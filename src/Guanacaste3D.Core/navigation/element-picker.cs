@@ -163,7 +163,7 @@ public sealed class ElementPicker
 
     /// <summary>
     /// The faces of an element's prism as triangles (three corners each, counted in groups of three), for tinting a
-    /// selection. Caps are fanned from the first corner, which is exact for convex footprints.
+    /// selection. Ear-clipped caps respect concave footprints instead of spilling blue tint outside the selected slab.
     /// </summary>
     public List<Vector3> Fill(PickedKind kind, Guid id)
     {
@@ -178,10 +178,23 @@ public sealed class ElementPicker
                 result.AddRange([new(a, prism.Bottom), new(b, prism.Bottom), new(b, prism.Top),
                     new(a, prism.Bottom), new(b, prism.Top), new(a, prism.Top)]);
             }
-            for (var i = 1; i < ring.Length - 1; i++)
+            // A triangle fan covers the wrong area on a concave footprint. Reuse the BIM mesher's
+            // ear-clipping algorithm so selection tint and the model share the same planar outline.
+            // A malformed outline should never crash selection; keep its side faces and outline.
+            IReadOnlyList<(int A, int B, int C)> caps;
+            try
             {
-                result.AddRange([new(ring[0], prism.Top), new(ring[i], prism.Top), new(ring[i + 1], prism.Top)]);
-                result.AddRange([new(ring[0], prism.Bottom), new(ring[i + 1], prism.Bottom), new(ring[i], prism.Bottom)]);
+                caps = PolygonTriangulator.Triangulate(
+                    ring.Select(point => new Point2(point.X, point.Y)).ToArray());
+            }
+            catch (ArgumentException)
+            {
+                continue;
+            }
+            foreach (var (a, b, c) in caps)
+            {
+                result.AddRange([new(ring[a], prism.Top), new(ring[b], prism.Top), new(ring[c], prism.Top)]);
+                result.AddRange([new(ring[a], prism.Bottom), new(ring[c], prism.Bottom), new(ring[b], prism.Bottom)]);
             }
         }
         return result;
