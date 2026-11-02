@@ -177,7 +177,12 @@ internal static class ProjectThumbnail
             encoder.Frames.Add(BitmapFrame.Create(image));
             using (var stream = new FileStream(temporary, FileMode.CreateNew, FileAccess.Write, FileShare.None))
                 encoder.Save(stream);
-            File.Move(temporary, destination, overwrite: true);
+            // ReplaceFile handles a destination opened with FILE_SHARE_DELETE on Windows.
+            // A plain MoveFileEx overwrite can return ACCESS_DENIED for that case.
+            if (File.Exists(destination))
+                File.Replace(temporary, destination, null);
+            else
+                File.Move(temporary, destination);
         }
         finally
         {
