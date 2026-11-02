@@ -27,8 +27,9 @@ function Remove-RecordedInstallationFiles {
             $parent = Split-Path -Parent $parent
         }
     }
+    # Native PBR material manifests (.g3dm) are user assets, not disposable binaries.
     foreach ($target in $Targets) {
-        if ($target -in $ControlFiles -or [System.IO.Path]::GetExtension($target) -in @('.g3d', '.g3', '.g3dt', '.g3df', '.g3dx')) { continue }
+        if ($target -in $ControlFiles -or [System.IO.Path]::GetExtension($target) -in @('.g3d', '.g3', '.g3dt', '.g3df', '.g3dx', '.g3dm')) { continue }
         if (Test-Path -LiteralPath $target -PathType Leaf) { Remove-Item -LiteralPath $target -Force }
     }
 }
