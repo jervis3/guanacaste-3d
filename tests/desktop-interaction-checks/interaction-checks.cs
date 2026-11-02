@@ -111,6 +111,7 @@ internal static partial class InteractionChecks
             PlumbingToolChecks(session);
             PlanServiceVisibilityChecks(session);
             CaptureDemoToolTip();
+            PhotoThumbnailCacheChecks();
             IconChecks();
             RenderJoinScene();
             Model3DSelectionChecks();
