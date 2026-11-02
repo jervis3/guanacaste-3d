@@ -160,8 +160,8 @@ public partial class MainWindow
             string? normalPath, string? roughnessPath, string? metallicPath) =>
             window.SetRenderMaterialMaps(category, elementId, normalPath, roughnessPath, metallicPath);
         public void SetRenderMaterialAppearance(SurfaceKind category, Guid? elementId,
-            double? roughness, double? metallic, double relief) =>
-            window.SetRenderMaterialAppearance(category, elementId, roughness, metallic, relief);
+            double? roughness, double? metallic, double relief, string? tintHex = null, double? textureSize = null) =>
+            window.SetRenderMaterialAppearance(category, elementId, roughness, metallic, relief, tintHex, textureSize);
 
         public event Action? SceneChanged
         {
@@ -223,7 +223,8 @@ public partial class MainWindow
                     ElementId = elementId, TextureSize = size, Relief = relief,
                     NormalPath = previous?.NormalPath, RoughnessPath = previous?.RoughnessPath,
                     MetallicPath = previous?.MetallicPath,
-                    RoughnessOverride = previous?.RoughnessOverride, MetallicOverride = previous?.MetallicOverride
+                    RoughnessOverride = previous?.RoughnessOverride, MetallicOverride = previous?.MetallicOverride,
+                    TintHex = previous?.TintHex
                 });
             }
         }
@@ -236,7 +237,7 @@ public partial class MainWindow
 
     /// <summary>One undoable, project-scoped update; never edits a shared .g3dm file.</summary>
     private void SetRenderMaterialAppearance(SurfaceKind category, Guid? elementId,
-        double? roughness, double? metallic, double relief)
+        double? roughness, double? metallic, double relief, string? tintHex = null, double? textureSize = null)
     {
         try
         {
@@ -244,7 +245,8 @@ public partial class MainWindow
                 a.Category == category && a.ElementId == elementId);
             var assignment = (current ?? new RenderMaterialAssignment(category, "stock:") { ElementId = elementId }) with
             {
-                RoughnessOverride = roughness, MetallicOverride = metallic, Relief = relief
+                RoughnessOverride = roughness, MetallicOverride = metallic, Relief = relief, TintHex = tintHex,
+                TextureSize = textureSize ?? (current ?? new RenderMaterialAssignment(category, "stock:")).TextureSize
             };
             _session.SetRenderMaterial(assignment);
         }

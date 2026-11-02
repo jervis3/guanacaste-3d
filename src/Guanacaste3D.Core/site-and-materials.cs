@@ -27,6 +27,8 @@ public sealed record RenderMaterialAssignment(SurfaceKind Category, string Textu
     public double? RoughnessOverride { get; init; }
     /// <summary>Per-category or per-element metalness; null inherits the selected material/preset.</summary>
     public double? MetallicOverride { get; init; }
+    /// <summary>Colorización: an sRGB <c>#RRGGBB</c> that multiplies the material's colour; null leaves the colour untouched.</summary>
+    public string? TintHex { get; init; }
 }
 
 /// <summary>Site terrain points and render materials; each public method is one undoable transaction.</summary>
@@ -100,6 +102,7 @@ public static class RenderMaterialRules
                 !ValidOptionalMapPath(material.NormalPath) ||
                 !ValidOptionalMapPath(material.RoughnessPath) ||
                 !ValidOptionalMapPath(material.MetallicPath) ||
+                !Rendering.MaterialTint.IsValid(material.TintHex) ||
                 string.IsNullOrWhiteSpace(material.TexturePath) || material.TexturePath.Length > 1024 ||
                 !double.IsFinite(material.TextureSize) || material.TextureSize is < 0.01 or > 1000 ||
                 !double.IsFinite(material.Relief) || material.Relief is < 0 or > 1 ||

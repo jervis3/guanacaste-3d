@@ -3,9 +3,15 @@
 Builds a downloadable Windows application installer with optional in-process file thumbnails and an offline runtime prerequisite.
 #>
 [CmdletBinding()]
-param([string]$Version = '0.26.0')
+param([string]$Version)
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $PSScriptRoot
+# The version is written once, in the Desktop project, so the package, the title bar and the executable always agree.
+if (-not $Version) {
+    $Version = ([xml](Get-Content -LiteralPath (Join-Path $projectRoot 'src\Guanacaste3D.Desktop\Guanacaste3D.Desktop.csproj') -Raw)).Project.PropertyGroup.Version |
+        Where-Object { $_ } | Select-Object -First 1
+    if (-not $Version) { throw 'Guanacaste3D.Desktop.csproj does not declare a Version.' }
+}
 $packageRoot = Join-Path $projectRoot "artifacts\release-$Version"
 $package = Join-Path $packageRoot 'guanacaste-3d-installer'
 $application = Join-Path $package 'application'

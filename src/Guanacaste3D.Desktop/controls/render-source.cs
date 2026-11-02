@@ -76,7 +76,7 @@ internal interface IRenderSource
         string? normalPath, string? roughnessPath, string? metallicPath);
     /// <summary>Non-destructive per-surface sliders: one undoable transaction, never edits the .g3dm manifest.</summary>
     void SetRenderMaterialAppearance(SurfaceKind category, Guid? elementId,
-        double? roughness, double? metallic, double relief);
+        double? roughness, double? metallic, double relief, string? tintHex = null, double? textureSize = null);
 
     /// <summary>Render-only stone tessellation. Off leaves low-power machines and the BIM model unaffected.</summary>
     bool StoneMicrogeometry { get; set; }

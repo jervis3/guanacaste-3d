@@ -522,6 +522,8 @@ DoorImportChecks.Run(Check);
 NavigationChecks.Run(Check);
 ViewVisibilityChecks.Run(Check);
 RenderFxChecks.Run(Check);
+MaterialTintChecks.Run(Check);
+AppVersionChecks.Run(Check);
 RevitFamilyImportChecks.Run(Check);
 NavigationChecks.Run(Check);
 OpeningFamilyChecks.Run(Check);

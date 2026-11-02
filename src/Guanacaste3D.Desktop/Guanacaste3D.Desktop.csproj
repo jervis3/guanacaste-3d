@@ -8,10 +8,15 @@
     <AssemblyName>Guanacaste3D.Desktop</AssemblyName>
     <RootNamespace>Guanacaste3D.Desktop</RootNamespace>
     <Product>Guanacaste 3D</Product>
-    <Version>0.26.0</Version>
+    <!-- Versions count 1.0.0 … 1.0.99, then 1.1.0 … 1.99.99, then 2.0.0 (see AppVersion). Bump both lines with each release. -->
+    <Version>1.0.0</Version>
+    <ReleaseDate>2026-11-02</ReleaseDate>
     <!-- Embedded in the .exe so Explorer, the Start menu shortcut and the taskbar show the brand mark. -->
     <ApplicationIcon>resources\brand\guanacaste3d.ico</ApplicationIcon>
   </PropertyGroup>
+  <ItemGroup>
+    <AssemblyMetadata Include="ReleaseDate" Value="$(ReleaseDate)" />
+  </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="../Guanacaste3D.Core/Guanacaste3D.Core.csproj" />
     <ProjectReference Include="../Guanacaste3D.Agent/Guanacaste3D.Agent.csproj" />

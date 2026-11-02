@@ -1,8 +1,10 @@
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using System.Windows.Threading;
 using Guanacaste3D.Core;
 using Guanacaste3D.Core.Geometry;
 using Guanacaste3D.Core.Rendering;
@@ -16,6 +18,15 @@ namespace Guanacaste3D.Desktop.Controls;
 public partial class RenderPanel
 {
     private bool _settingGalleryAppearance;
+    private string? _galleryTintHex;
+    private DispatcherTimer? _galleryApplyTimer;
+
+    // Lumion's colour boxes: neutral first, then warm, cool and earth tones that suit architecture.
+    private static readonly string[] GalleryTints =
+    [
+        "#FFFFFF", "#F2E6D0", "#E8C9A0", "#D9A066", "#B5651D", "#8B4513", "#C0392B", "#E07A5F",
+        "#F2CC8F", "#A7C957", "#6A994E", "#2A9D8F", "#81B3D6", "#4A6FA5", "#7D7D7D", "#2B2B2B"
+    ];
 
     private RenderMaterialAssignment? GalleryAssignment() =>
         _source?.RenderMaterials.FirstOrDefault(item =>
@@ -60,12 +71,15 @@ public partial class RenderPanel
             GalleryRoughnessSlider.Value = current?.RoughnessOverride ?? initial.Roughness;
             GalleryMetallicSlider.Value = current?.MetallicOverride ?? initial.Metallic;
             GalleryReliefSlider.Value = current?.Relief ?? initial.Relief;
+            GalleryScaleSlider.Value = Math.Clamp(current?.TextureSize ?? 1.0, GalleryScaleSlider.Minimum, GalleryScaleSlider.Maximum);
+            _galleryTintHex = current?.TintHex;
             GalleryAppearanceName.Text = current is null
                 ? Text("RenderGallery.StockMaterial")
                 : MaterialDisplayName(current.TexturePath);
             GalleryApplyAppearanceButton.IsEnabled = true;
             GalleryResetAppearanceButton.IsEnabled = current is not null;
             UpdateGalleryAppearanceLabels();
+            BuildGalleryTintSwatches();
             RefreshGalleryMapCards(current, target);
         }
         finally { _settingGalleryAppearance = false; }
@@ -75,6 +89,77 @@ public partial class RenderPanel
     {
         if (_settingGalleryAppearance) return;
         UpdateGalleryAppearanceLabels();
+        ScheduleGalleryApply();
+    }
+
+    /// <summary>
+    /// Like Lumion, a change shows up without pressing Apply: the change is applied once the slider has rested a moment,
+    /// as one undoable step, instead of rebuilding the scene on every tick of a drag.
+    /// </summary>
+    private void ScheduleGalleryApply()
+    {
+        if (!_galleryReady) return;
+        _galleryApplyTimer ??= new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(450) };
+        _galleryApplyTimer.Tick -= GalleryApplyTimer_Tick;
+        _galleryApplyTimer.Tick += GalleryApplyTimer_Tick;
+        _galleryApplyTimer.Stop();
+        _galleryApplyTimer.Start();
+    }
+
+    private void GalleryApplyTimer_Tick(object? sender, EventArgs e)
+    {
+        _galleryApplyTimer?.Stop();
+        ApplyGalleryAppearance();
+    }
+
+    /// <summary>One box per colour; the chosen one is outlined, and the first clears the tint.</summary>
+    private void BuildGalleryTintSwatches()
+    {
+        GalleryTintSwatches.Children.Clear();
+        foreach (var hex in GalleryTints)
+        {
+            var none = hex == GalleryTints[0];
+            var chosen = none ? _galleryTintHex is null : string.Equals(_galleryTintHex, hex, StringComparison.OrdinalIgnoreCase);
+            var swatch = new Border
+            {
+                Width = 24, Height = 24, Margin = new Thickness(0, 0, 5, 5), CornerRadius = new CornerRadius(4), Cursor = Cursors.Hand,
+                Background = (SolidColorBrush)new BrushConverter().ConvertFromString(hex)!,
+                BorderThickness = new Thickness(chosen ? 2 : 1),
+                BorderBrush = new SolidColorBrush(chosen ? Color.FromRgb(0x70, 0xDA, 0xC9) : Color.FromRgb(0x40, 0x60, 0x75)),
+                ToolTip = none ? "Sin colorización" : hex
+            };
+            swatch.MouseLeftButtonUp += (_, _) =>
+            {
+                _galleryTintHex = none ? null : hex;
+                BuildGalleryTintSwatches();
+                UpdateGalleryPreview();
+                ScheduleGalleryApply();
+            };
+            GalleryTintSwatches.Children.Add(swatch);
+        }
+    }
+
+    /// <summary>Paints the ball: its colour is the tint, the highlight widens with roughness and takes the colour as metal.</summary>
+    private void UpdateGalleryPreview()
+    {
+        if (GalleryPreviewSphere is null) return;
+        var baseColor = _galleryTintHex is { } hex && ColorConverter.ConvertFromString(hex) is Color tint ? tint : Color.FromRgb(184, 184, 178);
+        var roughness = GalleryRoughnessSlider.Value;
+        var metallic = GalleryMetallicSlider.Value;
+        static Color Mix(Color a, Color b, double t) => Color.FromRgb(
+            (byte)(a.R + (b.R - a.R) * t), (byte)(a.G + (b.G - a.G) * t), (byte)(a.B + (b.B - a.B) * t));
+        var highlight = Mix(Colors.White, baseColor, metallic * 0.8);
+        var lit = Mix(baseColor, highlight, (1 - roughness) * 0.9);
+        var shade = Mix(baseColor, Colors.Black, 0.62);
+        GalleryPreviewSphere.Fill = new RadialGradientBrush
+        {
+            GradientOrigin = new Point(0.34, 0.28), Center = new Point(0.5, 0.5), RadiusX = 0.72, RadiusY = 0.72,
+            GradientStops =
+            [
+                new GradientStop(lit, 0), new GradientStop(Mix(baseColor, lit, 0.35), 0.1 + 0.5 * roughness),
+                new GradientStop(baseColor, 0.55), new GradientStop(shade, 1)
+            ]
+        };
     }
 
     private void UpdateGalleryAppearanceLabels()
@@ -83,15 +168,24 @@ public partial class RenderPanel
         GalleryRoughnessValue.Text = GalleryRoughnessSlider.Value.ToString("0.00");
         GalleryMetallicValue.Text = GalleryMetallicSlider.Value.ToString("0.00");
         GalleryReliefValue.Text = GalleryReliefSlider.Value.ToString("0.00");
+        if (GalleryScaleValue is not null) GalleryScaleValue.Text = GalleryScaleSlider.Value.ToString("0.00") + " m";
+        UpdateGalleryPreview();
     }
 
     private void GalleryApplyAppearance_Click(object sender, RoutedEventArgs e)
+    {
+        _galleryApplyTimer?.Stop();
+        ApplyGalleryAppearance();
+    }
+
+    private void ApplyGalleryAppearance()
     {
         if (_source is null || !_galleryReady) return;
         var category = GalleryTarget();
         if (_focusedElement is Guid && category != _focusedMaterial) return;
         _source.SetRenderMaterialAppearance(category, _focusedElement,
-            GalleryRoughnessSlider.Value, GalleryMetallicSlider.Value, GalleryReliefSlider.Value);
+            GalleryRoughnessSlider.Value, GalleryMetallicSlider.Value, GalleryReliefSlider.Value,
+            _galleryTintHex, GalleryScaleSlider.Value);
         RefreshMaterialRows();
     }
 
