@@ -15,6 +15,9 @@ internal static class ProjectThumbnail
     public const int Height = 384;
     private const int MaximumDetailTrianglesPerKind = 3500;
     private const int MaximumPreviewTriangles = 40000;
+    // Home-screen thumbnails are generated at 384x384. A much larger cache file
+    // is unexpected and must not be decoded into the desktop process.
+    private const long MaximumCachedPngBytes = 16L * 1024 * 1024;
 
     /// <summary>A projected surface with a depth used to paint distant surfaces first.</summary>
     public readonly record struct Face(Point A, Point B, Point C, double Depth, Color Color);
@@ -171,7 +174,8 @@ internal static class ProjectThumbnail
     {
         try
         {
-            if (!File.Exists(path)) return null;
+            var file = new FileInfo(path);
+            if (!file.Exists || file.Length > MaximumCachedPngBytes) return null;
             var image = new BitmapImage();
             image.BeginInit();
             image.CacheOption = BitmapCacheOption.OnLoad;
@@ -181,7 +185,8 @@ internal static class ProjectThumbnail
             image.Freeze();
             return image;
         }
-        catch (Exception ex) when (ex is IOException or NotSupportedException or UnauthorizedAccessException)
+        catch (Exception ex) when (ex is IOException or NotSupportedException or UnauthorizedAccessException
+            or ArgumentException)
         {
             return null;
         }
