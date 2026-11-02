@@ -13,6 +13,9 @@ function Remove-RecordedInstallationFiles {
     )
     $root = [System.IO.Path]::GetFullPath($InstallRoot).TrimEnd('\')
     $prefix = $root + '\'
+    if ((Test-Path -LiteralPath $root) -and ((Get-Item -LiteralPath $root -Force).Attributes -band [System.IO.FileAttributes]::ReparsePoint)) {
+        throw 'The installation directory is redirected.'
+    }
     foreach ($target in $Targets) {
         $path = [System.IO.Path]::GetFullPath($target)
         if (-not $path.StartsWith($prefix, [System.StringComparison]::OrdinalIgnoreCase)) { throw 'Invalid installation manifest path.' }
