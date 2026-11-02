@@ -88,7 +88,7 @@ internal sealed partial class SceneNavigator
 
     /// <summary>Whether a key press is a navigation key that the window must not treat as a command shortcut.</summary>
     public bool OwnsKey(Key key) => IsActive && !Keyboard.Modifiers.HasFlag(ModifierKeys.Control) && key is Key.W or Key.A or Key.S or Key.D or Key.Q or Key.E or Key.Up or Key.Down
-        or Key.Left or Key.Right or Key.LeftShift or Key.RightShift or Key.LeftCtrl or Key.RightCtrl;
+        or Key.Left or Key.Right or Key.LeftShift or Key.RightShift or Key.LeftCtrl or Key.RightCtrl or Key.Space;
 
     /// <summary>Scales navigation speed from project bounds while keeping empty projects usable.</summary>
     private float SceneRadius()
@@ -225,6 +225,16 @@ internal sealed partial class SceneNavigator
         float Key(Key key) => Keyboard.IsKeyDown(key) ? 1 : 0;
         var forward = Key(System.Windows.Input.Key.W) + Key(System.Windows.Input.Key.Up) - Key(System.Windows.Input.Key.S) - Key(System.Windows.Input.Key.Down);
         var right = Key(System.Windows.Input.Key.D) + Key(System.Windows.Input.Key.Right) - Key(System.Windows.Input.Key.A) - Key(System.Windows.Input.Key.Left);
+        if (LumionControls)
+        {
+            // Q rises and E descends, as in Lumion; Space slows, Shift speeds up and both together fly very fast.
+            var rise = Key(System.Windows.Input.Key.Q) - Key(System.Windows.Input.Key.E);
+            var shift = Keyboard.Modifiers.HasFlag(ModifierKeys.Shift);
+            var space = Keyboard.IsKeyDown(System.Windows.Input.Key.Space);
+            ApplyFlightScaled(new Vector3(forward, right, rise), (float)dt, shift, space,
+                shift && space ? 12f : shift ? 4f : space ? 0.25f : 1f);
+            return;
+        }
         var up = Key(System.Windows.Input.Key.E) - Key(System.Windows.Input.Key.Q);
         ApplyFlight(new Vector3(forward, right, up), (float)dt,
             Keyboard.Modifiers.HasFlag(ModifierKeys.Shift), Keyboard.Modifiers.HasFlag(ModifierKeys.Alt));

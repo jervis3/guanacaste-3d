@@ -181,7 +181,7 @@
   <sys:String x:Key="ViewSelection.Count">{0} elementos seleccionados en esta vista (Ctrl+H ocultar, Ctrl+Mayús+H mostrar todo)</sys:String>
   <sys:String x:Key="RenderPanel.Controls">Clic derecho: mirar · Rueda: acercar al cursor · Botón central: mover · Shift + central: orbitar selección o proyecto · Clic izquierdo: seleccionar · W A S D: volar · Q E: bajar y subir · Shift: rápido</sys:String>
   <sys:String x:Key="RenderPanel.InteractiveTitle">Vista 3D interactiva</sys:String>
-  <sys:String x:Key="RenderPanel.InteractiveHint">Shift + botón central: girar · Rueda: acercar · Clic derecho: mirar</sys:String>
+  <sys:String x:Key="RenderPanel.InteractiveHint">Clic derecho: mirar · Clic izquierdo: avanzar y girar · Botón central: desplazar · W A S D: volar · Q/E: subir/bajar · Shift: rápido · Espacio: lento</sys:String>
   <sys:String x:Key="RenderPanel.OrbitLeft">Girar izquierda</sys:String>
   <sys:String x:Key="RenderPanel.OrbitRight">Girar derecha</sys:String>
   <sys:String x:Key="RenderPanel.FrameModel">Encuadrar</sys:String>
@@ -334,9 +334,9 @@
   <!-- Unsaved changes -->
   <sys:String x:Key="Dialog.UnsavedChanges">Hay cambios sin guardar. ¿Quieres guardarlos antes de continuar?</sys:String>
   <sys:String x:Key="RenderPanel.TravelSpeed">Velocidad de recorrido (m/s)</sys:String>
-  <sys:String x:Key="RenderPanel.TravelSpeedHint">De 0,2 a 10 m/s. Mayús acelera; Alt permite movimientos precisos.</sys:String>
+  <sys:String x:Key="RenderPanel.TravelSpeedHint">De 0,2 a 10 m/s. Mayús acelera, Espacio frena y Mayús+Espacio vuela muy rápido.</sys:String>
   <sys:String x:Key="RenderPanel.HorizontalTravel">Mantener altura al avanzar</sys:String>
-  <sys:String x:Key="RenderPanel.FlightHint">Clic en la vista para navegar. W/A/S/D o flechas: desplazarse. Q/E: bajar/subir. Botón derecho: mirar. Rueda: avanzar/retroceder. Desactiva las colisiones para atravesar paredes.</sys:String>
+  <sys:String x:Key="RenderPanel.FlightHint">Como en Lumion: botón derecho mirar, botón izquierdo avanzar y girar, botón central desplazar, W/A/S/D volar, Q subir, E bajar, Shift rápido, Espacio lento, Shift+Espacio muy rápido. Ctrl+1…0 guarda una foto; Shift+1…0 la abre.</sys:String>
   <sys:String x:Key="RenderGallery.Title">Biblioteca visual de texturas</sys:String>
   <sys:String x:Key="RenderGallery.Subtitle">Miniaturas · búsqueda · aplicar material</sys:String>
   <sys:String x:Key="RenderGallery.Target">Aplicar a la superficie</sys:String>

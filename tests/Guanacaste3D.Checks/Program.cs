@@ -532,6 +532,7 @@ LifeSafetyChecks.Run(Check);
 FloorPlanHatchChecks.Run(Check);
 AreaScheduleChecks.Run(Check);
 ScheduleChecks.Run(Check);
+RenderPhotoChecks.Run(Check);
 LocalizationChecks.Run(Check);
 IfcChecks.Run(Check);
 MeshExportChecks.Run(Check);

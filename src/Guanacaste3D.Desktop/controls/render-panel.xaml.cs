@@ -84,6 +84,8 @@ public partial class RenderPanel : UserControl
             Pick = (origin, direction) => source.Query?.Pick(origin, direction)
         };
         InitializeFlightControls();
+        _navigator.LumionControls = true;
+        InitializePhotos();
         _navigator.Changed += OnCameraChanged;
         source.SceneChanged += () => Dispatcher.BeginInvoke(RefreshScene);
         source.SceneChanged += () => Dispatcher.BeginInvoke(RefreshInteractiveScene);
@@ -91,6 +93,7 @@ public partial class RenderPanel : UserControl
         source.SceneChanged += () => Dispatcher.BeginInvoke(RefreshRenderScenes);
         RefreshMaterialRows();
         RefreshRenderScenes();
+        RefreshPhotos();
         source.QueryChanged += () => Dispatcher.BeginInvoke(ApplyCollision);
         ApplyCollision();
     }
@@ -116,6 +119,8 @@ public partial class RenderPanel : UserControl
         {
             _interactiveSceneRequest++;
             StopInteractivePreview();
+            HideStyledPreview();
+            _flightTimer?.Stop();
             _preview?.Suspend();
             StopTour();
             return;
@@ -133,6 +138,9 @@ public partial class RenderPanel : UserControl
     {
         _interactiveSceneRequest++;
         StopInteractivePreview();
+        HideStyledPreview();
+        _flightTimer?.Stop();
+        _photoWatch?.Stop();
         // Invalidate asynchronous scene requests before disposing the preview.
         _sceneRefreshVersion++;
         _cancel?.Cancel();

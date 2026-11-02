@@ -324,6 +324,8 @@ public partial class RenderPanel
             if (PreviewToggle.IsChecked == true) ResumePreview();
         }
         UpdateInteractiveCamera();
+        HideStyledPreview();
+        ScheduleStyledPreview();
         BeginInteractivePreview();
         _preview?.SetCamera(CurrentCamera());
     }

@@ -1,3 +1,4 @@
+using System.Numerics;
 using System.Windows;
 using System.Windows.Input;
 using Guanacaste3D.Core.Navigation;
@@ -47,6 +48,9 @@ internal sealed partial class SceneNavigator
             case MouseButton.Right:
                 Camera.Look(horizontal, vertical);
                 break;
+            case MouseButton.Left when LumionControls:
+                WalkAndTurn(horizontal, vertical);
+                break;
             case MouseButton.Middle when _orbiting:
                 Camera.OrbitAround(_orbitPivot, horizontal, vertical);
                 break;
@@ -57,8 +61,20 @@ internal sealed partial class SceneNavigator
                 MoveCamera(Camera.PanDelta(horizontal, vertical, unitsPerPixel));
                 break;
         }
-        if (button != MouseButton.Left) NotifyChanged();
+        if (button != MouseButton.Left || LumionControls) NotifyChanged();
         return true;
+    }
+
+    /// <summary>
+    /// Lumion's left-button gesture: dragging up or down walks along the horizon (scaled by the travel speed) while
+    /// dragging sideways turns the view, so the camera can be driven with a single hand on the mouse.
+    /// </summary>
+    private void WalkAndTurn(float horizontal, float vertical)
+    {
+        Camera.Look(horizontal * 0.6f, 0);
+        var heading = new Vector3(Camera.Forward.X, Camera.Forward.Y, 0);
+        if (heading.LengthSquared() < 1e-6f) return;
+        MoveCamera(Vector3.Normalize(heading) * (-vertical * (TravelSpeed ?? 2f) * 0.02f));
     }
 
     /// <summary>Applies the full wheel delta along the picked ray, retaining smooth-wheel precision and camera clearance.</summary>

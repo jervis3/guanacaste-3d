@@ -56,6 +56,15 @@ internal interface IRenderSource
     /// <summary>Removes a named setup as an undoable edit.</summary>
     void RemoveRenderScene(Guid id);
 
+    /// <summary>Adds a photo (camera, style, filters and preview) without a model transaction or scene rebuild.</summary>
+    Guid AddRenderPhoto(string name, RenderSetup setup, string? thumbnail, int? index = null);
+
+    /// <summary>Changes a photo's setup, name or preview; null arguments keep the current value.</summary>
+    void UpdateRenderPhoto(Guid id, RenderSetup? setup = null, string? name = null, string? thumbnail = null);
+
+    /// <summary>Deletes a photo.</summary>
+    void DeleteRenderPhoto(Guid id);
+
     /// <summary>Finds an editable render surface beneath a point in the shared viewport.</summary>
     (Guid ElementId, SurfaceKind Category)? PickRenderMaterial(Point position, FrameworkElement surface);
 

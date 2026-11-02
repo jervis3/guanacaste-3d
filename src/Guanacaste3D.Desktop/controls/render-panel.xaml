@@ -196,7 +196,7 @@
           </StackPanel>
         </Border>
 
-      <Border DockPanel.Dock="Top" Style="{StaticResource SettingsCard}" Margin="12,10,12,0" Padding="12,10">
+      <Border DockPanel.Dock="Top" Style="{StaticResource SettingsCard}" Margin="12,10,12,0" Padding="12,10" Visibility="Collapsed">
         <StackPanel>
           <TextBlock Text="{DynamicResource RenderPanel.Scenes}" Style="{StaticResource PanelTitle}"/>
           <ComboBox x:Name="ScenePicker" ToolTip="{DynamicResource RenderPanel.ScenesHint}"/>
@@ -762,14 +762,17 @@
         </LinearGradientBrush>
       </Grid.Background>
       <Viewport3D x:Name="InteractiveViewport" IsHitTestVisible="False" ClipToBounds="True"/>
-      <Border x:Name="FinalImageBorder" Visibility="Collapsed" Margin="28,24,28,62" Background="#F9FBFD" BorderBrush="#4A6579" BorderThickness="1" CornerRadius="8" Padding="8">
+      <!-- A still of the viewport with the active style and filters applied; hidden the moment the camera moves. -->
+      <Image x:Name="StyledPreviewImage" Stretch="Fill" IsHitTestVisible="False" Visibility="Collapsed"
+             RenderOptions.BitmapScalingMode="HighQuality"/>
+      <Border x:Name="FinalImageBorder" Visibility="Collapsed" Margin="28,24,28,176" Background="#F9FBFD" BorderBrush="#4A6579" BorderThickness="1" CornerRadius="8" Padding="8">
         <Border.Effect><DropShadowEffect Color="#475569" BlurRadius="24" ShadowDepth="4" Opacity="0.22"/></Border.Effect>
         <Image x:Name="PreviewImage" Stretch="Uniform" RenderOptions.BitmapScalingMode="HighQuality" Focusable="False"/>
       </Border>
       <Canvas x:Name="SelectionOverlay" IsHitTestVisible="False" ClipToBounds="True"/>
       <!-- Always available while inside Render, including for live preview frames. -->
       <Button x:Name="CopyCurrentViewButton" Content="{DynamicResource RenderPanel.CopyViewForAi}" Click="CopyCurrentView_Click"
-              HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,18,110"
+              HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,18,176"
               Padding="14,9" MinHeight="38" FontWeight="SemiBold"
               Background="#DB174B5A" Foreground="#FFFFFF" BorderBrush="#72D8C4"
               ToolTip="{DynamicResource RenderPanel.CopyViewForAiHint}"/>
@@ -813,7 +816,7 @@
           <TextBlock x:Name="HintText" Text="{DynamicResource RenderPanel.InteractiveHint}" Foreground="#B9CDD0" FontSize="11" Margin="0,3,0,0"/>
         </StackPanel>
       </Border>
-      <Border VerticalAlignment="Bottom" HorizontalAlignment="Center" Margin="0,0,0,64" Padding="6" CornerRadius="10"
+      <Border VerticalAlignment="Bottom" HorizontalAlignment="Center" Margin="0,0,0,170" Padding="6" CornerRadius="10"
               Background="#EA142A31" BorderBrush="#4A6870" BorderThickness="1">
         <StackPanel Orientation="Horizontal">
           <Button x:Name="OrbitLeftButton" Style="{StaticResource ViewportToolButton}" Click="OrbitLeft_Click"
@@ -823,6 +826,43 @@
           <Button x:Name="FrameModelButton" Style="{StaticResource ViewportToolButton}" Click="FrameModel_Click"
                   Content="{DynamicResource RenderPanel.FrameModel}" ToolTip="{DynamicResource RenderPanel.FrameModelHint}"/>
         </StackPanel>
+      </Border>
+      <!-- Photo strip: saved views with their own style and filters, rendered one by one or all at once. -->
+      <Border x:Name="PhotoStrip" VerticalAlignment="Bottom" Margin="0,0,0,41" Height="124" Background="#F20F1B26"
+              BorderBrush="#38505A" BorderThickness="0,1,0,0">
+        <Grid>
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/>
+          </Grid.ColumnDefinitions>
+          <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="14,0,10,0" Width="150">
+            <Button x:Name="NewPhotoButton" Click="NewPhoto_Click" Style="{StaticResource RenderPrimaryButton}" MinHeight="40"
+                    ToolTip="Guarda la vista actual como una foto con sus propios estilos y filtros (Ctrl+1 … Ctrl+0)">
+              <StackPanel Orientation="Horizontal">
+                <TextBlock Text="&#xE722;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="16" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                <TextBlock Text="Nueva foto" VerticalAlignment="Center"/>
+              </StackPanel>
+            </Button>
+            <CheckBox x:Name="StylePreviewCheck" IsChecked="True" Margin="0,9,0,0" Foreground="#C9D8E4" FontSize="11.5"
+                      Content="Ver estilo en vivo" Checked="StylePreview_Changed" Unchecked="StylePreview_Changed"
+                      ToolTip="Muestra el estilo y los filtros sobre la vista cuando dejas de mover la cámara."/>
+          </StackPanel>
+          <ScrollViewer Grid.Column="1" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" Padding="0,0,0,2">
+            <StackPanel x:Name="PhotoCards" Orientation="Horizontal" VerticalAlignment="Center"/>
+          </ScrollViewer>
+          <TextBlock x:Name="PhotoEmptyHint" Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="6,0,0,0"
+                     Foreground="#8FA6B9" FontSize="12" TextWrapping="Wrap" MaxWidth="420" IsHitTestVisible="False"
+                     Text="Navega hasta un buen encuadre y pulsa «Nueva foto». Cada foto guarda su cámara, estilo y filtros."/>
+          <StackPanel Grid.Column="2" VerticalAlignment="Center" Margin="10,0,16,0" Width="150">
+            <Button x:Name="RenderPhotosButton" Click="RenderPhotos_Click" Style="{StaticResource RenderPrimaryButton}" MinHeight="44"
+                    ToolTip="Renderiza una foto, varias o todas de una vez">
+              <StackPanel Orientation="Horizontal">
+                <TextBlock Text="&#xE768;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                <TextBlock Text="Renderizar…" VerticalAlignment="Center"/>
+              </StackPanel>
+            </Button>
+            <TextBlock x:Name="PhotoCountText" Foreground="#8FA6B9" FontSize="11" Margin="0,7,0,0" TextAlignment="Center"/>
+          </StackPanel>
+        </Grid>
       </Border>
       <Border VerticalAlignment="Bottom" Background="#12232C" BorderBrush="#38505A"
               BorderThickness="0,1,0,0" Padding="18,9">

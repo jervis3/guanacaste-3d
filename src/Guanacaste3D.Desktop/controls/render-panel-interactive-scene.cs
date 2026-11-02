@@ -39,6 +39,7 @@ public partial class RenderPanel
                 foreach (var model in snapshot.Models)
                     InteractiveViewport.Children.Add(new ModelVisual3D { Content = model });
                 UpdateInteractiveCamera();
+                ScheduleStyledPreview();
             });
         }
         catch (Exception exception)

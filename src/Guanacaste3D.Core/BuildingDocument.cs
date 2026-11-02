@@ -271,7 +271,7 @@ public sealed class BuildingDocument
         ComponentFamilyRules.Validate(this);
         RenderSetup?.Validate();
         if (RenderScenes is null || RenderScenes.Count > 1000 ||
-            RenderScenes.Any(scene => scene is null || scene.Id == Guid.Empty || string.IsNullOrWhiteSpace(scene.Name) || scene.Name.Length > 120 || scene.Setup is null) ||
+            RenderScenes.Any(scene => scene is null || scene.Id == Guid.Empty || string.IsNullOrWhiteSpace(scene.Name) || scene.Name.Length > 120 || scene.Setup is null || (scene.Thumbnail is not null && scene.Thumbnail.Length > Rendering.RenderSceneBookmark.MaximumThumbnailLength)) ||
             RenderScenes.Select(scene => scene.Id).Distinct().Count() != RenderScenes.Count)
             throw new InvalidDataException("The render scene collection is invalid.");
         foreach (var scene in RenderScenes) scene.Setup.Validate();

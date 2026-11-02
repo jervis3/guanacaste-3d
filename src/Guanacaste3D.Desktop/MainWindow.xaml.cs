@@ -41,6 +41,7 @@ public partial class MainWindow : Window
         _session = new DocumentSession(ArchitecturalLibrary.CreateProject(GetText("Project.Untitled")));
         _activeLevelId = _session.Document.Levels[0].Id;
         _session.Changed += OnDocumentChanged;
+        _session.RenderPhotosChanged += OnRenderPhotosChanged;
         InitializeNavigationAndRender();
         RefreshAll();
         if (!string.IsNullOrWhiteSpace(projectPath)) OpenAssociatedDocumentPath(projectPath);
@@ -74,6 +75,14 @@ public partial class MainWindow : Window
         // the asynchronous WPF scene is still being rebuilt.
         _picker = null;
         RefreshAll();
+    }
+
+    /// <summary>Photos are saved with the project, but editing one must not rebuild any view of the model.</summary>
+    private void OnRenderPhotosChanged(object? sender, EventArgs e)
+    {
+        if (_dirty) return;
+        _dirty = true;
+        UpdateWindowTitle();
     }
 
     /// <summary>Starts a new project after protecting unsaved edits.</summary>
@@ -239,6 +248,7 @@ public partial class MainWindow : Window
     private void AttachDocument(BuildingDocument document, string? filename)
     {
         _session.Changed -= OnDocumentChanged;
+        _session.RenderPhotosChanged -= OnRenderPhotosChanged;
         // The untouched single north view identifies projects from before cardinal elevations existed. A user who has
         // deliberately removed views keeps that choice when the project is reopened.
         var elevations = document.Views.Where(view => view.Kind == ProjectViewKind.Elevation).ToArray();
@@ -249,6 +259,7 @@ public partial class MainWindow : Window
         BuiltInProjectViews.EnsureLocation(document.Views);
         _session = new DocumentSession(document);
         _session.Changed += OnDocumentChanged;
+        _session.RenderPhotosChanged += OnRenderPhotosChanged;
         // The previous project's picker may outlive the async viewport rebuild.
         // Invalidate it synchronously before any new-project interaction is possible.
         _picker = null;

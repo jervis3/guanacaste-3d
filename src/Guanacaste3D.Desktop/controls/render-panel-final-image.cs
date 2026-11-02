@@ -28,8 +28,13 @@ public partial class RenderPanel
         _cancel?.Cancel();
         _lastFinal = null;
         _showingFinal = false;
+        _activePhotoId = null;
+        _photoBaseline = null;
+        _batchCancel = true;
+        HideStyledPreview();
         SaveButton.IsEnabled = CopyButton.IsEnabled = ShowImageButton.IsEnabled = false;
         ShowInteractiveScene(true);
+        RefreshPhotos();
     }
     private bool _renderStarting;
 
@@ -62,6 +67,12 @@ public partial class RenderPanel
     /// <summary>Starts rendering or requests cancellation of the active render operation.</summary>
     private async void RenderButton_Click(object sender, RoutedEventArgs e)
     {
+        if (_batchRunning)
+        {
+            _batchCancel = true;
+            _cancel?.Cancel();
+            return;
+        }
         if (_rendering || _renderingTour)
         {
             _cancel?.Cancel();
@@ -167,7 +178,7 @@ public partial class RenderPanel
             RenderProgress.Value = Math.Clamp(frame.Progress, 0, 1);
             _estimatedRemaining = frame.Remaining;
             if (!frame.IsFinal)
-                StatusText.Text = UiText.Get("RenderPanel.RenderingSimple");
+                StatusText.Text = (_batchLabel is null ? "" : _batchLabel + " · ") + UiText.Get("RenderPanel.RenderingSimple");
         });
 
         RenderResult? result = null;

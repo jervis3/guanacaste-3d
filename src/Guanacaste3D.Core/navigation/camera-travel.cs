@@ -17,4 +17,12 @@ public static class CameraTravel
         var multiplier = precise ? 0.2f : fast ? 4f : 1f;
         return Vector3.Normalize(direction) * Math.Clamp(speed, 0.1f, 50f) * multiplier * Math.Clamp(seconds, 0, 0.1f);
     }
+
+    /// <summary>Same travel with an explicit speed multiplier (Lumion-style slow, fast and very fast modes).</summary>
+    public static Vector3 Displacement(NavigationCamera camera, Vector3 input, float speed, float seconds,
+        bool horizontal, float multiplier)
+    {
+        if (!float.IsFinite(multiplier)) return Vector3.Zero;
+        return Displacement(camera, input, speed * Math.Clamp(multiplier, 0.05f, 20f), seconds, horizontal);
+    }
 }

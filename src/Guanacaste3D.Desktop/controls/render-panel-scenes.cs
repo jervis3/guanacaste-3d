@@ -17,6 +17,7 @@ public partial class RenderPanel
         foreach (var scene in _source.RenderScenes)
             ScenePicker.Items.Add(new ComboBoxItem { Content = scene.Name, Tag = scene.Id });
         ScenePicker.SelectedItem = ScenePicker.Items.OfType<ComboBoxItem>().FirstOrDefault(item => (Guid)item.Tag == selected);
+        RefreshPhotos();
     }
 
     /// <summary>Captures the current camera and render settings in the active project.</summary>

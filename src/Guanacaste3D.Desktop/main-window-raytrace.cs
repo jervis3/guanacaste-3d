@@ -110,6 +110,11 @@ public partial class MainWindow
         public void AddRenderScene(string name, RenderSetup setup) => window._session.AddRenderScene(name, setup);
         /// <summary>Deletes a scene from the active document.</summary>
         public void RemoveRenderScene(Guid id) => window._session.RemoveRenderScene(id);
+        public Guid AddRenderPhoto(string name, RenderSetup setup, string? thumbnail, int? index = null) =>
+            window._session.AddRenderPhoto(name, setup, thumbnail, index);
+        public void UpdateRenderPhoto(Guid id, RenderSetup? setup = null, string? name = null, string? thumbnail = null) =>
+            window._session.UpdateRenderPhoto(id, setup, name, thumbnail);
+        public void DeleteRenderPhoto(Guid id) => window._session.DeleteRenderPhoto(id);
         /// <summary>Resolves a material drop against the active project model.</summary>
         public (Guid ElementId, SurfaceKind Category)? PickRenderMaterial(Point position, FrameworkElement surface) =>
             window.PickRenderMaterial(position, surface);
