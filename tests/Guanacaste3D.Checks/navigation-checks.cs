@@ -262,6 +262,25 @@ static class NavigationChecks
         check(picker.Dimensions(PickedKind.Opening, door).Count >= 3 && picker.Outline(PickedKind.Column, column).Count == 12,
             "picking: openings are measured and a column outlines as 12 edges");
 
+        // A concave U-shaped floor has a 3 m² notch. A triangle fan from the first vertex
+        // overpaints that notch; the blue selection cap must have exactly the floor's 22 m².
+        var concave = session.AddFloor(level,
+            [new(0, 10), new(5, 10), new(5, 15), new(3, 15),
+             new(3, 12), new(2, 12), new(2, 15), new(0, 15)], 0.2);
+        var slab = session.Document.Floors.Single(item => item.Id == concave);
+        var capTop = (float)(session.Document.Levels.Single(item => item.Id == level).Elevation + slab.ElevationOffset);
+        var capBottom = capTop - (float)slab.Thickness;
+        var tinted = new ElementPicker(session.Document).Fill(PickedKind.Floor, concave);
+        static double CapArea(List<Vector3> triangles, float height) =>
+            triangles.Chunk(3)
+                .Where(triangle => triangle.Length == 3 && triangle.All(vertex => Math.Abs(vertex.Z - height) < 1e-5f))
+                .Sum(triangle => Math.Abs(
+                    (triangle[1].X - triangle[0].X) * (triangle[2].Y - triangle[0].Y) -
+                    (triangle[1].Y - triangle[0].Y) * (triangle[2].X - triangle[0].X)) / 2d);
+        check(Math.Abs(CapArea(tinted, capTop) - 22) < 1e-4 &&
+              Math.Abs(CapArea(tinted, capBottom) - 22) < 1e-4,
+            "picking: concave floor selection tints only the actual top and bottom footprint");
+
         var camera = new NavigationCamera { Position = new Vector3(0, -8, 2), YawDegrees = 90, PitchDegrees = 0, FieldOfViewDegrees = 50 };
         var ray = camera.PixelRay(300, 200, 800, 600);
         var onRay = camera.Position + ray * 7;
