@@ -7,6 +7,7 @@ param()
 $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.Windows.Forms
 $messages = Import-PowerShellDataFile (Join-Path $PSScriptRoot 'uninstall-messages.es.psd1')
+. (Join-Path $PSScriptRoot 'uninstall-file-cleanup.ps1')
 $installRoot = [System.IO.Path]::GetFullPath((Join-Path $env:LOCALAPPDATA 'Programs\Guanacaste 3D')).TrimEnd('\')
 $rootPrefix = $installRoot + '\'
 $executable = Join-Path $installRoot 'Guanacaste3D.Desktop.exe'
@@ -41,17 +42,11 @@ try {
         $shortcut = (New-Object -ComObject WScript.Shell).CreateShortcut($shortcutPath)
         if ($shortcut.TargetPath -ieq $executable) { Remove-Item -LiteralPath $shortcutPath -Force }
     }
-    foreach ($target in $targets) {
-        if ([System.IO.Path]::GetExtension($target) -in @('.g3d', '.g3', '.g3dt', '.g3df', '.g3dx')) { continue }
-        $parent = Split-Path -Parent $target
-        while ($parent -and $parent.StartsWith($rootPrefix, [System.StringComparison]::OrdinalIgnoreCase)) {
-            if ((Test-Path -LiteralPath $parent) -and ((Get-Item -LiteralPath $parent -Force).Attributes -band [System.IO.FileAttributes]::ReparsePoint)) {
-                throw 'Installation manifest contains a redirected directory.'
-            }
-            $parent = Split-Path -Parent $parent
-        }
-        if (Test-Path -LiteralPath $target -PathType Leaf) { Remove-Item -LiteralPath $target -Force }
-    }
+    $uninstallerPath = Join-Path $installRoot 'uninstall-guanacaste3d.ps1'
+    $messagesPath = Join-Path $installRoot 'uninstall-messages.es.psd1'
+    $cleanupPath = Join-Path $installRoot 'uninstall-file-cleanup.ps1'
+    $controlFiles = @($manifest, $uninstallerPath, $messagesPath, $cleanupPath, $thumbnailScript)
+    Remove-RecordedInstallationFiles -InstallRoot $installRoot -Targets $targets -ControlFiles $controlFiles
     $directories = @($targets | ForEach-Object { Split-Path -Parent $_ } | Sort-Object -Unique | Sort-Object Length -Descending)
     foreach ($directory in $directories) {
         if ($directory.StartsWith($rootPrefix, [System.StringComparison]::OrdinalIgnoreCase) -and
@@ -59,10 +54,13 @@ try {
             Remove-Item -LiteralPath $directory -Force
         }
     }
+    $uninstallKey = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\Guanacaste3D'
+    foreach ($controlFile in $controlFiles) {
+        if (Test-Path -LiteralPath $controlFile -PathType Leaf) { Remove-Item -LiteralPath $controlFile -Force }
+    }
     if ((Test-Path -LiteralPath $installRoot) -and -not (Get-ChildItem -LiteralPath $installRoot -Force | Select-Object -First 1)) {
         Remove-Item -LiteralPath $installRoot -Force
     }
-    $uninstallKey = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\Guanacaste3D'
     if (Test-Path -LiteralPath $uninstallKey) { Remove-Item -LiteralPath $uninstallKey -Force }
     [void][System.Windows.Forms.MessageBox]::Show($messages.Complete, $messages.Title)
 }

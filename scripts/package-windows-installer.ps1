@@ -16,6 +16,7 @@ Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'install-packaged-windows.ps1') 
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'register-thumbnails.ps1') -Destination $package -Force
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'uninstall-guanacaste3d.ps1') -Destination $package -Force
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'uninstall-messages.es.psd1') -Destination $package -Force
+Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'uninstall-file-cleanup.ps1') -Destination $package -Force
 & (Join-Path $PSScriptRoot 'package-runtime.ps1') -Destination $package
 @'
 @echo off

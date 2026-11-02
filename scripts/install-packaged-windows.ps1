@@ -24,11 +24,12 @@ New-Item -ItemType Directory -Path $installRoot -Force | Out-Null
 Get-ChildItem -LiteralPath $source -Force | Copy-Item -Destination $installRoot -Recurse -Force
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'uninstall-guanacaste3d.ps1') -Destination $uninstaller -Force
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'uninstall-messages.es.psd1') -Destination $installRoot -Force
+Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'uninstall-file-cleanup.ps1') -Destination $installRoot -Force
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'register-thumbnails.ps1') -Destination $installRoot -Force
 $sourcePrefix = [System.IO.Path]::GetFullPath($source).TrimEnd('\') + '\'
 $installedFiles = @(Get-ChildItem -LiteralPath $source -File -Recurse | ForEach-Object { $_.FullName.Substring($sourcePrefix.Length) })
 if (Test-Path -LiteralPath $manifest) { $installedFiles += @(Get-Content -LiteralPath $manifest) }
-$installedFiles += @('uninstall-guanacaste3d.ps1', 'uninstall-messages.es.psd1', 'register-thumbnails.ps1', 'installed-files.txt')
+$installedFiles += @('uninstall-guanacaste3d.ps1', 'uninstall-messages.es.psd1', 'uninstall-file-cleanup.ps1', 'register-thumbnails.ps1', 'installed-files.txt')
 $installedFiles | Where-Object { $_ } | Sort-Object -Unique | Set-Content -LiteralPath $manifest -Encoding UTF8
 $shell = New-Object -ComObject WScript.Shell
 $shortcut = $shell.CreateShortcut((Join-Path $env:APPDATA 'Microsoft\Windows\Start Menu\Programs\Guanacaste 3D.lnk'))
