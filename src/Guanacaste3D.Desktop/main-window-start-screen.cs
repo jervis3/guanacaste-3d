@@ -53,7 +53,7 @@ public partial class MainWindow : IStartScreenHost
         _recents.Add(path);
         var thumbnail = _recents.ThumbnailPath(path);
         var copy = document.Clone();
-        _ = Task.Run(() => ProjectThumbnail.Lines(copy)).ContinueWith(task =>
+        _ = Task.Run(() => ProjectThumbnail.Faces(copy)).ContinueWith(task =>
         {
             if (!task.IsCompletedSuccessfully) return;
             Dispatcher.BeginInvoke(() =>

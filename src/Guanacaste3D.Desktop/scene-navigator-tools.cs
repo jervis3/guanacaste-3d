@@ -26,7 +26,7 @@ internal sealed partial class SceneNavigator
     {
         if (IsLocked) return;
         _history.Record(Camera);
-        Camera.FieldOfViewDegrees = Math.Clamp(degrees, 15, 100);
+        Camera.FieldOfViewDegrees = Math.Clamp(degrees, 8, 110);
         NotifyChanged();
     }
 

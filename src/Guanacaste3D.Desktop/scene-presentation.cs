@@ -92,7 +92,60 @@ internal static class ScenePresentation
         // WPF measures the field of view horizontally; the renderer measures it vertically.
         var halfVertical = camera.VerticalFieldOfViewDegrees * Math.PI / 360;
         var horizontal = 2 * Math.Atan(Math.Tan(halfVertical) * Math.Max(0.1, aspectRatio)) * 180 / Math.PI;
-        return new PerspectiveCamera(position, target - position, new Vector3D(0, 1, 0), horizontal);
+        var look = target - position;
+        var up = new Vector3D(0, 1, 0);
+        if (camera.RollDegrees != 0)
+        {
+            // Rolling turns the up vector about the view axis, tilting the horizon.
+            var axis = look;
+            axis.Normalize();
+            var turn = new System.Windows.Media.Media3D.QuaternionRotation3D(
+                new System.Windows.Media.Media3D.Quaternion(axis, -camera.RollDegrees));
+            up = new System.Windows.Media.Media3D.RotateTransform3D(turn).Transform(up);
+        }
+        return new PerspectiveCamera(position, look, up, horizontal);
+    }
+
+    /// <summary>
+    /// A camera with an off-centre frustum for a shift lens: the picture slides across the lens without turning the camera,
+    /// so a building keeps its vertical lines. Null when the lens is not shifted and the ordinary camera is enough.
+    /// </summary>
+    public static MatrixCamera? ToShiftedWpfCamera(RenderCamera camera, double aspectRatio, double nearPlane, double farPlane)
+    {
+        if (camera.ShiftX == 0 && camera.ShiftY == 0) return null;
+        var eye = ToWpf(camera.Position);
+        var look = ToWpf(camera.Target) - eye;
+        look.Normalize();
+        var up = new Vector3D(0, 1, 0);
+        if (camera.RollDegrees != 0)
+        {
+            var turn = new System.Windows.Media.Media3D.QuaternionRotation3D(
+                new System.Windows.Media.Media3D.Quaternion(look, -camera.RollDegrees));
+            up = new System.Windows.Media.Media3D.RotateTransform3D(turn).Transform(up);
+        }
+        // Right-handed view looking down -Z.
+        var z = -look;
+        var x = Vector3D.CrossProduct(up, z);
+        if (x.LengthSquared < 1e-12) return null;
+        x.Normalize();
+        var y = Vector3D.CrossProduct(z, x);
+        var origin = new Vector3D(eye.X, eye.Y, eye.Z);
+        var view = new System.Windows.Media.Media3D.Matrix3D(
+            x.X, y.X, z.X, 0, x.Y, y.Y, z.Y, 0, x.Z, y.Z, z.Z, 0,
+            -Vector3D.DotProduct(x, origin), -Vector3D.DotProduct(y, origin), -Vector3D.DotProduct(z, origin), 1);
+        var halfHeight = Math.Tan(camera.VerticalFieldOfViewDegrees * Math.PI / 360);
+        var halfWidth = halfHeight * Math.Max(0.1, aspectRatio);
+        var shiftX = camera.ShiftX * 2 * halfHeight;
+        var shiftY = camera.ShiftY * 2 * halfHeight;
+        double n = nearPlane, f = farPlane;
+        double l = (-halfWidth + shiftX) * n, r = (halfWidth + shiftX) * n;
+        double b = (-halfHeight + shiftY) * n, t = (halfHeight + shiftY) * n;
+        var projection = new System.Windows.Media.Media3D.Matrix3D(
+            2 * n / (r - l), 0, 0, 0,
+            0, 2 * n / (t - b), 0, 0,
+            (r + l) / (r - l), (t + b) / (t - b), f / (n - f), -1,
+            0, 0, n * f / (n - f), 0);
+        return new MatrixCamera(view, projection);
     }
 
     /// <summary>

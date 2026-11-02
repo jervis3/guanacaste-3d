@@ -306,28 +306,48 @@ public sealed partial class PathTracer
     // ---------------------------------------------------------------- camera
 
     private readonly record struct CameraBasis(Vector3 Forward, Vector3 Right, Vector3 Up, float HalfWidth,
-        float HalfHeight, float VerticalShift);
+        float HalfHeight, float VerticalShift, float HorizontalShift = 0);
 
     /// <summary>Angle one pixel spans (radians, small-angle), so distance times it is a pixel's size on a surface.</summary>
     private float PixelAngle =>
         2 * MathF.Tan(Math.Clamp(_camera.VerticalFieldOfViewDegrees, 5f, 150f) * MathF.PI / 360) / Height;
 
-    /// <summary>Returns the camera frame; with vertical correction the image plane stays upright and is shifted instead.</summary>
+    /// <summary>
+    /// Returns the camera frame; with vertical correction the image plane stays upright and is shifted instead. The lens
+    /// can also be rolled about the view axis and shifted by hand (a shift lens), as in a photographic camera.
+    /// </summary>
     private CameraBasis Basis()
     {
         var forward = Vector3.Normalize(_camera.Target - _camera.Position);
         var halfHeight = MathF.Tan(Math.Clamp(_camera.VerticalFieldOfViewDegrees, 5f, 150f) * MathF.PI / 360);
         var halfWidth = halfHeight * Width / Height;
+        CameraBasis basis;
         if (_camera.CorrectVerticals && MathF.Abs(forward.Z) < 0.97f)
         {
             var horizontal = Vector3.Normalize(new Vector3(forward.X, forward.Y, 0));
             var rightLevel = Vector3.Normalize(Vector3.Cross(horizontal, Vector3.UnitZ));
-            return new CameraBasis(horizontal, rightLevel, Vector3.UnitZ, halfWidth, halfHeight,
+            basis = new CameraBasis(horizontal, rightLevel, Vector3.UnitZ, halfWidth, halfHeight,
                 forward.Z / MathF.Sqrt(1 - forward.Z * forward.Z));
         }
-        var worldUp = MathF.Abs(forward.Z) > 0.999f ? Vector3.UnitY : Vector3.UnitZ;
-        var right = Vector3.Normalize(Vector3.Cross(forward, worldUp));
-        return new CameraBasis(forward, right, Vector3.Cross(right, forward), halfWidth, halfHeight, 0);
+        else
+        {
+            var worldUp = MathF.Abs(forward.Z) > 0.999f ? Vector3.UnitY : Vector3.UnitZ;
+            var right = Vector3.Normalize(Vector3.Cross(forward, worldUp));
+            basis = new CameraBasis(forward, right, Vector3.Cross(right, forward), halfWidth, halfHeight, 0);
+        }
+        if (_camera.RollDegrees != 0)
+        {
+            // Turning the sensor about the view axis tilts the horizon without moving the camera.
+            var roll = _camera.RollDegrees * MathF.PI / 180;
+            var (sin, cos) = MathF.SinCos(roll);
+            basis = basis with { Right = basis.Right * cos + basis.Up * sin, Up = basis.Up * cos - basis.Right * sin };
+        }
+        // Shifts are fractions of the frame height: the sensor slides behind the lens, so lines stay parallel.
+        return basis with
+        {
+            VerticalShift = basis.VerticalShift + _camera.ShiftY * 2 * halfHeight,
+            HorizontalShift = _camera.ShiftX * 2 * halfHeight
+        };
     }
 
     /// <summary>Creates the primary ray through continuous pixel coordinates, including thin-lens blur.</summary>
@@ -336,7 +356,7 @@ public sealed partial class PathTracer
     {
         var x = 2 * column / Width - 1;
         var y = 1 - 2 * row / Height;
-        var unscaled = basis.Forward + basis.Right * (x * basis.HalfWidth) + basis.Up * (y * basis.HalfHeight + basis.VerticalShift);
+        var unscaled = basis.Forward + basis.Right * (x * basis.HalfWidth + basis.HorizontalShift) + basis.Up * (y * basis.HalfHeight + basis.VerticalShift);
         if (_camera.ApertureRadius <= 0) return (_camera.Position, Vector3.Normalize(unscaled));
         var lens = Sampling.Disk(sampler.NextFloat(), sampler.NextFloat()) * _camera.ApertureRadius;
         var origin = _camera.Position + basis.Right * lens.X + basis.Up * lens.Y;
@@ -361,7 +381,7 @@ public sealed partial class PathTracer
                 var camera = _camera with { ApertureRadius = 0 };
                 var x = 2 * (column + 0.5f) / Width - 1;
                 var y = 1 - 2 * (row + 0.5f) / Height;
-                var direction = Vector3.Normalize(basis.Forward + basis.Right * (x * basis.HalfWidth) +
+                var direction = Vector3.Normalize(basis.Forward + basis.Right * (x * basis.HalfWidth + basis.HorizontalShift) +
                                                   basis.Up * (y * basis.HalfHeight + basis.VerticalShift));
                 var origin = camera.Position;
                 var found = false;
@@ -769,7 +789,7 @@ public sealed partial class PathTracer
                 var index = row * Width + column;
                 var x = 2 * (column + 0.5f) / Width - 1;
                 var y = 1 - 2 * (row + 0.5f) / Height;
-                var direction = Vector3.Normalize(basis.Forward + basis.Right * (x * basis.HalfWidth) +
+                var direction = Vector3.Normalize(basis.Forward + basis.Right * (x * basis.HalfWidth + basis.HorizontalShift) +
                                                   basis.Up * (y * basis.HalfHeight + basis.VerticalShift));
                 var origin = _camera.Position;
                 var travelled = 0f;

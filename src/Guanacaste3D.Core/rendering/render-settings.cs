@@ -14,6 +14,15 @@ public readonly record struct RenderCamera(Vector3 Position, Vector3 Target, flo
     /// <summary>Keeps vertical edges vertical when the camera tilts (a shift lens), as architectural photography does.</summary>
     public bool CorrectVerticals { get; init; }
 
+    /// <summary>Rotation of the sensor about the view axis in degrees (a tilted horizon); positive turns the picture clockwise.</summary>
+    public float RollDegrees { get; init; }
+
+    /// <summary>Lens shift as a fraction of the frame height: positive moves the view right.</summary>
+    public float ShiftX { get; init; }
+
+    /// <summary>Lens shift as a fraction of the frame height: positive moves the view up, keeping verticals parallel.</summary>
+    public float ShiftY { get; init; }
+
     /// <summary>Frames the mesh bounds from a south-east, elevated three-quarter viewpoint.</summary>
     public static RenderCamera FrameBounds(Vector3 min, Vector3 max, float azimuthDegrees = -50,
         float elevationDegrees = 28, float distanceScale = 1)

@@ -20,6 +20,18 @@ public sealed record RenderSetup
     /// <summary>Vertical field of view in degrees.</summary>
     public double FieldOfViewDegrees { get; init; } = 45;
 
+    /// <summary>Tilt of the horizon in degrees (−45 to 45); 0 keeps the picture level.</summary>
+    public double RollDegrees { get; init; }
+
+    /// <summary>Lens shift sideways as a fraction of the frame height (−0.5 to 0.5), as a shift lens does.</summary>
+    public double ShiftX { get; init; }
+
+    /// <summary>Lens shift up or down as a fraction of the frame height (−0.5 to 0.5); keeps buildings from leaning.</summary>
+    public double ShiftY { get; init; }
+
+    /// <summary>Distance in meters to the plane of sharp focus; 0 focuses on whatever is at the centre of the view.</summary>
+    public double FocusDistance { get; init; }
+
     public LightingScenario Scenario { get; init; } = LightingScenario.Sunny;
 
     /// <summary>Day of the year for the sun (1 = January 1).</summary>
@@ -117,7 +129,7 @@ public sealed record RenderSetup
         double[] finite = [CameraX, CameraY, CameraZ, YawDegrees, PitchDegrees, FieldOfViewDegrees, SolarHour, Latitude,
             CloudCover, ExposureStops, Temperature, DepthOfField, Highlights, Shadows, Vibrance, Tint, Glare, Fog, Sharpen,
             ChromaticAberration, FilmGrain, EnvironmentYawDegrees, EnvironmentExposureStops, LutStrength,
-            Turbidity, CloudDirectionDegrees, SunStrength, SkyStrength];
+            Turbidity, CloudDirectionDegrees, SunStrength, SkyStrength, RollDegrees, ShiftX, ShiftY, FocusDistance];
         if (finite.Any(value => !double.IsFinite(value)) || Math.Abs(CameraX) > 1e6 || Math.Abs(CameraY) > 1e6 ||
             Math.Abs(CameraZ) > 1e6 || PitchDegrees is < -90 or > 90 || FieldOfViewDegrees is < 5 or > 150 ||
             !Enum.IsDefined(Scenario) || DayOfYear is < 1 or > 366 || SolarHour is < 0 or > 24 || Latitude is < -90 or > 90 ||
@@ -128,6 +140,8 @@ public sealed record RenderSetup
             ExposureStops is < -3 or > 3 || Temperature is < -1 or > 1 || DepthOfField is < 0 or > 100 ||
             EnvironmentYawDegrees is < 0 or > 360 || EnvironmentExposureStops is < -4 or > 4 ||
             Turbidity is < 1.7 or > 10 || CloudSeed > 1023 || CloudDirectionDegrees is < -180 or > 180 ||
+            RollDegrees is < -45 or > 45 || ShiftX is < -0.5 or > 0.5 || ShiftY is < -0.5 or > 0.5 ||
+            FocusDistance is < 0 or > 1000 ||
             SunStrength is < 0 or > 2 || SkyStrength is < 0 or > 2 ||
             (SkyPresetId is not null && RenderLooks.Skies.All(sky => sky.Id != SkyPresetId)) ||
             LutStrength is < 0 or > 1 ||

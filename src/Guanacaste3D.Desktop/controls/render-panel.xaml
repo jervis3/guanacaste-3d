@@ -509,6 +509,47 @@
           </TabItem.Header>
           <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
             <StackPanel Margin="0,8,0,4">
+              <!-- The photographic lens: focal length, level, shift and focus, as in Lumion's photo camera. -->
+              <Border Style="{StaticResource SettingsCard}">
+                <StackPanel>
+                  <TextBlock Style="{StaticResource PanelTitle}" Text="{DynamicResource RenderPanel.Lens}"/>
+                  <TextBlock Style="{StaticResource PanelLabel}" Text="{DynamicResource RenderPanel.FocalLength}"/>
+                  <DockPanel>
+                    <TextBlock x:Name="FocalValueText" Style="{StaticResource SliderValue}" Text="29 mm"/>
+                    <Slider x:Name="FocalSlider" Minimum="10" Maximum="135" Value="29" SmallChange="1" LargeChange="5"
+                            ValueChanged="FocalSlider_Changed"/>
+                  </DockPanel>
+                  <TextBlock x:Name="FieldOfViewText" Style="{StaticResource PanelHint}" Margin="0,2,0,6"/>
+                  <WrapPanel x:Name="FocalPresets"/>
+                  <TextBlock Style="{StaticResource PanelLabel}" Text="{DynamicResource RenderPanel.Roll}"/>
+                  <DockPanel>
+                    <TextBlock Style="{StaticResource SliderValue}" Text="{Binding Value, ElementName=RollSlider, StringFormat={}{0:0.0}°}"/>
+                    <Slider x:Name="RollSlider" Minimum="-45" Maximum="45" Value="0" TickFrequency="0.5" IsSnapToTickEnabled="True"
+                            ValueChanged="Lens_SliderChanged"/>
+                  </DockPanel>
+                  <TextBlock Style="{StaticResource PanelLabel}" Text="{DynamicResource RenderPanel.ShiftY}"/>
+                  <DockPanel>
+                    <TextBlock Style="{StaticResource SliderValue}" Text="{Binding Value, ElementName=ShiftYSlider, StringFormat={}{0:0} %}"/>
+                    <Slider x:Name="ShiftYSlider" Minimum="-50" Maximum="50" Value="0" TickFrequency="1" IsSnapToTickEnabled="True"
+                            ValueChanged="Lens_SliderChanged"/>
+                  </DockPanel>
+                  <TextBlock Style="{StaticResource PanelLabel}" Text="{DynamicResource RenderPanel.ShiftX}"/>
+                  <DockPanel>
+                    <TextBlock Style="{StaticResource SliderValue}" Text="{Binding Value, ElementName=ShiftXSlider, StringFormat={}{0:0} %}"/>
+                    <Slider x:Name="ShiftXSlider" Minimum="-50" Maximum="50" Value="0" TickFrequency="1" IsSnapToTickEnabled="True"
+                            ValueChanged="Lens_SliderChanged"/>
+                  </DockPanel>
+                  <TextBlock Style="{StaticResource PanelLabel}" Text="{DynamicResource RenderPanel.FocusDistance}"/>
+                  <DockPanel>
+                    <TextBlock x:Name="FocusValueText" Style="{StaticResource SliderValue}" Text="Auto"/>
+                    <Slider x:Name="FocusSlider" Minimum="0" Maximum="100" Value="0" TickFrequency="0.5" IsSnapToTickEnabled="True"
+                            ValueChanged="Lens_SliderChanged"/>
+                  </DockPanel>
+                  <TextBlock Style="{StaticResource PanelHint}" Text="{DynamicResource RenderPanel.LensHint}" Margin="0,2,0,0"/>
+                  <Button Content="{DynamicResource RenderPanel.ResetLens}" Click="ResetLens_Click"
+                          Style="{StaticResource PanelButton}" HorizontalAlignment="Left" Margin="0,12,0,0"/>
+                </StackPanel>
+              </Border>
               <Border Style="{StaticResource SettingsCard}">
                 <StackPanel>
                   <TextBlock Style="{StaticResource PanelTitle}" Text="{DynamicResource RenderPanel.Navigation}"/>

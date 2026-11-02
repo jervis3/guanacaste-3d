@@ -66,7 +66,7 @@ internal sealed partial class SceneNavigator
         Camera.Position = position;
         Camera.YawDegrees = yawDegrees;
         Camera.PitchDegrees = Math.Clamp(pitchDegrees, -89f, 89f);
-        Camera.FieldOfViewDegrees = Math.Clamp(fieldOfViewDegrees, 15f, 100f);
+        Camera.FieldOfViewDegrees = Math.Clamp(fieldOfViewDegrees, 8f, 110f);
         Changed?.Invoke();
         if (recordHistory) _history.Record(Camera);
     }

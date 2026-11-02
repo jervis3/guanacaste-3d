@@ -84,7 +84,7 @@ public sealed class RecentDocuments
     public string ThumbnailPath(string path)
     {
         var hash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(Path.GetFullPath(path).ToUpperInvariant())))[..24];
-        return Path.Combine(ThumbnailFolder, hash + ".png");
+        return Path.Combine(ThumbnailFolder, hash + "-v3.png");
     }
 
     private void Save(IEnumerable<RecentDocument> items)

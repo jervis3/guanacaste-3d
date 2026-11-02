@@ -41,6 +41,11 @@ public sealed class StartItem : INotifyPropertyChanged
     public required string Detail { get; init; }
     public required string Badge { get; init; }
     public string Location { get; init; } = string.Empty;
+    /// <summary>The name of the folder holding the file, shown under the date so projects with the same name can be told apart.</summary>
+    public string Folder { get; init; } = string.Empty;
+    /// <summary>True when the file is no longer where it was; the tile is dimmed and says so.</summary>
+    public bool Missing { get; init; }
+    public double TileOpacity => Missing ? 0.55 : 1;
     public string ToolTip { get; init; } = string.Empty;
     public string? Path { get; init; }
     public StartSample? Sample { get; init; }
@@ -124,18 +129,21 @@ public partial class StartScreen : UserControl
             // Recents are intentionally ordered by the last time the user opened the project, not by when Windows last
             // modified the file. This keeps the projects the person actually worked on at the top of Home.
             var lastOpened = recent.LastOpened;
+            var exists = File.Exists(recent.Path);
+            var directory = System.IO.Path.GetDirectoryName(recent.Path) ?? string.Empty;
             var item = new StartItem
             {
                 Title = System.IO.Path.GetFileNameWithoutExtension(recent.Path), Path = recent.Path,
                 Badge = System.IO.Path.GetExtension(recent.Path).TrimStart('.').ToUpperInvariant(),
-                Detail = lastOpened.ToString("d/M/yy, H:mm", CultureInfo.CurrentCulture),
-                Location = System.IO.Path.GetDirectoryName(recent.Path) ?? string.Empty,
+                Detail = exists ? lastOpened.ToString("d/M/yy, H:mm", CultureInfo.CurrentCulture) : Text("Start.Missing"),
+                Location = directory, Missing = !exists,
+                Folder = System.IO.Path.GetFileName(directory.TrimEnd(System.IO.Path.DirectorySeparatorChar)),
                 ToolTip = recent.Path,
                 Modified = lastOpened,
                 FileModified = File.GetLastWriteTime(recent.Path)
             };
             item.Thumbnail = CachedThumbnail(_host.Recents.ThumbnailPath(recent.Path)) ?? Placeholder();
-            if (!File.Exists(_host.Recents.ThumbnailPath(recent.Path)))
+            if (exists && !File.Exists(_host.Recents.ThumbnailPath(recent.Path)))
                 _ = MakeThumbnailAsync(item, () => ProjectFile.Load(recent.Path), _host.Recents.ThumbnailPath(recent.Path));
             yield return item;
         }
@@ -153,7 +161,7 @@ public partial class StartScreen : UserControl
                 Modified = DateTime.MaxValue.AddDays(-order),
                 FileModified = DateTime.MaxValue.AddDays(-order)
             };
-            var cached = System.IO.Path.Combine(_host.Recents.ThumbnailFolder, $"sample-{sample.Id}.png");
+            var cached = System.IO.Path.Combine(_host.Recents.ThumbnailFolder, $"sample-v3-{sample.Id}.png");
             item.Thumbnail = CachedThumbnail(sample.Thumbnail ?? cached) ?? Placeholder();
             if (sample.Thumbnail is null && !File.Exists(cached)) _ = MakeThumbnailAsync(item, sample.Build, cached);
             yield return item;
@@ -200,7 +208,7 @@ public partial class StartScreen : UserControl
     {
         try
         {
-            var lines = await Task.Run(() => ProjectThumbnail.Lines(load()));
+            var lines = await Task.Run(() => ProjectThumbnail.Faces(load()));
             // An empty project (a template) keeps the placeholder rather than a blank picture.
             if (lines.Count == 0) return;
             var image = ProjectThumbnail.Render(lines);

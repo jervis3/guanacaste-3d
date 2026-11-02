@@ -8,56 +8,89 @@ using Guanacaste3D.Core.Geometry;
 
 namespace Guanacaste3D.Desktop;
 
-/// <summary>
-/// The picture of a project on the Home screen: an isometric line drawing of its model (the same projection as a sheet's
-/// 3D view), the building in dark lines and its planting in light green, on white.
-/// </summary>
+/// <summary>Creates compact, shaded isometric previews for the Home screen.</summary>
 internal static class ProjectThumbnail
 {
-    public const int Width = 256;
-    public const int Height = 256;
+    public const int Width = 384;
+    public const int Height = 384;
+    private const int MaximumTriangles = 40000;
 
-    /// <summary>One line of the drawing, already projected: planting draws lighter.</summary>
-    public readonly record struct Line(Point A, Point B, bool Planting);
+    /// <summary>A projected surface with a depth used to paint distant surfaces first.</summary>
+    public readonly record struct Face(Point A, Point B, Point C, double Depth, Color Color);
 
-    /// <summary>Projects the model's feature edges. Pure computation, so it runs off the UI thread.</summary>
-    public static IReadOnlyList<Line> Lines(BuildingDocument document)
+    /// <summary>Builds a bounded preview mesh off the UI thread, omitting oversized terrain.</summary>
+    public static IReadOnlyList<Face> Faces(BuildingDocument document)
     {
         var mesh = BuildingMesher.Build(document);
-        var architecture = new List<int>();
-        var planting = new List<int>();
-        for (var triangle = 0; triangle < mesh.TriangleCount; triangle++)
+        var stride = Math.Max(1, (int)Math.Ceiling(mesh.TriangleCount / (double)MaximumTriangles));
+        var faces = new List<Face>(Math.Min(mesh.TriangleCount, MaximumTriangles));
+        for (var triangle = 0; triangle < mesh.TriangleCount; triangle += stride)
         {
             var kind = mesh.TriangleKinds[triangle];
-            if (kind == SurfaceKind.Ground) continue;
-            (kind is SurfaceKind.Foliage or SurfaceKind.Leaf or SurfaceKind.Bark ? planting : architecture)
-                .AddRange([mesh.Indices[triangle * 3], mesh.Indices[triangle * 3 + 1], mesh.Indices[triangle * 3 + 2]]);
+            if (kind is SurfaceKind.Ground or SurfaceKind.Earth) continue;
+            var a = mesh.Positions[mesh.Indices[triangle * 3]];
+            var b = mesh.Positions[mesh.Indices[triangle * 3 + 1]];
+            var c = mesh.Positions[mesh.Indices[triangle * 3 + 2]];
+            var normal = Vector3.Cross(b - a, c - a);
+            if (normal.LengthSquared() < 1e-12f) continue;
+            normal = Vector3.Normalize(normal);
+            var light = 0.68 + 0.32 * Math.Abs(Vector3.Dot(normal, Vector3.Normalize(new Vector3(-1, -2, 3))));
+            var color = SurfaceColor(kind);
+            color = Color.FromRgb((byte)(color.R * light), (byte)(color.G * light), (byte)(color.B * light));
+            faces.Add(new Face(Project(a), Project(b), Project(c),
+                (a.X + b.X + c.X + a.Y + b.Y + c.Y - a.Z - b.Z - c.Z) / 3, color));
         }
-        static Point Project(Vector3 point) => new((point.X - point.Y) * 0.70710678, -((point.X + point.Y) * 0.40824829 + point.Z * 0.81649658));
-        return FeatureEdges.Extract(mesh.Positions, planting, maximumEdges: 6_000).Select(edge => new Line(Project(edge.A), Project(edge.B), true))
-            .Concat(FeatureEdges.Extract(mesh.Positions, architecture, maximumEdges: 20_000)
-                .Select(edge => new Line(Project(edge.A), Project(edge.B), false))).ToArray();
+        faces.Sort((left, right) => right.Depth.CompareTo(left.Depth));
+        return faces;
     }
 
-    /// <summary>Draws the lines fitted to the thumbnail. WPF drawing: call it on the UI thread.</summary>
-    public static BitmapSource Render(IReadOnlyList<Line> lines)
+    /// <summary>Projects model coordinates onto an isometric view.</summary>
+    private static Point Project(Vector3 point) =>
+        new((point.X - point.Y) * 0.70710678, -((point.X + point.Y) * 0.40824829 + point.Z * 0.81649658));
+
+    /// <summary>Maps surface categories to a restrained architectural material palette.</summary>
+    private static Color SurfaceColor(SurfaceKind kind) => kind switch
+    {
+        SurfaceKind.Foliage or SurfaceKind.Leaf => Color.FromRgb(104, 151, 98),
+        SurfaceKind.Bark or SurfaceKind.WallWood or SurfaceKind.DoorLeaf => Color.FromRgb(152, 114, 82),
+        SurfaceKind.Glass or SurfaceKind.TintedGlass or SurfaceKind.Mirror => Color.FromRgb(126, 164, 177),
+        SurfaceKind.Water => Color.FromRgb(96, 157, 174),
+        SurfaceKind.Roof or SurfaceKind.WallBrick => Color.FromRgb(169, 113, 91),
+        SurfaceKind.Metal or SurfaceKind.WallMetal or SurfaceKind.Structure => Color.FromRgb(126, 139, 143),
+        SurfaceKind.Asphalt or SurfaceKind.Rubber => Color.FromRgb(95, 106, 109),
+        SurfaceKind.Floor or SurfaceKind.WallConcrete or SurfaceKind.WallBlock => Color.FromRgb(197, 199, 188),
+        _ => Color.FromRgb(226, 224, 211)
+    };
+
+    /// <summary>Paints projected faces on the UI thread and fits the model to the card.</summary>
+    public static BitmapSource Render(IReadOnlyList<Face> faces)
     {
         var visual = new DrawingVisual();
         using (var context = visual.RenderOpen())
         {
-            context.DrawRectangle(Brushes.White, null, new Rect(0, 0, Width, Height));
-            var points = lines.Where(line => !line.Planting).SelectMany(line => new[] { line.A, line.B }).ToArray();
+            context.DrawRectangle(new SolidColorBrush(Color.FromRgb(232, 239, 235)), null, new Rect(0, 0, Width, Height));
+            var points = faces.SelectMany(face => new[] { face.A, face.B, face.C }).ToArray();
             if (points.Length > 0)
             {
-                var (minX, maxX) = (points.Min(point => point.X), points.Max(point => point.X));
-                var (minY, maxY) = (points.Min(point => point.Y), points.Max(point => point.Y));
-                var scale = Math.Min((Width - 24) / Math.Max(1e-6, maxX - minX), (Height - 24) / Math.Max(1e-6, maxY - minY));
+                var minX = points.Min(point => point.X); var maxX = points.Max(point => point.X);
+                var minY = points.Min(point => point.Y); var maxY = points.Max(point => point.Y);
+                var scale = Math.Min((Width - 28) / Math.Max(1e-6, maxX - minX), (Height - 28) / Math.Max(1e-6, maxY - minY));
                 Point Map(Point point) => new(Width / 2 + (point.X - (minX + maxX) / 2) * scale, Height / 2 + (point.Y - (minY + maxY) / 2) * scale);
-                var plantPen = new Pen(new SolidColorBrush(Color.FromRgb(150, 176, 130)), 0.5);
-                var linePen = new Pen(new SolidColorBrush(Color.FromRgb(44, 48, 54)), 0.7);
-                plantPen.Freeze();
-                linePen.Freeze();
-                foreach (var line in lines) context.DrawLine(line.Planting ? plantPen : linePen, Map(line.A), Map(line.B));
+                var brushes = new Dictionary<Color, SolidColorBrush>();
+                foreach (var face in faces)
+                {
+                    if (!brushes.TryGetValue(face.Color, out var brush))
+                        brushes[face.Color] = brush = new SolidColorBrush(face.Color);
+                    var geometry = new StreamGeometry();
+                    using (var path = geometry.Open())
+                    {
+                        path.BeginFigure(Map(face.A), true, true);
+                        path.LineTo(Map(face.B), true, false);
+                        path.LineTo(Map(face.C), true, false);
+                    }
+                    geometry.Freeze();
+                    context.DrawGeometry(brush, null, geometry);
+                }
             }
         }
         var bitmap = new RenderTargetBitmap(Width, Height, 96, 96, PixelFormats.Pbgra32);
@@ -66,7 +99,7 @@ internal static class ProjectThumbnail
         return bitmap;
     }
 
-    /// <summary>Writes the thumbnail of a project as PNG, replacing an older one.</summary>
+    /// <summary>Writes a preview as PNG, replacing an older cached image.</summary>
     public static void Save(BitmapSource image, string path)
     {
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
@@ -76,7 +109,7 @@ internal static class ProjectThumbnail
         encoder.Save(stream);
     }
 
-    /// <summary>Loads a cached PNG without locking the file, or null when there is none.</summary>
+    /// <summary>Loads a cached PNG without locking it; invalid caches are ignored.</summary>
     public static BitmapSource? Load(string path)
     {
         try

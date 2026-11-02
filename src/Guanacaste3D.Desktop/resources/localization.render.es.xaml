@@ -141,6 +141,16 @@
   <sys:String x:Key="RenderPanel.Vignette">Viñeta suave</sys:String>
   <sys:String x:Key="RenderPanel.Verticals">Corregir verticales (fotografía de arquitectura)</sys:String>
   <sys:String x:Key="RenderPanel.DepthOfField">Desenfoque de fondo</sys:String>
+  <sys:String x:Key="RenderPanel.Lens">Lente y perspectiva</sys:String>
+  <sys:String x:Key="RenderPanel.FocalLength">Distancia focal</sys:String>
+  <sys:String x:Key="RenderPanel.Roll">Inclinación del horizonte</sys:String>
+  <sys:String x:Key="RenderPanel.ShiftY">Desplazamiento vertical del lente</sys:String>
+  <sys:String x:Key="RenderPanel.ShiftX">Desplazamiento horizontal del lente</sys:String>
+  <sys:String x:Key="RenderPanel.FocusDistance">Distancia de enfoque</sys:String>
+  <sys:String x:Key="RenderPanel.LensHint">Un lente corto abre el encuadre y uno largo lo acerca. El desplazamiento mueve la imagen sin inclinar la cámara, así los edificios no se ven caídos. El enfoque se nota con el desenfoque de fondo.</sys:String>
+  <sys:String x:Key="RenderPanel.ResetLens">Restablecer lente</sys:String>
+  <sys:String x:Key="RenderPanel.FieldOfViewFormat">Campo de visión vertical: {0:0.#}°</sys:String>
+  <sys:String x:Key="RenderPanel.FocusAuto">Auto</sys:String>
   <sys:String x:Key="RenderPanel.Navigation">Navegación</sys:String>
   <sys:String x:Key="RenderPanel.Collisions">Chocar con muros y objetos</sys:String>
   <sys:String x:Key="RenderPanel.CollisionsHint">Apagado: la cámara atraviesa muros. Encendido: se detiene y se desliza junto a ellos.</sys:String>

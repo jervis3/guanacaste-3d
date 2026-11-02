@@ -20,3 +20,6 @@ artifacts/
 *.mdmp
 *.hdmp
 *.wer
+
+# Render references the desktop app writes beside a project
+*.g3d.renders/

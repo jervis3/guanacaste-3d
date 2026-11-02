@@ -40,6 +40,10 @@ public partial class RenderPanel
         VignetteCheck.IsChecked = setup.Vignette;
         VerticalsCheck.IsChecked = setup.CorrectVerticals;
         DepthOfFieldSlider.Value = setup.DepthOfField;
+        RollSlider.Value = setup.RollDegrees;
+        ShiftXSlider.Value = setup.ShiftX * 100;
+        ShiftYSlider.Value = setup.ShiftY * 100;
+        FocusSlider.Value = Math.Min(FocusSlider.Maximum, setup.FocusDistance);
         ArtificialLightsCheck.IsChecked = setup.ArtificialLights;
         StoneDetailCheck.IsChecked = setup.StoneMicrogeometry;
         HdriYawSlider.Value = setup.EnvironmentYawDegrees;
@@ -90,7 +94,9 @@ public partial class RenderPanel
             Look = CurrentFinish().ToneMapper, ExposureStops = ExposureSlider.Value, Temperature = TemperatureSlider.Value,
             AutoExposure = AutoExposureCheck.IsChecked == true, Bloom = BloomCheck.IsChecked == true,
             Vignette = VignetteCheck.IsChecked == true, CorrectVerticals = VerticalsCheck.IsChecked == true,
-            DepthOfField = DepthOfFieldSlider.Value, ArtificialLights = ArtificialLightsCheck.IsChecked == true,
+            DepthOfField = DepthOfFieldSlider.Value,
+            RollDegrees = RollSlider.Value, ShiftX = ShiftXSlider.Value / 100, ShiftY = ShiftYSlider.Value / 100,
+            FocusDistance = FocusSlider.Value, ArtificialLights = ArtificialLightsCheck.IsChecked == true,
             StoneMicrogeometry = StoneDetailCheck.IsChecked == true,
             EnvironmentPath = _hdriFilePath,
             EnvironmentYawDegrees = HdriYawSlider.Value,

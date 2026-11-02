@@ -277,11 +277,16 @@ public partial class RenderPanel
         var camera = _source?.Camera ?? new NavigationCamera();
         var focus = 10f;
         if (_source?.Query is { } query && query.Pick(camera.Position, camera.Forward) is { } distance) focus = Math.Max(0.5f, distance);
+        // A focus distance set by hand wins over the point at the centre of the view.
+        if (FocusSlider is { Value: > 0 } manual) focus = (float)manual.Value;
         return camera.ToRenderCamera(focus) with
         {
             CorrectVerticals = VerticalsCheck.IsChecked == true,
             ApertureRadius = (float)(DepthOfFieldSlider.Value / 100 * 0.25),
-            FocusDistance = focus
+            FocusDistance = focus,
+            RollDegrees = (float)RollSlider.Value,
+            ShiftX = (float)(ShiftXSlider.Value / 100),
+            ShiftY = (float)(ShiftYSlider.Value / 100)
         };
     }
 
@@ -323,6 +328,7 @@ public partial class RenderPanel
             }
             if (PreviewToggle.IsChecked == true) ResumePreview();
         }
+        SyncLensFromCamera();
         UpdateInteractiveCamera();
         HideStyledPreview();
         ScheduleStyledPreview();

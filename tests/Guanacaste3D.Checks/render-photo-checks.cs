@@ -1,5 +1,6 @@
 using System.Numerics;
 using Guanacaste3D.Core;
+using Guanacaste3D.Core.Geometry;
 using Guanacaste3D.Core.Navigation;
 using Guanacaste3D.Core.Rendering;
 
@@ -62,5 +63,54 @@ static class RenderPhotoChecks
             "Shift flies four times faster and Space a quarter as fast, as in Lumion");
         check(CameraTravel.Displacement(camera, new Vector3(1, 0, 0), 2, 0.1f, false, float.NaN) == Vector3.Zero,
             "An invalid speed multiplier cannot move the camera");
+        LensChecks(check);
+    }
+
+    /// <summary>Roll, lens shift and focus distance: what the shift lens must do to the picture, and what the setup accepts.</summary>
+    private static void LensChecks(Action<bool, string> check)
+    {
+        var house = SampleProjects.CreateDemonstrationHouse();
+        var scene = BuildingMesher.Build(house, includeGround: true);
+        var (min, max) = BuildingMesher.Build(house).Bounds();
+        var framed = RenderCamera.FrameBounds(min, max);
+        const int width = 64, height = 40;
+        var plain = new PathTracer(scene, width, height, framed).CaptureFeatures();
+        var shifted = new PathTracer(scene, width, height, framed with { ShiftY = 0.25f }).CaptureFeatures();
+        // A shift of a quarter of the frame slides the picture down by a quarter of the rows without changing perspective.
+        var rows = height / 4;
+        var same = 0;
+        var compared = 0;
+        for (var row = rows; row < height; row++)
+            for (var column = 0; column < width; column++)
+            {
+                var a = shifted.Depth[row * width + column];
+                var b = plain.Depth[(row - rows) * width + column];
+                if (!float.IsFinite(a) || !float.IsFinite(b)) continue;
+                compared++;
+                if (Math.Abs(a - b) <= 0.02f * Math.Max(1, b)) same++;
+            }
+        check(compared > 100 && same > compared * 0.97, "A vertical lens shift moves the picture without changing its perspective");
+
+        var rolled = new PathTracer(scene, width, height, framed with { RollDegrees = 30 }).CaptureFeatures();
+        var middle = (height / 2) * width + width / 2;
+        var differing = 0;
+        for (var index = 0; index < plain.Depth.Length; index++)
+            if (Math.Abs(plain.Depth[index] - rolled.Depth[index]) > 0.05f) differing++;
+        check(Math.Abs(plain.Depth[middle] - rolled.Depth[middle]) < 0.5f && differing > plain.Depth.Length / 20,
+            "Rolling the camera turns the picture about its centre");
+
+        var lens = new RenderSetup { RollDegrees = 12, ShiftX = -0.1, ShiftY = 0.2, FocusDistance = 8 };
+        lens.Validate();
+        var rejected = 0;
+        foreach (var bad in new[] { lens with { RollDegrees = 60 }, lens with { ShiftY = 0.8 }, lens with { ShiftX = double.NaN },
+                     lens with { FocusDistance = -1 } })
+        {
+            try { bad.Validate(); }
+            catch (InvalidDataException) { rejected++; }
+        }
+        check(rejected == 4, "Lens settings outside their range are rejected");
+
+        var focal35 = PhotographicCamera.VerticalFieldOfView(35);
+        check(Math.Abs(PhotographicCamera.FocalLength(focal35) - 35) < 1e-3, "Focal length and field of view convert both ways");
     }
 }

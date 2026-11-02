@@ -58,7 +58,11 @@ public partial class RenderPanel
     private void UpdateInteractiveCamera()
     {
         if (_source is null || ImageHost.ActualHeight <= 0) return;
-        InteractiveViewport.Camera = ScenePresentation.ToWpfCamera(CurrentCamera(), ImageHost.ActualWidth / ImageHost.ActualHeight);
+        var camera = CurrentCamera();
+        var aspect = ImageHost.ActualWidth / ImageHost.ActualHeight;
+        // A shifted lens needs an off-centre frustum; otherwise the ordinary camera is used.
+        InteractiveViewport.Camera = (Camera?)ScenePresentation.ToShiftedWpfCamera(camera, aspect, 0.05, 5000)
+            ?? ScenePresentation.ToWpfCamera(camera, aspect);
     }
 
     /// <summary>Switches between the navigable scene and an explicitly requested final image.</summary>

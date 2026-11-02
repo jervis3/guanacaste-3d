@@ -99,26 +99,30 @@
 
     <!-- A file tile: the picture on white inside a grey card, a badge for the file type, the name and the date. -->
     <DataTemplate x:Key="TileTemplate">
-      <Border Width="185" Height="262" Margin="0,0,15,15" Background="#ECECEC" BorderBrush="#DDDDDD"
-              BorderThickness="1" ToolTip="{Binding ToolTip}">
+      <Border Width="185" Height="250" Margin="0,0,15,15" Background="White" BorderBrush="#D9DEDB"
+              BorderThickness="1" CornerRadius="6" ToolTip="{Binding ToolTip}" Opacity="{Binding TileOpacity}"
+              SnapsToDevicePixels="True">
+        <Border.Effect>
+          <DropShadowEffect BlurRadius="8" ShadowDepth="1" Opacity="0.14" Color="#223"/>
+        </Border.Effect>
         <DockPanel>
-          <Grid DockPanel.Dock="Top" Height="139" Background="#ECECEC">
-            <Border Width="113" Height="113" Background="White"
-                    HorizontalAlignment="Center" VerticalAlignment="Center">
-              <Image Source="{Binding Thumbnail}" Stretch="Uniform" Margin="3" RenderOptions.BitmapScalingMode="HighQuality"/>
+          <Grid DockPanel.Dock="Top" Height="160" Background="#E8EFEB">
+            <Border CornerRadius="5,5,0,0" ClipToBounds="True">
+              <Image Source="{Binding Thumbnail}" Stretch="Uniform" RenderOptions.BitmapScalingMode="HighQuality"/>
             </Border>
             <Border HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="8" Background="{DynamicResource FileTabBrush}"
-                    Padding="4,1" CornerRadius="2">
+                    Padding="5,1" CornerRadius="3">
               <TextBlock Text="{Binding Badge}" Foreground="White" FontSize="9" FontWeight="Bold"/>
             </Border>
           </Grid>
-          <Border DockPanel.Dock="Top" Height="1" Background="#DADADA"/>
-          <StackPanel Margin="12,12,12,0">
-            <TextBlock Text="{Binding Title}" FontSize="14" FontWeight="SemiBold" TextWrapping="Wrap" MaxHeight="43"
-                       TextTrimming="CharacterEllipsis" Foreground="{DynamicResource PrimaryTextBrush}"/>
-            <TextBlock Text="{Binding Detail}" FontSize="12" Margin="0,12,0,0" Foreground="#4C5661"
+          <Border DockPanel.Dock="Top" Height="1" Background="#D9DEDB"/>
+          <StackPanel Margin="12,9,12,0">
+            <TextBlock Text="{Binding Title}" FontSize="14" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"
+                       Foreground="{DynamicResource PrimaryTextBrush}"/>
+            <TextBlock Text="{Binding Detail}" FontSize="12" Margin="0,5,0,0" Foreground="#4C5661"
                        TextTrimming="CharacterEllipsis"/>
-            
+            <TextBlock Text="{Binding Folder}" FontSize="11" Margin="0,3,0,0" Foreground="#85909A"
+                       TextTrimming="CharacterEllipsis"/>
           </StackPanel>
         </DockPanel>
       </Border>
@@ -128,7 +132,7 @@
         <Grid.ColumnDefinitions>
           <ColumnDefinition Width="64"/><ColumnDefinition Width="*"/><ColumnDefinition Width="200"/>
         </Grid.ColumnDefinitions>
-        <Border Width="44" Height="44" Background="White" BorderBrush="#E0E0E0" BorderThickness="1">
+        <Border Width="44" Height="44" Background="#E8EFEB" BorderBrush="#D9DEDB" BorderThickness="1" Opacity="{Binding TileOpacity}">
           <Image Source="{Binding Thumbnail}" Stretch="Uniform"/>
         </Border>
         <StackPanel Grid.Column="1" VerticalAlignment="Center">
@@ -148,10 +152,10 @@
 
     <!-- Left: what to do. -->
     <DockPanel Background="#F0F0F0">
-      <StackPanel DockPanel.Dock="Top" Margin="35,64,55,0">
+      <StackPanel DockPanel.Dock="Top" Margin="30,64,24,0">
         <StackPanel Orientation="Horizontal" Margin="0,0,0,32">
           <Image Source="{StaticResource Brand.Logo}" Width="26" Height="26" Margin="0,0,7,0"/>
-          <TextBlock Text="{DynamicResource App.Name}" FontSize="22" FontWeight="SemiBold" VerticalAlignment="Center"
+          <TextBlock Text="{DynamicResource App.Name}" FontSize="21" FontWeight="SemiBold" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
                      Foreground="{DynamicResource PrimaryTextBrush}"/>
         </StackPanel>
         <TextBlock Text="{DynamicResource Start.Projects}" FontSize="13" Foreground="#555555" Margin="0,0,0,10"/>
