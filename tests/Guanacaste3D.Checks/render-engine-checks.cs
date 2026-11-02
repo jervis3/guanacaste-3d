@@ -136,6 +136,29 @@ static class RenderEngineChecks
               odd.LevelCount == 3 && float.IsFinite(sample.X) &&
               MathF.Abs(sample.Length() - 1f) < 1e-4f,
             "Normal maps reject malformed dimensions and filter odd-sized maps safely");
+
+        // On a 3x3 map, a single tilted corner represents 1/9 of the
+        // texture regardless of which corner it occupies. Repeated unweighted
+        // 2x2 reductions used to make opposite corners contribute 1/16 vs 1/4.
+        var neutral = new byte[3 * 3 * 3];
+        for (var pixel = 0; pixel < 9; pixel++)
+        {
+            neutral[pixel * 3] = 128;
+            neutral[pixel * 3 + 1] = 128;
+            neutral[pixel * 3 + 2] = 255;
+        }
+        var firstCorner = (byte[])neutral.Clone();
+        firstCorner[0] = 255;
+        firstCorner[2] = 128;
+        var lastCorner = (byte[])neutral.Clone();
+        lastCorner[8 * 3] = 255;
+        lastCorner[8 * 3 + 2] = 128;
+        var firstDistant = NormalMap.FromRgb(3, 3, firstCorner).Sample(.4f, .6f, 10f);
+        var lastDistant = NormalMap.FromRgb(3, 3, lastCorner).Sample(.4f, .6f, 10f);
+        check(MathF.Abs(firstDistant.X - lastDistant.X) < .02f &&
+              firstDistant.X is > .12f and < .23f &&
+              firstDistant.Z > .96f && lastDistant.Z > .96f,
+            "Odd-sized normal-map mips give equally sized corner details equal distant coverage");
     }
 
     private static void TextureInputValidation(Action<bool, string> check)
