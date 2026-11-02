@@ -702,6 +702,35 @@ static class RenderInfrastructureChecks
         check(PhotographicCamera.BlurCircleDiameter(50, 2, 3, 3) == 0 && PhotographicCamera.BlurCircleDiameter(50, 2, 3, 12) > PhotographicCamera.BlurCircleDiameter(50, 8, 3, 12) * 3.9,
             "The thin-lens blur is zero at the focus distance and shrinks four times for two stops of aperture");
 
+        // Invalid physical settings must never inject NaN or infinity into the path tracer.
+        // Log-space exposure math also handles extreme but finite camera parameters.
+        check(double.IsFinite(PhotographicCamera.ExposureValue(1e200, 1e200, 1e200)) &&
+              float.IsFinite(Exposure(1e200, 1e200, 1e200)),
+            "Extreme finite camera settings keep exposure calculations finite");
+        bool Rejects(Action action)
+        {
+            try { action(); return false; }
+            catch (ArgumentException) { return true; }
+        }
+        check(Rejects(() => Exposure(16, 0.01, 100, double.NaN)) &&
+              Rejects(() => Exposure(16, 0.01, 100, double.PositiveInfinity)) &&
+              Rejects(() => Exposure(16, 0.01, double.NaN)) &&
+              Rejects(() => PhotographicCamera.ExposureValue(double.PositiveInfinity, 0.01)),
+            "Nonfinite exposure inputs are rejected before rendering");
+        check(Rejects(() => PhotographicCamera.VerticalFieldOfView(double.NaN)) &&
+              Rejects(() => PhotographicCamera.VerticalFieldOfView(35, double.PositiveInfinity)) &&
+              Rejects(() => PhotographicCamera.FocalLength(0)) &&
+              Rejects(() => PhotographicCamera.FocalLength(180)) &&
+              Rejects(() => PhotographicCamera.FocalLength(double.NaN)) &&
+              Rejects(() => PhotographicCamera.ApertureRadius(50, double.PositiveInfinity)),
+            "Invalid lens and field-of-view values cannot create an invalid render camera");
+        check(Rejects(() => PhotographicCamera.Create(Vector3.Zero, Vector3.UnitY, 35, 2, double.NaN)) &&
+              Rejects(() => PhotographicCamera.Create(Vector3.Zero, Vector3.Zero, 35, 2)) &&
+              Rejects(() => PhotographicCamera.Create(new Vector3(float.NaN, 0, 0), Vector3.UnitY, 35, 2)) &&
+              Rejects(() => PhotographicCamera.BlurCircleDiameter(50, 2, 0.05, 2)) &&
+              Rejects(() => PhotographicCamera.BlurCircleDiameter(50, 2, 3, 0)),
+            "Focus distances, camera vectors and thin-lens blur calculations reject invalid geometry");
+
         // A sunlit 18 % grey card at noon, photographed with Sunny 16, must land at scene-referred mid-grey.
         var mesh = new SceneMesh();
         BenchmarkScenes.AddBox(mesh, new(-50, -50, -1), new(50, 50, 0), SurfaceKind.Floor);
