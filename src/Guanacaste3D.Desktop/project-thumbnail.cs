@@ -206,6 +206,7 @@ internal static class ProjectThumbnail
         catch (Exception ex) when (ex is IOException or NotSupportedException or UnauthorizedAccessException
             or ArgumentException or FileFormatException)
         {
+            Console.Error.WriteLine("PNG CACHE DEBUG: " + ex);
             return null;
         }
     }
