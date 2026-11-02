@@ -9,7 +9,8 @@ namespace Guanacaste3D.Core.Rendering;
 /// </summary>
 public static class MaterialTint
 {
-    private const float Gamma = 2.2f;
+    // IEC 61966-2-1 sRGB decoding. A simple power of 2.2 makes dark tint channels
+    // substantially too dark and is not the transfer function used by sRGB images.
 
     /// <summary>Reads <c>#RRGGBB</c> into a linear colour; false for anything else, so a bad file never tints.</summary>
     public static bool TryParse(string? hex, out Vector3 linear)
@@ -18,7 +19,10 @@ public static class MaterialTint
         if (hex is not { Length: 7 } || hex[0] != '#' ||
             !int.TryParse(hex.AsSpan(1), NumberStyles.AllowHexSpecifier, CultureInfo.InvariantCulture, out var rgb))
             return false;
-        float Channel(int shift) => MathF.Pow(((rgb >> shift) & 0xFF) / 255f, Gamma);
+        static float ToLinear(float srgb) => srgb <= 0.04045f
+            ? srgb / 12.92f
+            : MathF.Pow((srgb + 0.055f) / 1.055f, 2.4f);
+        float Channel(int shift) => ToLinear(((rgb >> shift) & 0xFF) / 255f);
         linear = new Vector3(Channel(16), Channel(8), Channel(0));
         return true;
     }
