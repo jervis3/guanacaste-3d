@@ -1,3 +1,4 @@
+using System.IO;
 using System.Reflection;
 using Guanacaste3D.Core.Geometry;
 using Guanacaste3D.Desktop;
@@ -35,5 +36,47 @@ internal static partial class InteractionChecks
         Check(mixedFaces.Count <= 40_000 && mixedFaces.Any(index => denseMixed[index] == SurfaceKind.Leaf) &&
               mixedFaces.Any(index => denseMixed[index] == SurfaceKind.WallConcrete),
             "Mixed high-density models remain bounded and retain architecture and decorative context");
+
+        ProjectThumbnailCacheLoadChecks(thumbnail);
+    }
+
+    /// <summary>Corrupt or unexpectedly large cached images must never break the Home screen.</summary>
+    private static void ProjectThumbnailCacheLoadChecks(Type thumbnail)
+    {
+        var load = thumbnail.GetMethod("Load", BindingFlags.Static | BindingFlags.Public)!;
+        object? Load(string path) => load.Invoke(null, [path]);
+
+        var directory = Path.Combine(Path.GetTempPath(), "guanacaste-thumbnail-cache-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(directory);
+        try
+        {
+            Check(Load(Path.Combine(directory, "missing.png")) is null,
+                "Missing cached thumbnail is ignored");
+
+            var damaged = Path.Combine(directory, "damaged.png");
+            File.WriteAllBytes(damaged, [137, 80, 78, 71, 13, 10, 26, 10, 0, 0, 0, 13, 73, 72, 68, 82]);
+            Check(Load(damaged) is null,
+                "Truncated cached PNG is ignored instead of crashing the Home screen");
+
+            var oversized = Path.Combine(directory, "oversized.png");
+            using (var stream = File.Create(oversized))
+                stream.SetLength(16L * 1024 * 1024 + 1);
+            Check(Load(oversized) is null,
+                "Unexpectedly large cached PNG is rejected before decoding");
+
+            var valid = Path.Combine(directory, "valid.png");
+            var source = System.Windows.Media.Imaging.BitmapSource.Create(1, 1, 96, 96,
+                System.Windows.Media.PixelFormats.Pbgra32, null, new byte[] { 0, 0, 0, 255 }, 4);
+            var encoder = new System.Windows.Media.Imaging.PngBitmapEncoder();
+            encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(source));
+            using (var stream = File.Create(valid))
+                encoder.Save(stream);
+            Check(Load(valid) is System.Windows.Media.Imaging.BitmapSource,
+                "Valid cached PNG still loads correctly");
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
+        }
     }
 }
