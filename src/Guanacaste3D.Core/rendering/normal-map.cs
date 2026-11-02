@@ -45,14 +45,33 @@ public sealed class NormalMap
                 for (var x = 0; x < nextWidth; x++)
                 {
                     var sum = Vector3.Zero;
-                    var count = 0;
-                    for (var yy = y * 2; yy < Math.Min(height, y * 2 + 2); yy++)
-                        for (var xx = x * 2; xx < Math.Min(width, x * 2 + 2); xx++)
-                        {
-                            sum += Decode(previous, (yy * width + xx) * 3);
-                            count++;
-                        }
-                    var average = sum / count;
+                    Vector3 average;
+                    if ((width & 1) == 0 && (height & 1) == 0)
+                    {
+                        // Preserve the original 2x2 filter for even-sized levels.
+                        for (var yy = y * 2; yy < y * 2 + 2; yy++)
+                            for (var xx = x * 2; xx < x * 2 + 2; xx++)
+                                sum += Decode(previous, (yy * width + xx) * 3);
+                        average = sum / 4f;
+                    }
+                    else
+                    {
+                        // Odd-sized textures need area coverage, not equal-weight
+                        // 2x2 blocks: otherwise corner slopes become exaggerated
+                        // or disappear as successive mip levels shrink.
+                        var left = (double)x * width / nextWidth;
+                        var right = (double)(x + 1) * width / nextWidth;
+                        var top = (double)y * height / nextHeight;
+                        var bottom = (double)(y + 1) * height / nextHeight;
+                        for (var yy = (int)top; yy < Math.Ceiling(bottom); yy++)
+                            for (var xx = (int)left; xx < Math.Ceiling(right); xx++)
+                            {
+                                var area = (Math.Min(right, xx + 1) - Math.Max(left, xx)) *
+                                           (Math.Min(bottom, yy + 1) - Math.Max(top, yy));
+                                sum += Decode(previous, (yy * width + xx) * 3) * (float)area;
+                            }
+                        average = sum / (float)((right - left) * (bottom - top));
+                    }
                     average = average.LengthSquared() > 1e-8f ? Vector3.Normalize(average) : Vector3.UnitZ;
                     var index = (y * nextWidth + x) * 3;
                     downsampled[index] = Encode(average.X);
