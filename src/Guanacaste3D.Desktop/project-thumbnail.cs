@@ -31,6 +31,8 @@ internal static class ProjectThumbnail
         var mesh = BuildingMesher.Build(document);
         var selected = SelectTriangleIndices(mesh.TriangleKinds);
         var faces = new List<Face>(selected.Count);
+        // The light direction is constant for every face of this thumbnail.
+        var lightDirection = Vector3.Normalize(new Vector3(-1, -2, 3));
         foreach (var triangle in selected)
         {
             var kind = mesh.TriangleKinds[triangle];
@@ -40,7 +42,7 @@ internal static class ProjectThumbnail
             var normal = Vector3.Cross(b - a, c - a);
             if (normal.LengthSquared() < 1e-12f) continue;
             normal = Vector3.Normalize(normal);
-            var light = 0.68 + 0.32 * Math.Abs(Vector3.Dot(normal, Vector3.Normalize(new Vector3(-1, -2, 3))));
+            var light = 0.68 + 0.32 * Math.Abs(Vector3.Dot(normal, lightDirection));
             var color = SurfaceColor(kind);
             color = Color.FromRgb((byte)(color.R * light), (byte)(color.G * light), (byte)(color.B * light));
             faces.Add(new Face(Project(a), Project(b), Project(c),
@@ -132,18 +134,39 @@ internal static class ProjectThumbnail
         using (var context = visual.RenderOpen())
         {
             context.DrawRectangle(new SolidColorBrush(Color.FromRgb(232, 239, 235)), null, new Rect(0, 0, Width, Height));
-            var points = faces.SelectMany(face => new[] { face.A, face.B, face.C }).ToArray();
-            if (points.Length > 0)
+            if (faces.Count > 0)
             {
-                var minX = points.Min(point => point.X); var maxX = points.Max(point => point.X);
-                var minY = points.Min(point => point.Y); var maxY = points.Max(point => point.Y);
+                // Compute bounds in one pass. SelectMany previously allocated a
+                // three-point array for every face plus a second 120,000-point
+                // array for a full 40,000-face Home preview.
+                var minX = double.PositiveInfinity;
+                var maxX = double.NegativeInfinity;
+                var minY = double.PositiveInfinity;
+                var maxY = double.NegativeInfinity;
+                void Include(Point point)
+                {
+                    minX = Math.Min(minX, point.X);
+                    maxX = Math.Max(maxX, point.X);
+                    minY = Math.Min(minY, point.Y);
+                    maxY = Math.Max(maxY, point.Y);
+                }
+                foreach (var face in faces)
+                {
+                    Include(face.A);
+                    Include(face.B);
+                    Include(face.C);
+                }
                 var scale = Math.Min((Width - 28) / Math.Max(1e-6, maxX - minX), (Height - 28) / Math.Max(1e-6, maxY - minY));
                 Point Map(Point point) => new(Width / 2 + (point.X - (minX + maxX) / 2) * scale, Height / 2 + (point.Y - (minY + maxY) / 2) * scale);
                 var brushes = new Dictionary<Color, SolidColorBrush>();
                 foreach (var face in faces)
                 {
                     if (!brushes.TryGetValue(face.Color, out var brush))
-                        brushes[face.Color] = brush = new SolidColorBrush(face.Color);
+                    {
+                        brush = new SolidColorBrush(face.Color);
+                        brush.Freeze();
+                        brushes.Add(face.Color, brush);
+                    }
                     var geometry = new StreamGeometry();
                     using (var path = geometry.Open())
                     {
