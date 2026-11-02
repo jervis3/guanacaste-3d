@@ -1,3 +1,4 @@
+using System.Buffers.Binary;
 using System.IO;
 using System.Numerics;
 using System.Windows;
@@ -18,6 +19,8 @@ internal static class ProjectThumbnail
     // Home-screen thumbnails are generated at 384x384. A much larger cache file
     // is unexpected and must not be decoded into the desktop process.
     private const long MaximumCachedPngBytes = 16L * 1024 * 1024;
+    // A small compressed PNG can claim enormous dimensions and exhaust memory on decode.
+    private const uint MaximumCachedDimension = 1024;
 
     /// <summary>A projected surface with a depth used to paint distant surfaces first.</summary>
     public readonly record struct Face(Point A, Point B, Point C, double Depth, Color Color);
@@ -174,13 +177,28 @@ internal static class ProjectThumbnail
     {
         try
         {
-            var file = new FileInfo(path);
-            if (!file.Exists || file.Length > MaximumCachedPngBytes) return null;
+            using var stream = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.Read);
+            if (stream.Length is < 24 or > MaximumCachedPngBytes) return null;
+
+            // Validate the PNG signature and IHDR dimensions before WPF allocates pixels.
+            // Decode from this same stream to avoid a file-swap race between the check and load.
+            Span<byte> header = stackalloc byte[24];
+            stream.ReadExactly(header);
+            if (!header[..8].SequenceEqual(new byte[] { 137, 80, 78, 71, 13, 10, 26, 10 }) ||
+                BinaryPrimitives.ReadUInt32BigEndian(header[8..12]) != 13 ||
+                !header[12..16].SequenceEqual("IHDR"u8))
+                return null;
+            var width = BinaryPrimitives.ReadUInt32BigEndian(header[16..20]);
+            var height = BinaryPrimitives.ReadUInt32BigEndian(header[20..24]);
+            if (width is 0 or > MaximumCachedDimension || height is 0 or > MaximumCachedDimension)
+                return null;
+
+            stream.Position = 0;
             var image = new BitmapImage();
             image.BeginInit();
             image.CacheOption = BitmapCacheOption.OnLoad;
-            image.CreateOptions = BitmapCreateOptions.IgnoreImageCache;
-            image.UriSource = new Uri(path);
+            // StreamSource does not use the URI image cache (IgnoreImageCache requires UriSource).
+            image.StreamSource = stream;
             image.EndInit();
             image.Freeze();
             return image;
