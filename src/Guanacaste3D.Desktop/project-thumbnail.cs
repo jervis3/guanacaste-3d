@@ -13,21 +13,29 @@ internal static class ProjectThumbnail
 {
     public const int Width = 384;
     public const int Height = 384;
-    private const int MaximumTriangles = 40000;
+    private const int MaximumDetailTrianglesPerKind = 3500;
 
     /// <summary>A projected surface with a depth used to paint distant surfaces first.</summary>
     public readonly record struct Face(Point A, Point B, Point C, double Depth, Color Color);
 
-    /// <summary>Builds a bounded preview mesh off the UI thread, omitting oversized terrain.</summary>
+    /// <summary>Builds a preview mesh off the UI thread, omitting terrain and reducing dense details.</summary>
     public static IReadOnlyList<Face> Faces(BuildingDocument document)
     {
         var mesh = BuildingMesher.Build(document);
-        var stride = Math.Max(1, (int)Math.Ceiling(mesh.TriangleCount / (double)MaximumTriangles));
-        var faces = new List<Face>(Math.Min(mesh.TriangleCount, MaximumTriangles));
-        for (var triangle = 0; triangle < mesh.TriangleCount; triangle += stride)
+        var counts = mesh.TriangleKinds.GroupBy(kind => kind).ToDictionary(group => group.Key, group => group.Count());
+        var offsets = new Dictionary<SurfaceKind, int>();
+        var faces = new List<Face>();
+        for (var triangle = 0; triangle < mesh.TriangleCount; triangle++)
         {
             var kind = mesh.TriangleKinds[triangle];
             if (kind is SurfaceKind.Ground or SurfaceKind.Earth) continue;
+            if (IsFineDetail(kind))
+            {
+                var offset = offsets.GetValueOrDefault(kind);
+                offsets[kind] = offset + 1;
+                var stride = Math.Max(1, (int)Math.Ceiling(counts[kind] / (double)MaximumDetailTrianglesPerKind));
+                if (offset % stride != 0) continue;
+            }
             var a = mesh.Positions[mesh.Indices[triangle * 3]];
             var b = mesh.Positions[mesh.Indices[triangle * 3 + 1]];
             var c = mesh.Positions[mesh.Indices[triangle * 3 + 2]];
@@ -43,6 +51,11 @@ internal static class ProjectThumbnail
         faces.Sort((left, right) => right.Depth.CompareTo(left.Depth));
         return faces;
     }
+
+    /// <summary>Keeps architecture intact while reducing dense decorative meshes.</summary>
+    private static bool IsFineDetail(SurfaceKind kind) => kind is
+        SurfaceKind.Leaf or SurfaceKind.Foliage or SurfaceKind.Bark or SurfaceKind.CarPaint or
+        SurfaceKind.CarPaintSilver or SurfaceKind.Rubber or SurfaceKind.TintedGlass or SurfaceKind.Metal;
 
     /// <summary>Projects model coordinates onto an isometric view.</summary>
     private static Point Project(Vector3 point) =>

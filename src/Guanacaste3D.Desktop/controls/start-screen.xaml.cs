@@ -161,7 +161,7 @@ public partial class StartScreen : UserControl
                 Modified = DateTime.MaxValue.AddDays(-order),
                 FileModified = DateTime.MaxValue.AddDays(-order)
             };
-            var cached = System.IO.Path.Combine(_host.Recents.ThumbnailFolder, $"sample-v3-{sample.Id}.png");
+            var cached = System.IO.Path.Combine(_host.Recents.ThumbnailFolder, $"sample-v4-{sample.Id}.png");
             item.Thumbnail = CachedThumbnail(sample.Thumbnail ?? cached) ?? Placeholder();
             if (sample.Thumbnail is null && !File.Exists(cached)) _ = MakeThumbnailAsync(item, sample.Build, cached);
             yield return item;
