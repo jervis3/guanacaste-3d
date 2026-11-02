@@ -390,6 +390,27 @@
           </TabItem.Header>
           <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
             <StackPanel Margin="0,8,0,4">
+              <!-- Effect stack: the finishing effects in use, each with an eye to switch it off and its own settings. -->
+              <Border Style="{StaticResource SettingsCard}">
+                <StackPanel>
+                  <Grid>
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                    <TextBlock Text="FX" Style="{StaticResource PanelTitle}" Margin="0" VerticalAlignment="Center"/>
+                    <Button x:Name="AddFxButton" Grid.Column="1" Click="AddFx_Click" Style="{StaticResource ViewportToolButton}" Padding="12,6" MinHeight="32"
+                            ToolTip="Agregar un efecto a la imagen">
+                      <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="&#xE710;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                        <TextBlock Text="FX" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                      </StackPanel>
+                    </Button>
+                    <Button x:Name="FxMenuButton" Grid.Column="2" Click="FxMenu_Click" Style="{StaticResource ViewportToolButton}" Padding="9,6" MinHeight="32"
+                            Content="&#xE712;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" ToolTip="Guardar o cargar un estilo de efectos"/>
+                  </Grid>
+                  <StackPanel x:Name="FxStackList" Margin="0,10,0,0"/>
+                  <TextBlock x:Name="FxEmptyHint" Style="{StaticResource PanelHint}" Margin="0,8,0,0"
+                             Text="Sin efectos de acabado. Pulsa «FX» para agregar el primero."/>
+                </StackPanel>
+              </Border>
               <Border Style="{StaticResource SettingsCard}">
                 <StackPanel>
                   <TextBlock Style="{StaticResource PanelTitle}" Text="{DynamicResource RenderPanel.Image}"/>
@@ -436,7 +457,8 @@
                             Content="{DynamicResource RenderPanel.Vignette}" Checked="Finish_Changed" Unchecked="Finish_Changed"/>
                 </StackPanel>
               </Border>
-              <Border Style="{StaticResource SettingsCard}">
+              <!-- The effect sliders live in the FX stack now; this card stays only because the stack edits these very controls. -->
+              <Border x:Name="LegacyEffectsCard" Style="{StaticResource SettingsCard}" Visibility="Collapsed">
                 <StackPanel>
                   <TextBlock Style="{StaticResource PanelTitle}" Text="{DynamicResource RenderPanel.Effects}"/>
                   <TextBlock Style="{StaticResource PanelLabel}" Text="{DynamicResource RenderPanel.Highlights}" Margin="0,4,0,4"/>
@@ -813,7 +835,7 @@
     </Grid>
 
     <!-- Drag to give the settings or the picture more room. -->
-    <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Stretch" ResizeBehavior="PreviousAndNext"
+    <GridSplitter x:Name="SettingsSplitter" Grid.Column="1" Width="5" HorizontalAlignment="Stretch" ResizeBehavior="PreviousAndNext"
                   Background="{DynamicResource PanelBorderBrush}" Cursor="SizeWE" Focusable="False"/>
 
     <Grid Grid.Column="2" x:Name="ImageHost" ClipToBounds="True" SizeChanged="ImageHost_SizeChanged"
@@ -871,6 +893,25 @@
           <TextBlock Text="{DynamicResource RenderPanel.GpuCpuBackend}" Foreground="#BBC9D9" TextWrapping="Wrap" FontSize="10" Margin="0,6,0,0"/>
         </StackPanel>
       </Border>
+      <!-- Effect picker: categories on the left, one tile per effect on the right, like Lumion's "Select Photo Effect". -->
+      <Border x:Name="FxPicker" Visibility="Collapsed" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="24"
+              Width="660" Height="430" CornerRadius="10" Background="#F2182633" BorderBrush="#4A6870" BorderThickness="1">
+        <Border.Effect><DropShadowEffect Color="Black" BlurRadius="28" ShadowDepth="4" Opacity="0.45"/></Border.Effect>
+        <DockPanel>
+          <Grid DockPanel.Dock="Top" Margin="0,10,0,10">
+            <Button Click="FxPickerClose_Click" HorizontalAlignment="Left" Margin="12,0,0,0" Style="{StaticResource ViewportToolButton}"
+                    Padding="10,5" MinHeight="30" Content="&#xE72B;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" ToolTip="Cerrar"/>
+            <TextBlock Text="Seleccionar efecto de foto" Foreground="#F1F5F9" FontSize="16" FontWeight="SemiBold"
+                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+          </Grid>
+          <ScrollViewer DockPanel.Dock="Left" Width="170" VerticalScrollBarVisibility="Auto" Margin="8,0,0,8">
+            <StackPanel x:Name="FxCategoryList"/>
+          </ScrollViewer>
+          <ScrollViewer VerticalScrollBarVisibility="Auto" Margin="8,0,8,8">
+            <WrapPanel x:Name="FxTiles"/>
+          </ScrollViewer>
+        </DockPanel>
+      </Border>
       <Border x:Name="InteractiveHintCard" VerticalAlignment="Top" HorizontalAlignment="Left" Margin="18,18,0,0" Padding="12,9" CornerRadius="8"
               Background="#D91A3038" BorderBrush="#526F75" BorderThickness="1" IsHitTestVisible="False">
         <StackPanel>
@@ -887,6 +928,19 @@
                   Content="{DynamicResource RenderPanel.OrbitRight}" ToolTip="{DynamicResource RenderPanel.OrbitRightHint}"/>
           <Button x:Name="FrameModelButton" Style="{StaticResource ViewportToolButton}" Click="FrameModel_Click"
                   Content="{DynamicResource RenderPanel.FrameModel}" ToolTip="{DynamicResource RenderPanel.FrameModelHint}"/>
+          <Border Width="1" Margin="6,4" Background="#4A6870"/>
+          <Button x:Name="FxBarButton" Style="{StaticResource ViewportToolButton}" Click="AddFx_Click" ToolTip="Efectos de imagen">
+            <StackPanel Orientation="Horizontal">
+              <TextBlock Text="&#xE710;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" Margin="0,0,6,0" VerticalAlignment="Center"/>
+              <TextBlock Text="FX" FontWeight="SemiBold" VerticalAlignment="Center"/>
+            </StackPanel>
+          </Button>
+          <Button x:Name="TheaterButton" Style="{StaticResource ViewportToolButton}" Click="Theater_Click" ToolTip="Ocultar los paneles para ver solo la imagen">
+            <StackPanel Orientation="Horizontal">
+              <TextBlock Text="&#xE740;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" Margin="0,0,6,0" VerticalAlignment="Center"/>
+              <TextBlock x:Name="TheaterText" Text="Teatro" VerticalAlignment="Center"/>
+            </StackPanel>
+          </Button>
         </StackPanel>
       </Border>
       <!-- Photo strip: saved views with their own style and filters, rendered one by one or all at once. -->

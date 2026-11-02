@@ -521,6 +521,7 @@ WallDimensionChecks.Run(Check);
 DoorImportChecks.Run(Check);
 NavigationChecks.Run(Check);
 ViewVisibilityChecks.Run(Check);
+RenderFxChecks.Run(Check);
 RevitFamilyImportChecks.Run(Check);
 NavigationChecks.Run(Check);
 OpeningFamilyChecks.Run(Check);

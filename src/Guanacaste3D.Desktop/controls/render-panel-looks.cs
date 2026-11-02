@@ -107,6 +107,7 @@ public partial class RenderPanel
             _applyingLook = false;
         }
         Finish_Changed(sender, e);
+        SyncFxFromControls();
     }
 
     private ToneMapper CurrentLook() => ((LookPicker.SelectedItem as ComboBoxItem)?.Tag as string) switch

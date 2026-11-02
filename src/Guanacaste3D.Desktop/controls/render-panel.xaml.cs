@@ -58,6 +58,7 @@ public partial class RenderPanel : UserControl
         InitializeMaterialGallery();
         SunDatePicker.SelectedDate = DateTime.Today;
         _ready = true;
+        SyncFxFromControls();
         IsVisibleChanged += (_, _) => OnVisibilityChanged();
         Unloaded += (_, _) => Shutdown();
         UpdateMemoryEstimate();
