@@ -181,8 +181,12 @@ public sealed class BuildingDocument
         if (Grids.Count > 10000 || Grids.Any(axis => axis is null || !axis.IsValid) ||
             // Match the interactive editor's case-insensitive, whitespace-trimmed axis-name rule.
             // Imported/native documents must not bypass uniqueness by storing "A" and " A ".
-            Grids.Select(axis => axis.Name.Trim()).Distinct(StringComparer.OrdinalIgnoreCase).Count() != Grids.Count)
+            Grids.Select(axis => axis.Name.Trim()).Distinct(StringComparer.OrdinalIgnoreCase).Count() != Grids.Count ||
+            Grids.Select(axis => axis.Id).Distinct().Count() != Grids.Count)
             throw new InvalidDataException("Invalid grid axis definitions.");
+        // Resolve references once. Checking each wall against Grids.Any() used to scale as
+        // O(walls × grids), which is costly in large architectural projects.
+        var gridsById = Grids.ToDictionary(axis => axis.Id);
         if (WallTypes.Count is < 1 or > 10000 || WallTypes.Any(type =>
                 type.Id == Guid.Empty || string.IsNullOrWhiteSpace(type.Name) || type.Name.Length > 120 ||
                 !Enum.IsDefined(type.Function) || !double.IsFinite(type.Thickness) ||
@@ -204,10 +208,11 @@ public sealed class BuildingDocument
             throw new InvalidDataException("The wall collection contains duplicate identifiers.");
         foreach (var wall in Walls)
         {
-            if (wall.GridAxisId is Guid linkedAxis && !Grids.Any(axis => axis.Id == linkedAxis))
-                throw new InvalidDataException("A wall references a missing grid axis.");
+            if (wall.GridAxisId is Guid linkedAxis &&
+                (!gridsById.TryGetValue(linkedAxis, out var datum) ||
+                 !datum.IsCollinearWith(wall.Start, wall.End)))
+                throw new InvalidDataException("A wall references a missing or non-collinear grid axis.");
             if (wall.Id == Guid.Empty || !levelIds.Contains(wall.LevelId) || !wallTypeIds.Contains(wall.WallTypeId) ||
-                (wall.GridAxisId is Guid axisId && !Grids.Any(axis => axis.Id == axisId)) ||
                 !double.IsFinite(wall.Start.X) || !double.IsFinite(wall.Start.Y) ||
                 !double.IsFinite(wall.End.X) || !double.IsFinite(wall.End.Y) ||
                 !double.IsFinite(wall.Thickness) || !double.IsFinite(wall.Height) ||
