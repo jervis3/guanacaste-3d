@@ -11,6 +11,15 @@ static class MaterialTintChecks
         check(MaterialTint.TryParse("#FFFFFF", out var white) && white == Vector3.One &&
               MaterialTint.TryParse("#000000", out var black) && black == Vector3.Zero,
             "A tint reads white and black from their hex text");
+        check(MaterialTint.TryParse("#0A80FF", out var decoded) &&
+              MathF.Abs(decoded.X - 0.00303527f) < 0.00001f &&
+              MathF.Abs(decoded.Y - 0.2158605f) < 0.00001f &&
+              decoded.Z == 1f,
+            "Tint channels use the exact sRGB transfer function, including its dark linear segment");
+        check(MaterialTint.TryParse("#040000", out var nearBlack) &&
+              MathF.Abs(nearBlack.X - (4f / 255f / 12.92f)) < 0.000001f,
+            "Near-black tint values do not use the inaccurate gamma-2.2 approximation");
+
         check(!MaterialTint.TryParse("rojo", out _) && !MaterialTint.TryParse("#FFF", out _) && !MaterialTint.TryParse("#GG0000", out _) &&
               !MaterialTint.TryParse(null, out _) && MaterialTint.IsValid(null) && !MaterialTint.IsValid("#12"),
             "Malformed tint text never tints and is rejected by validation");
