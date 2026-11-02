@@ -14,6 +14,7 @@ internal static class ProjectThumbnail
     public const int Width = 384;
     public const int Height = 384;
     private const int MaximumDetailTrianglesPerKind = 3500;
+    private const int MaximumPreviewTriangles = 40000;
 
     /// <summary>A projected surface with a depth used to paint distant surfaces first.</summary>
     public readonly record struct Face(Point A, Point B, Point C, double Depth, Color Color);
@@ -22,20 +23,11 @@ internal static class ProjectThumbnail
     public static IReadOnlyList<Face> Faces(BuildingDocument document)
     {
         var mesh = BuildingMesher.Build(document);
-        var counts = mesh.TriangleKinds.GroupBy(kind => kind).ToDictionary(group => group.Key, group => group.Count());
-        var offsets = new Dictionary<SurfaceKind, int>();
-        var faces = new List<Face>();
-        for (var triangle = 0; triangle < mesh.TriangleCount; triangle++)
+        var selected = SelectTriangleIndices(mesh.TriangleKinds);
+        var faces = new List<Face>(selected.Count);
+        foreach (var triangle in selected)
         {
             var kind = mesh.TriangleKinds[triangle];
-            if (kind is SurfaceKind.Ground or SurfaceKind.Earth) continue;
-            if (IsFineDetail(kind))
-            {
-                var offset = offsets.GetValueOrDefault(kind);
-                offsets[kind] = offset + 1;
-                var stride = Math.Max(1, (int)Math.Ceiling(counts[kind] / (double)MaximumDetailTrianglesPerKind));
-                if (offset % stride != 0) continue;
-            }
             var a = mesh.Positions[mesh.Indices[triangle * 3]];
             var b = mesh.Positions[mesh.Indices[triangle * 3 + 1]];
             var c = mesh.Positions[mesh.Indices[triangle * 3 + 2]];
@@ -50,6 +42,58 @@ internal static class ProjectThumbnail
         }
         faces.Sort((left, right) => right.Depth.CompareTo(left.Depth));
         return faces;
+    }
+
+    /// <summary>
+    /// Selects at most 40,000 faces before WPF allocates drawing geometry. Decorative
+    /// categories retain their own detail budgets; architectural faces use the
+    /// remaining global budget rather than growing without limit on large models.
+    /// This bounds preview output, not the upstream BuildingMesher allocation.
+    /// </summary>
+    internal static IReadOnlyList<int> SelectTriangleIndices(IReadOnlyList<SurfaceKind> kinds)
+    {
+        var counts = new Dictionary<SurfaceKind, int>();
+        foreach (var kind in kinds)
+        {
+            if (kind is SurfaceKind.Ground or SurfaceKind.Earth) continue;
+            counts[kind] = counts.GetValueOrDefault(kind) + 1;
+        }
+
+        var detailStrides = new Dictionary<SurfaceKind, int>();
+        long eligibleCount = 0;
+        foreach (var (kind, count) in counts)
+        {
+            if (!IsFineDetail(kind))
+            {
+                eligibleCount += count;
+                continue;
+            }
+
+            var stride = Math.Max(1, (int)Math.Ceiling(count / (double)MaximumDetailTrianglesPerKind));
+            detailStrides[kind] = stride;
+            eligibleCount += (count - 1) / stride + 1;
+        }
+
+        var globalStride = Math.Max(1, (int)Math.Ceiling(eligibleCount / (double)MaximumPreviewTriangles));
+        var selected = new List<int>((int)Math.Min(MaximumPreviewTriangles, (eligibleCount + globalStride - 1) / globalStride));
+        var detailOffsets = new Dictionary<SurfaceKind, int>();
+        long eligibleOffset = 0;
+        for (var triangle = 0; triangle < kinds.Count; triangle++)
+        {
+            var kind = kinds[triangle];
+            if (kind is SurfaceKind.Ground or SurfaceKind.Earth) continue;
+            if (detailStrides.TryGetValue(kind, out var stride))
+            {
+                var offset = detailOffsets.GetValueOrDefault(kind);
+                detailOffsets[kind] = offset + 1;
+                if (offset % stride != 0) continue;
+            }
+
+            if (eligibleOffset % globalStride == 0) selected.Add(triangle);
+            eligibleOffset++;
+        }
+
+        return selected;
     }
 
     /// <summary>Keeps architecture intact while reducing dense decorative meshes.</summary>
