@@ -11,6 +11,13 @@ public partial class RenderPanel
     /// <summary>Builds the latest model without starting the path tracer, discarding obsolete results.</summary>
     private async void RefreshInteractiveScene()
     {
+        // The scene source may raise notifications on worker threads. WPF controls must only be read and updated
+        // on their owning dispatcher, including the error-reporting path.
+        if (!Dispatcher.CheckAccess())
+        {
+            if (!Dispatcher.HasShutdownStarted) _ = Dispatcher.BeginInvoke((Action)RefreshInteractiveScene);
+            return;
+        }
         if (_source is null || !IsVisible) return;
         var source = _source;
         var version = source.SceneVersion;

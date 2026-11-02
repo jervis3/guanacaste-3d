@@ -5,6 +5,23 @@ public sealed record GridAxis(Guid Id, string Name, Point2 Start, Point2 End)
 {
     public bool IsValid => Id != Guid.Empty && !string.IsNullOrWhiteSpace(Name) && Name.Length <= 32 &&
         new SectionCut(Start, End).IsValid;
+
+    /// <summary>
+    /// A datum represents an infinite reference line. Shortening its visible segment must not
+    /// detach a wall whose centreline is still coincident with that reference.
+    /// </summary>
+    internal bool IsCollinearWith(Point2 start, Point2 end)
+    {
+        const double toleranceMeters = 0.015;
+        var dx = End.X - Start.X;
+        var dy = End.Y - Start.Y;
+        var length = double.Hypot(dx, dy);
+        if (!double.IsFinite(length) || length < 1e-8) return false;
+        var ux = dx / length;
+        var uy = dy / length;
+        return Math.Abs((start.X - Start.X) * uy - (start.Y - Start.Y) * ux) <= toleranceMeters &&
+               Math.Abs((end.X - Start.X) * uy - (end.Y - Start.Y) * ux) <= toleranceMeters;
+    }
 }
 
 /// <summary>Reports the existing datum so the UI can offer to locate it instead of silently failing.</summary>
@@ -110,16 +127,12 @@ public sealed partial class DocumentSession
 
     private static bool IsAligned(GridAxis axis, Point2 start, Point2 end)
     {
-        const double toleranceMeters = 0.015;
+        if (!axis.IsCollinearWith(start, end)) return false;
         var dx = axis.End.X - axis.Start.X;
         var dy = axis.End.Y - axis.Start.Y;
         var length = double.Hypot(dx, dy);
-        if (length < 1e-8) return false;
         var ux = dx / length;
         var uy = dy / length;
-        var d1 = Math.Abs((start.X - axis.Start.X) * uy - (start.Y - axis.Start.Y) * ux);
-        var d2 = Math.Abs((end.X - axis.Start.X) * uy - (end.Y - axis.Start.Y) * ux);
-        if (d1 > toleranceMeters || d2 > toleranceMeters) return false;
         var from = (start.X - axis.Start.X) * ux + (start.Y - axis.Start.Y) * uy;
         var to = (end.X - axis.Start.X) * ux + (end.Y - axis.Start.Y) * uy;
         return Math.Max(Math.Min(from, to), 0) < Math.Min(Math.Max(from, to), length) - 1e-8;

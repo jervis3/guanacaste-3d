@@ -6,12 +6,17 @@ public static class PolygonTriangulator
     /// <summary>Returns the signed doubled area; positive for counter-clockwise order.</summary>
     public static double SignedDoubleArea(IReadOnlyList<Point2> polygon)
     {
+        // Translate the shoelace products to a local origin. Building outlines can be
+        // far from (0, 0); multiplying absolute coordinates loses small floor areas.
+        if (polygon.Count == 0) return 0;
+        var origin = polygon[0];
         var sum = 0d;
-        for (var index = 0; index < polygon.Count; index++)
+        for (var index = 1; index < polygon.Count - 1; index++)
         {
             var current = polygon[index];
-            var next = polygon[(index + 1) % polygon.Count];
-            sum += current.X * next.Y - next.X * current.Y;
+            var next = polygon[index + 1];
+            sum += (current.X - origin.X) * (next.Y - origin.Y) -
+                   (next.X - origin.X) * (current.Y - origin.Y);
         }
         return sum;
     }
@@ -24,8 +29,11 @@ public static class PolygonTriangulator
     {
         ArgumentNullException.ThrowIfNull(polygon);
         if (polygon.Count < 3) throw new ArgumentException("A polygon needs at least three points.");
+        if (polygon.Any(point => !double.IsFinite(point.X) || !double.IsFinite(point.Y)))
+            throw new ArgumentException("Polygon coordinates must be finite.", nameof(polygon));
         var area = SignedDoubleArea(polygon);
-        if (Math.Abs(area) < 1e-12) throw new ArgumentException("The polygon has no area.");
+        if (!double.IsFinite(area) || Math.Abs(area) < 1e-12)
+            throw new ArgumentException("The polygon must have a finite nonzero area.", nameof(polygon));
 
         var remaining = Enumerable.Range(0, polygon.Count).ToList();
         if (area < 0) remaining.Reverse();

@@ -201,16 +201,20 @@ public sealed record FloorSlab(
     /// <summary>Whether the slab is site terrain rather than a building slab.</summary>
     [JsonIgnore] public bool IsToposolid => Kind == FloorKind.Toposolid;
 
-    /// <summary>Calculates plan area using the shoelace formula.</summary>
+    /// <summary>Calculates plan area relative to the first vertex to preserve precision far from the origin.</summary>
     public double CalculateArea()
     {
         if (Boundary.Count < 3) return 0;
+        // Global-coordinate cross products lose small areas when the site has large survey coordinates.
+        // A triangle fan about the first vertex preserves signed area for concave outlines as well.
+        var origin = Boundary[0];
         var doubledArea = 0d;
-        for (var index = 0; index < Boundary.Count; index++)
+        for (var index = 1; index < Boundary.Count - 1; index++)
         {
             var current = Boundary[index];
-            var next = Boundary[(index + 1) % Boundary.Count];
-            doubledArea += current.X * next.Y - next.X * current.Y;
+            var next = Boundary[index + 1];
+            doubledArea += (current.X - origin.X) * (next.Y - origin.Y) -
+                           (next.X - origin.X) * (current.Y - origin.Y);
         }
         return Math.Abs(doubledArea) / 2;
     }

@@ -136,6 +136,29 @@ static class RenderEngineChecks
               odd.LevelCount == 3 && float.IsFinite(sample.X) &&
               MathF.Abs(sample.Length() - 1f) < 1e-4f,
             "Normal maps reject malformed dimensions and filter odd-sized maps safely");
+
+        // On a 3x3 map, a single tilted corner represents 1/9 of the
+        // texture regardless of which corner it occupies. Repeated unweighted
+        // 2x2 reductions used to make opposite corners contribute 1/16 vs 1/4.
+        var neutral = new byte[3 * 3 * 3];
+        for (var pixel = 0; pixel < 9; pixel++)
+        {
+            neutral[pixel * 3] = 128;
+            neutral[pixel * 3 + 1] = 128;
+            neutral[pixel * 3 + 2] = 255;
+        }
+        var firstCorner = (byte[])neutral.Clone();
+        firstCorner[0] = 255;
+        firstCorner[2] = 128;
+        var lastCorner = (byte[])neutral.Clone();
+        lastCorner[8 * 3] = 255;
+        lastCorner[8 * 3 + 2] = 128;
+        var firstDistant = NormalMap.FromRgb(3, 3, firstCorner).Sample(.4f, .6f, 10f);
+        var lastDistant = NormalMap.FromRgb(3, 3, lastCorner).Sample(.4f, .6f, 10f);
+        check(MathF.Abs(firstDistant.X - lastDistant.X) < .02f &&
+              firstDistant.X is > .12f and < .23f &&
+              firstDistant.Z > .96f && lastDistant.Z > .96f,
+            "Odd-sized normal-map mips give equally sized corner details equal distant coverage");
     }
 
     private static void TextureInputValidation(Action<bool, string> check)
@@ -161,6 +184,24 @@ static class RenderEngineChecks
         check(rgba.Width == 2 && rgba.Height == 1 && rgba.HasAlpha &&
               rgba.Alpha(0.25f, 0.5f) > 0.99f && rgba.Alpha(0.75f, 0.5f) < 0.01f,
             "Valid RGBA cut-out textures retain their dimensions and alpha coverage");
+
+        // Color maps must make the same safe mip choice as roughness/height maps:
+        // extreme finite footprints are fully blurred, not accidentally sharp.
+        var color = RenderTexture.FromBgra32(2, 2,
+            [0, 0, 255, 255, 0, 0, 0, 255, 0, 0, 0, 255, 0, 0, 0, 255]);
+        var near = color.Sample(.25f, .75f, 0f);
+        var far = color.Sample(.25f, .75f, float.MaxValue);
+        check(near.X > .99f && far.X > .22f && far.X < .28f &&
+              MathF.Abs(color.TexelSize(float.MaxValue) - 1f) < 1e-6f,
+            "Extreme finite color texture footprints use the coarsest mip and texel size");
+        var invalidUv = color.Sample(float.NaN, .75f, 0f);
+        var invalidFootprint = color.Sample(.25f, .75f, float.NaN);
+        check(float.IsFinite(invalidUv.X) && float.IsFinite(invalidUv.Y) &&
+              float.IsFinite(invalidUv.Z) &&
+              Vector3.Distance(invalidUv, color.Mean) < 1e-6f &&
+              Vector3.Distance(invalidFootprint, near) < 1e-6f &&
+              MathF.Abs(color.TexelSize(float.NaN) - .5f) < 1e-6f,
+            "Malformed color UVs and footprints never propagate NaN into PBR shading");
     }
 
     private static void Sky(Action<bool, string> check)
@@ -215,6 +256,18 @@ static class RenderEngineChecks
         var light = rle.Sample(Vector3.UnitX);
         check(rle.Width == 8 && light.X > light.Y && light.Y > light.Z && light.Z > 0,
             "RGBE per-channel RLE scanlines decode colors and exponent correctly");
+
+        // Very large but finite camera/environment yaw values must not overflow
+        // degrees-to-radians conversion and turn HDRI samples into NaN pixels.
+        var hugeYaw = panorama.Sample(Vector3.UnitX, float.MaxValue);
+        var negativeHugeYaw = panorama.Sample(Vector3.UnitX, -float.MaxValue);
+        var reducedYaw = (float)((double)float.MaxValue % 360.0);
+        check(float.IsFinite(hugeYaw.X + hugeYaw.Y + hugeYaw.Z) &&
+              float.IsFinite(negativeHugeYaw.X + negativeHugeYaw.Y + negativeHugeYaw.Z) &&
+              Vector3.Distance(hugeYaw, panorama.Sample(Vector3.UnitX, reducedYaw)) < 1e-4f &&
+              Vector3.Distance(panorama.Sample(Vector3.UnitX, float.NaN),
+                               panorama.Sample(Vector3.UnitX)) < 1e-4f,
+            "HDRI sampling wraps extreme finite yaw and ignores nonfinite yaw without NaN pixels");
     }
 
     private static float Sum(Vector3 v) => v.X + v.Y + v.Z;

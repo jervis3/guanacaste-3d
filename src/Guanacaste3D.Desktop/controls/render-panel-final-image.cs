@@ -31,6 +31,7 @@ public partial class RenderPanel
         SaveButton.IsEnabled = CopyButton.IsEnabled = ShowImageButton.IsEnabled = false;
         ShowInteractiveScene(true);
     }
+    private bool _renderStarting;
 
     /// <summary>Re-applies exposure and grading to a finished render without rendering again.</summary>
     private async void RefinishFinal()
@@ -82,11 +83,35 @@ public partial class RenderPanel
     /// <summary>Runs a bounded progressive final render and restores controls after completion or cancellation.</summary>
     private async Task RenderFinalAsync()
     {
-        if (_source is null) return;
+        if (_source is null || _renderStarting || _rendering || _renderingTour) return;
         if (PreviewToggle.IsChecked == true) PreviewToggle.IsChecked = false;
         var documentVersion = _renderDocumentVersion;
-        var scene = await _source.GetSceneAsync();
-        if (documentVersion != _renderDocumentVersion) return;
+        var source = _source;
+        var sceneVersion = source.SceneVersion;
+        _renderStarting = true;
+        RenderButton.IsEnabled = false;
+        RenderScene? scene;
+        try
+        {
+            scene = await source.GetSceneAsync();
+        }
+        catch (OutOfMemoryException)
+        {
+            StatusText.Text = UiText.Get("RenderPanel.NoMemory");
+            return;
+        }
+        catch (Exception ex)
+        {
+            StatusText.Text = UiText.Format("RenderPanel.Failed", ex.Message);
+            return;
+        }
+        finally
+        {
+            _renderStarting = false;
+            RenderButton.IsEnabled = true;
+        }
+        // Never render a scene belonging to a project or geometry version that was replaced while loading.
+        if (documentVersion != _renderDocumentVersion || !ReferenceEquals(source, _source) || sceneVersion != source.SceneVersion) return;
         if (scene is null)
         {
             StatusText.Text = UiText.Get("RenderPanel.EmptyScene");

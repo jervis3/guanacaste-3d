@@ -26,6 +26,18 @@ Check(WallAssemblyPlanRules.StudPositions(3.0, WallAssemblyPlanRules.Stud16Inche
     .Zip(WallAssemblyPlanRules.StudPositions(3.0, WallAssemblyPlanRules.Stud16Inches).Skip(1))
     .All(pair => pair.Second - pair.First <= WallAssemblyPlanRules.Stud16Inches + 1e-9),
     "Gypsum stud intervals never exceed maximum pitch");
+foreach (var invalidLength in new[] { 0d, double.NaN, double.MaxValue, 1_000_001d * WallAssemblyPlanRules.Stud16Inches })
+{
+    var rejected = false;
+    try { WallAssemblyPlanRules.StudPositions(invalidLength, WallAssemblyPlanRules.Stud16Inches); }
+    catch (ArgumentOutOfRangeException exception) when (exception.ParamName == "length") { rejected = true; }
+    Check(rejected, "Gypsum stud layout rejects invalid or excessive lengths before allocation");
+}
+var longStudLayout = WallAssemblyPlanRules.StudPositions(12, WallAssemblyPlanRules.Stud24Inches);
+Check(longStudLayout[0] == 0 && longStudLayout[^1] == 12 &&
+      longStudLayout.Zip(longStudLayout.Skip(1)).All(pair => pair.Second > pair.First &&
+          pair.Second - pair.First <= WallAssemblyPlanRules.Stud24Inches + 1e-9),
+    "Long gypsum walls preserve exact endpoints and safe stud pitch");
 var layerDocument = BuildingDocument.Create();
 layerDocument.WallTypes[1] = finishedType;
 layerDocument.Validate();
@@ -353,6 +365,28 @@ try { PolygonTriangulator.Triangulate([new(0, 0), new(1, 1), new(2, 2)]); }
 catch (ArgumentException) { failed = true; }
 Check(failed, "Degenerate outlines are rejected by the triangulator");
 
+// A local floor outline can be placed far from the project origin without losing its area.
+var distantL = lShape.Select(point => new Point2(point.X + 1_000_000_000, point.Y + 1_000_000_000)).ToArray();
+var distantTriangles = PolygonTriangulator.Triangulate(distantL);
+var distantArea = distantTriangles.Sum(t =>
+    Math.Abs(PolygonTriangulator.SignedDoubleArea([distantL[t.A], distantL[t.B], distantL[t.C]])) / 2);
+Check(distantTriangles.Count == 4 &&
+      Math.Abs(PolygonTriangulator.SignedDoubleArea(distantL) / 2 - 18) < 1e-9 &&
+      Math.Abs(distantArea - 18) < 1e-9,
+    "Large project coordinates retain precise floor areas and triangulation");
+foreach (var invalidOutline in new Point2[][]
+{
+    [new(0, 0), new(double.NaN, 1), new(0, 2)],
+    [new(0, 0), new(double.PositiveInfinity, 1), new(0, 2)],
+    [new(0, 0), new(double.MaxValue, 0), new(0, double.MaxValue)]
+})
+{
+    var rejected = false;
+    try { PolygonTriangulator.Triangulate(invalidOutline); }
+    catch (ArgumentException) { rejected = true; }
+    Check(rejected, "Triangulation rejects non-finite coordinates or overflowed areas");
+}
+
 var renderSession = new DocumentSession(BuildingDocument.Create("Render"));
 var renderLevel = renderSession.Document.Levels[0].Id;
 var renderWall = renderSession.AddWall(renderLevel, new Point2(0, 0), new Point2(8, 0));
@@ -446,6 +480,20 @@ houseTracer.RenderPass();
 renderTimer.Stop();
 Console.WriteLine($"INFO: {houseScene.TriangleCount} triangles, 320x200 sample pass in {renderTimer.ElapsedMilliseconds} ms");
 Check(renderTimer.ElapsedMilliseconds < 10000, "Path tracer renders a 64k-pixel pass of the sample house in under 10 s");
+
+// Extreme but finite scene counts must never wrap memory estimates negative
+// and incorrectly authorize a render that would exhaust the machine.
+Check(RenderSafety.EstimateBytes(64, 64, 0, 0) ==
+      RenderSettings.EstimateImageBytes(64, 64) + 64L * 64 * 16,
+    "Render memory estimate preserves ordinary image buffer accounting");
+Check(RenderSafety.EstimateBytes(8192, 8192, long.MaxValue, 0) == long.MaxValue,
+    "Render memory estimate saturates for enormous imported scenes");
+var extremeRenderPlan = QualityPlanner.Plan(RenderQuality.High,
+    new HardwareProfile { LogicalCores = 8, AvailableMemoryBytes = 16L << 30, TotalMemoryBytes = 16L << 30 },
+    1920, 1080, sceneTriangles: long.MaxValue);
+Check(extremeRenderPlan.EstimatedBytes == long.MaxValue &&
+      extremeRenderPlan.Notes.Contains(PlanNote.SceneNearBudget),
+    "Quality planner never reports a huge overflowing scene as fitting memory");
 
 GridAxisAssociationChecks.Run(Check);
 RoomSeparatorBoundaryChecks.Run(Check);

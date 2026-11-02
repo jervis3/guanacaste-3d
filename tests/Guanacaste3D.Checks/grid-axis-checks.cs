@@ -19,6 +19,50 @@ static class GridAxisChecks
         check(rejected && session.Document.Grids.Single(x => x.Id == id).Name == "A",
             "Duplicate numerical labels cannot overwrite existing axes");
 
+        // Files can be imported or edited outside DocumentSession. They must obey the
+        // same normalized-name uniqueness rule as the interactive grid-axis editor.
+        var imported = BuildingDocument.Create("Imported axes");
+        imported.Grids.Add(new GridAxis(Guid.NewGuid(), "A", new(0, 0), new(10, 0)));
+        imported.Grids.Add(new GridAxis(Guid.NewGuid(), " a ", new(0, 4), new(10, 4)));
+        rejected = false;
+        try { imported.Validate(); }
+        catch (InvalidDataException) { rejected = true; }
+        check(rejected, "Imported axes cannot duplicate names by case or surrounding whitespace");
+        imported.Grids.RemoveAt(1);
+        imported.Validate();
+        check(imported.Grids.Count == 1, "Valid existing grid axes remain compatible with document validation");
+
+        // Imported/native files must not bypass the editor's wall-to-datum collinearity
+        // check: otherwise dragging a grid could unexpectedly move an unrelated wall.
+        var importedLinks = new DocumentSession(BuildingDocument.Create("Imported wall links"));
+        var importedLevel = importedLinks.Document.Levels[0].Id;
+        var importedDatum = importedLinks.AddGridAxis("Z", new(0, 0), new(10, 0));
+        var offAxisId = importedLinks.AddWall(importedLevel, new(1, 3), new(4, 3));
+        var corrupted = importedLinks.Document.Clone();
+        var wallIndex = corrupted.Walls.FindIndex(w => w.Id == offAxisId);
+        corrupted.Walls[wallIndex] = corrupted.Walls[wallIndex] with { GridAxisId = importedDatum };
+        rejected = false;
+        try { corrupted.Validate(); }
+        catch (InvalidDataException) { rejected = true; }
+        check(rejected, "Imported walls cannot reference a non-collinear grid axis");
+
+        // A datum is an infinite reference line, even if its visible segment is short.
+        // A valid existing link should survive a later shortening of that segment.
+        var beyondSegmentId = importedLinks.AddWall(importedLevel, new(20, 0), new(25, 0));
+        var shortened = importedLinks.Document.Clone();
+        var beyondIndex = shortened.Walls.FindIndex(w => w.Id == beyondSegmentId);
+        shortened.Walls[beyondIndex] = shortened.Walls[beyondIndex] with { GridAxisId = importedDatum };
+        shortened.Validate();
+        check(shortened.Walls[beyondIndex].GridAxisId == importedDatum,
+            "Collinear wall associations survive shortening the visible datum segment");
+
+        var duplicateIds = importedLinks.Document.Clone();
+        duplicateIds.Grids.Add(duplicateIds.Grids[0] with { Name = "Y" });
+        rejected = false;
+        try { duplicateIds.Validate(); }
+        catch (InvalidDataException) { rejected = true; }
+        check(rejected, "Imported duplicate datum IDs fail document validation predictably");
+
         var wallId = session.AddWall(level, new Point2(1, 0), new Point2(7, 0));
         var crossing = session.AddWall(level, new Point2(4, -2), new Point2(4, 2));
         session.AddOpening(wallId, OpeningKind.Door, offset: 2);
