@@ -12,6 +12,39 @@ static class RoofTakeoffChecks
             [new(0, 0), new(10, 0), new(10, 6), new(0, 6)], preset, 3.1);
         var roof = session.Document.Floors.Single(floor => floor.Id == id);
 
+        // A surveyed site may use large absolute coordinates. The plan area must
+        // remain invariant under translation, including for concave outlines.
+        const double survey = 1_000_000_000d;
+        var translatedFloor = roof with
+        {
+            Kind = FloorKind.Floor, Shape = RoofShape.Flat, Pitch = 0, Overhang = 0,
+            Boundary =
+            [
+                new(survey, survey), new(survey + 10, survey),
+                new(survey + 10, survey + 6), new(survey, survey + 6)
+            ]
+        };
+        check(Math.Abs(translatedFloor.CalculateArea() - 60) < 1e-8 &&
+              Math.Abs(FinishRules.FloorFinishArea(translatedFloor) - 60) < 1e-8,
+            "Floor plan and finish quantities retain their area at large survey coordinates");
+
+        var translatedConcave = translatedFloor with
+        {
+            Boundary =
+            [
+                new(survey, survey), new(survey + 10, survey),
+                new(survey + 10, survey + 6), new(survey + 7, survey + 6),
+                new(survey + 7, survey + 2), new(survey + 3, survey + 2),
+                new(survey + 3, survey + 6), new(survey, survey + 6)
+            ]
+        };
+        check(Math.Abs(translatedConcave.CalculateArea() - 44) < 1e-8 &&
+              Math.Abs((translatedConcave with
+              {
+                  Boundary = [.. translatedConcave.Boundary.AsEnumerable().Reverse()]
+              }).CalculateArea() - 44) < 1e-8,
+            "Concave slab takeoff preserves area and winding independence far from the origin");
+
         // 10 x 6 m plan with 0.6 m eaves on every side: 11.2 x 7.2 m projected.
         var projected = 11.2 * 7.2;
         var expected = projected / Math.Cos(Math.PI / 6);
