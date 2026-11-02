@@ -74,6 +74,8 @@ public sealed class BuildingDocument
     public List<FamilyDocument> ComponentFamilies { get; set; } = [];
     /// <summary>The render view the project was last saved with (camera, sun, filters); null for the default view.</summary>
     public Rendering.RenderSetup? RenderSetup { get; set; }
+    /// <summary>Named render cameras and settings retained with the project.</summary>
+    public List<Rendering.RenderSceneBookmark> RenderScenes { get; set; } = [];
     public List<RenderMaterialAssignment> RenderMaterials { get; set; } = [];
     public List<ElectricalDevice> ElectricalDevices { get; set; } = [];
     public List<ElectricalCircuit> ElectricalCircuits { get; set; } = [];
@@ -141,6 +143,7 @@ public sealed class BuildingDocument
         InPlaceFamilies = InPlaceFamilies.Select(family => family.Clone()).ToList(),
         ComponentFamilies = ComponentFamilies.Select(family => family.Clone()).ToList(),
         RenderSetup = RenderSetup,
+        RenderScenes = [.. RenderScenes],
         RenderMaterials = [.. RenderMaterials],
         ElectricalDevices = ElectricalDevices.Select(device => device with { Controls = [.. device.Controls] }).ToList(),
         ElectricalCircuits = [.. ElectricalCircuits],
@@ -260,6 +263,11 @@ public sealed class BuildingDocument
         InPlaceFamilyRules.Validate(this);
         ComponentFamilyRules.Validate(this);
         RenderSetup?.Validate();
+        if (RenderScenes is null || RenderScenes.Count > 1000 ||
+            RenderScenes.Any(scene => scene is null || scene.Id == Guid.Empty || string.IsNullOrWhiteSpace(scene.Name) || scene.Name.Length > 120 || scene.Setup is null) ||
+            RenderScenes.Select(scene => scene.Id).Distinct().Count() != RenderScenes.Count)
+            throw new InvalidDataException("The render scene collection is invalid.");
+        foreach (var scene in RenderScenes) scene.Setup.Validate();
         RenderMaterialRules.Validate(this);
         ElectricalRules.Validate(this);
         PlumbingRules.Validate(this);

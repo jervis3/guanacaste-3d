@@ -47,6 +47,18 @@ internal interface IRenderSource
     /// <summary>The project's render texture per surface category.</summary>
     IReadOnlyList<RenderMaterialAssignment> RenderMaterials { get; }
 
+    /// <summary>Named render scenes persisted in the current project.</summary>
+    IReadOnlyList<RenderSceneBookmark> RenderScenes { get; }
+
+    /// <summary>Adds a named setup to the project as an undoable edit.</summary>
+    void AddRenderScene(string name, RenderSetup setup);
+
+    /// <summary>Removes a named setup as an undoable edit.</summary>
+    void RemoveRenderScene(Guid id);
+
+    /// <summary>Finds an editable render surface beneath a point in the shared viewport.</summary>
+    (Guid ElementId, SurfaceKind Category)? PickRenderMaterial(Point position, FrameworkElement surface);
+
     /// <summary>Assigns a texture to a category, or returns it to its stock material when the path is null.</summary>
     void AssignRenderMaterial(SurfaceKind category, string? texturePath, double size, double relief, Guid? elementId = null);
 

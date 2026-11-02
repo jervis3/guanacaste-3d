@@ -6,7 +6,7 @@
        Links. prefixes so they never collide with the older Render.* texts. -->
 
   <!-- Panel sections -->
-  <sys:String x:Key="RenderPanel.Preview">Vista previa en vivo</sys:String>
+  <sys:String x:Key="RenderPanel.Preview">Vista previa</sys:String>
   <sys:String x:Key="RenderPanel.PreviewHint">Navega por el proyecto con luz y sombras reales a baja calidad. Al pulsar Renderizar, la imagen se detiene mientras se genera.</sys:String>
   <sys:String x:Key="RenderPanel.Render">Renderizar</sys:String>
   <sys:String x:Key="RenderPanel.Stop">Detener</sys:String>
@@ -180,6 +180,25 @@
   <!-- Keyboard selection in a view -->
   <sys:String x:Key="ViewSelection.Count">{0} elementos seleccionados en esta vista (Ctrl+H ocultar, Ctrl+Mayús+H mostrar todo)</sys:String>
   <sys:String x:Key="RenderPanel.Controls">Clic derecho: mirar · Rueda: acercar al cursor · Botón central: mover · Shift + central: orbitar selección o proyecto · Clic izquierdo: seleccionar · W A S D: volar · Q E: bajar y subir · Shift: rápido</sys:String>
+  <sys:String x:Key="RenderPanel.InteractiveTitle">Vista 3D interactiva</sys:String>
+  <sys:String x:Key="RenderPanel.InteractiveHint">Shift + botón central: girar · Rueda: acercar · Clic derecho: mirar</sys:String>
+  <sys:String x:Key="RenderPanel.OrbitLeft">Girar izquierda</sys:String>
+  <sys:String x:Key="RenderPanel.OrbitRight">Girar derecha</sys:String>
+  <sys:String x:Key="RenderPanel.FrameModel">Encuadrar</sys:String>
+  <sys:String x:Key="RenderPanel.OrbitLeftHint">Girar alrededor de la selección o del proyecto hacia la izquierda.</sys:String>
+  <sys:String x:Key="RenderPanel.OrbitRightHint">Girar alrededor de la selección o del proyecto hacia la derecha.</sys:String>
+  <sys:String x:Key="RenderPanel.FrameModelHint">Mostrar el proyecto completo.</sys:String>
+  <sys:String x:Key="RenderPanel.ShowImage">Imagen</sys:String>
+  <sys:String x:Key="RenderPanel.Scenes">Escenas</sys:String>
+  <sys:String x:Key="RenderPanel.ScenesHint">Cámaras y ajustes guardados en este proyecto.</sys:String>
+  <sys:String x:Key="RenderPanel.SceneName">Nombre de la escena</sys:String>
+  <sys:String x:Key="RenderPanel.SceneSave">Crear</sys:String>
+  <sys:String x:Key="RenderPanel.SceneOpen">Abrir</sys:String>
+  <sys:String x:Key="RenderPanel.SceneDelete">Eliminar</sys:String>
+  <sys:String x:Key="RenderPanel.MaterialDropMiss">Suelta el material sobre un elemento editable.</sys:String>
+  <sys:String x:Key="RenderPanel.MaterialDropApplied">Material aplicado al elemento.</sys:String>
+  <sys:String x:Key="RenderPanel.SaveShort">Guardar</sys:String>
+  <sys:String x:Key="RenderPanel.ShowImageHint">Volver a la última imagen renderizada.</sys:String>
   <sys:String x:Key="RenderPanel.Output">Resultado</sys:String>
   <sys:String x:Key="RenderPanel.SaveImage">Guardar imagen…</sys:String>
   <sys:String x:Key="RenderPanel.CopyImage">Copiar</sys:String>

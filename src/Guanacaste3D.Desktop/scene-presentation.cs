@@ -71,7 +71,7 @@ internal static class ScenePresentation
     }
 
     /// <summary>A material that repeats an image once per texture-coordinate unit.</summary>
-    private static Material Textured(ImageSource image)
+    internal static Material Textured(ImageSource image)
     {
         var brush = new ImageBrush(image)
         {
@@ -292,7 +292,7 @@ internal static class ScenePresentation
         return converted;
     }
 
-    private static Material MaterialFor(SurfaceKind kind) => kind switch
+    internal static Material MaterialFor(SurfaceKind kind) => kind switch
     {
         SurfaceKind.DoorLeaf => Diffuse(Color.FromRgb(154, 99, 55)),
         SurfaceKind.OpeningFrame => Diffuse(Color.FromRgb(65, 69, 73)),

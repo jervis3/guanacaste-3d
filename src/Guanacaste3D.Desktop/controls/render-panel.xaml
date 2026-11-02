@@ -107,16 +107,54 @@
     <Style x:Key="ImageToolButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
       <Setter Property="Padding" Value="12,6"/><Setter Property="Margin" Value="0,0,8,0"/><Setter Property="MinHeight" Value="34"/>
     </Style>
+    <Style x:Key="ViewportToolButton" TargetType="Button">
+      <Setter Property="Foreground" Value="#E7F1F3"/><Setter Property="Background" Value="#233E46"/>
+      <Setter Property="BorderBrush" Value="#3B5B63"/><Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="Padding" Value="12,8"/><Setter Property="Margin" Value="3,0"/>
+      <Setter Property="MinHeight" Value="36"/><Setter Property="Cursor" Value="Hand"/>
+      <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="Button">
+        <Border x:Name="ButtonChrome" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="6" Padding="{TemplateBinding Padding}">
+          <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+        </Border>
+        <ControlTemplate.Triggers>
+          <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="ButtonChrome" Property="Background" Value="#315B62"/></Trigger>
+          <Trigger Property="IsPressed" Value="True"><Setter TargetName="ButtonChrome" Property="Background" Value="#18383E"/></Trigger>
+          <Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.45"/></Trigger>
+        </ControlTemplate.Triggers>
+      </ControlTemplate></Setter.Value></Setter>
+    </Style>
+    <Style x:Key="RenderPrimaryButton" TargetType="Button" BasedOn="{StaticResource ViewportToolButton}">
+      <Setter Property="Background" Value="#087D83"/><Setter Property="BorderBrush" Value="#3AA7A3"/>
+      <Setter Property="Foreground" Value="White"/><Setter Property="FontWeight" Value="SemiBold"/>
+      <Setter Property="Margin" Value="0"/>
+    </Style>
+    <Style x:Key="PreviewSwitch" TargetType="ToggleButton">
+      <Setter Property="Foreground" Value="#E7F1F3"/><Setter Property="Background" Value="#233E46"/>
+      <Setter Property="BorderBrush" Value="#3B5B63"/><Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="Padding" Value="8,7"/><Setter Property="MinHeight" Value="34"/><Setter Property="Cursor" Value="Hand"/>
+      <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="ToggleButton">
+        <Border x:Name="SwitchChrome" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="6" Padding="{TemplateBinding Padding}">
+          <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+        </Border>
+        <ControlTemplate.Triggers>
+          <Trigger Property="IsChecked" Value="True"><Setter TargetName="SwitchChrome" Property="Background" Value="#087D83"/></Trigger>
+          <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="SwitchChrome" Property="BorderBrush" Value="#7BDCD0"/></Trigger>
+          <Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.45"/></Trigger>
+        </ControlTemplate.Triggers>
+      </ControlTemplate></Setter.Value></Setter>
+    </Style>
   </UserControl.Resources>
   <Grid>
     <Grid.ColumnDefinitions>
-      <ColumnDefinition x:Name="SettingsColumn" Width="470" MinWidth="410" MaxWidth="760"/>
+      <ColumnDefinition x:Name="SettingsColumn" Width="370" MinWidth="320" MaxWidth="760"/>
       <ColumnDefinition Width="Auto"/>
       <ColumnDefinition Width="*"/>
     </Grid.ColumnDefinitions>
     <Grid Grid.Column="0" Background="#111A26">
       <Grid.ColumnDefinitions>
-        <ColumnDefinition Width="70"/>
+        <ColumnDefinition Width="64"/>
         <ColumnDefinition Width="*"/>
       </Grid.ColumnDefinitions>
       <Border Grid.Column="0" Background="#0C1521" BorderBrush="#304050" BorderThickness="0,0,1,0">
@@ -158,35 +196,49 @@
           </StackPanel>
         </Border>
 
-      <!-- Always visible: the live preview switch and the render, pause, save and copy actions. -->
+      <Border DockPanel.Dock="Top" Style="{StaticResource SettingsCard}" Margin="12,10,12,0" Padding="12,10">
+        <StackPanel>
+          <TextBlock Text="{DynamicResource RenderPanel.Scenes}" Style="{StaticResource PanelTitle}"/>
+          <ComboBox x:Name="ScenePicker" ToolTip="{DynamicResource RenderPanel.ScenesHint}"/>
+          <UniformGrid Columns="3" Margin="0,8,0,0">
+            <Button x:Name="SaveSceneButton" Content="{DynamicResource RenderPanel.SceneSave}" Click="SaveRenderScene_Click" Style="{StaticResource ViewportToolButton}"/>
+            <Button x:Name="OpenSceneButton" Content="{DynamicResource RenderPanel.SceneOpen}" Click="OpenRenderScene_Click" Style="{StaticResource ViewportToolButton}"/>
+            <Button x:Name="DeleteSceneButton" Content="{DynamicResource RenderPanel.SceneDelete}" Click="DeleteRenderScene_Click" Style="{StaticResource ViewportToolButton}"/>
+          </UniformGrid>
+        </StackPanel>
+      </Border>
+      <!-- Render actions remain available in every settings section. -->
       <Border DockPanel.Dock="Top" Style="{StaticResource SettingsCard}" Margin="12,12,12,8">
         <StackPanel>
           <Grid>
             <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-            <Button x:Name="RenderButton" Click="RenderButton_Click" MinHeight="46" FontSize="15" FontWeight="SemiBold"
-                    Background="{DynamicResource AccentBrush}" Foreground="White" BorderBrush="{DynamicResource AccentBrush}">
+            <Button x:Name="RenderButton" Click="RenderButton_Click" MinHeight="44" FontSize="14"
+                    Style="{StaticResource RenderPrimaryButton}">
               <StackPanel Orientation="Horizontal">
                 <TextBlock Text="&#xE768;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,10,0"/>
                 <TextBlock Text="{DynamicResource RenderPanel.Render}" VerticalAlignment="Center"/>
               </StackPanel>
             </Button>
             <Button x:Name="PauseButton" Grid.Column="1" Content="{DynamicResource RenderPanel.Pause}"
-                    Click="PauseButton_Click" MinHeight="46" Padding="16,8" Margin="8,0,0,0" IsEnabled="False"/>
+                    Click="PauseButton_Click" Style="{StaticResource ViewportToolButton}" MinHeight="44" Padding="16,8" Margin="8,0,0,0" IsEnabled="False"/>
           </Grid>
           <Grid Margin="0,10,0,0">
-            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-            <ToggleButton x:Name="PreviewToggle" IsChecked="False" Visibility="Collapsed" Padding="12,7" MinHeight="34"
+            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+            <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+            <ToggleButton x:Name="PreviewToggle" IsChecked="False" Style="{StaticResource PreviewSwitch}" Margin="0,0,4,0"
                           Checked="PreviewToggle_Changed" Unchecked="PreviewToggle_Changed"
                           Content="{DynamicResource RenderPanel.Preview}" ToolTip="{DynamicResource RenderPanel.PreviewHint}"/>
-            <Button x:Name="SaveButton" Grid.Column="1" Click="SaveButton_Click" IsEnabled="False" Padding="12,7" MinHeight="34"
-                    Margin="8,0,0,0" ToolTip="{DynamicResource RenderPanel.SaveImage}">
+            <Button x:Name="ShowImageButton" Grid.Column="1" Grid.ColumnSpan="2" Content="{DynamicResource RenderPanel.ShowImage}" Click="ShowImage_Click"
+                    IsEnabled="False" Style="{StaticResource ViewportToolButton}" Padding="10,7" MinHeight="34" ToolTip="{DynamicResource RenderPanel.ShowImageHint}"/>
+            <Button x:Name="SaveButton" Grid.Row="1" Grid.ColumnSpan="2" Click="SaveButton_Click" IsEnabled="False" Style="{StaticResource ViewportToolButton}" Padding="8,7" MinHeight="34"
+                    Margin="0,6,4,0" ToolTip="{DynamicResource RenderPanel.SaveImage}">
               <StackPanel Orientation="Horizontal">
                 <TextBlock Text="&#xE74E;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                <TextBlock Text="{DynamicResource RenderPanel.SaveImage}" VerticalAlignment="Center"/>
+                <TextBlock Text="{DynamicResource RenderPanel.SaveShort}" VerticalAlignment="Center"/>
               </StackPanel>
             </Button>
-            <Button x:Name="CopyButton" Grid.Column="2" Click="CopyButton_Click" IsEnabled="False" Padding="10,7" MinHeight="34"
-                    Margin="8,0,0,0" ToolTip="{DynamicResource RenderPanel.CopyImage}">
+            <Button x:Name="CopyButton" Grid.Row="1" Grid.Column="2" Click="CopyButton_Click" IsEnabled="False" Style="{StaticResource ViewportToolButton}" Padding="10,7" MinHeight="34"
+                    Margin="4,6,0,0" ToolTip="{DynamicResource RenderPanel.CopyImage}">
               <TextBlock Text="&#xE8C8;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" VerticalAlignment="Center"/>
             </Button>
           </Grid>
@@ -702,10 +754,11 @@
     <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Stretch" ResizeBehavior="PreviousAndNext"
                   Background="{DynamicResource PanelBorderBrush}" Cursor="SizeWE" Focusable="False"/>
 
-    <Grid Grid.Column="2" x:Name="ImageHost" ClipToBounds="True" SizeChanged="ImageHost_SizeChanged">
+    <Grid Grid.Column="2" x:Name="ImageHost" ClipToBounds="True" SizeChanged="ImageHost_SizeChanged"
+          AllowDrop="True" DragOver="MaterialDragOver" Drop="MaterialDrop">
       <Grid.Background>
         <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-          <GradientStop Color="#111D2B" Offset="0"/><GradientStop Color="#25394C" Offset="1"/>
+          <GradientStop Color="#91C5DF" Offset="0"/><GradientStop Color="#DCECF0" Offset="1"/>
         </LinearGradientBrush>
       </Grid.Background>
       <Viewport3D x:Name="InteractiveViewport" IsHitTestVisible="False" ClipToBounds="True"/>
@@ -753,13 +806,26 @@
           <TextBlock Text="{DynamicResource RenderPanel.GpuCpuBackend}" Foreground="#BBC9D9" TextWrapping="Wrap" FontSize="10" Margin="0,6,0,0"/>
         </StackPanel>
       </Border>
-      <Border VerticalAlignment="Bottom" HorizontalAlignment="Center" Margin="0,0,0,66" Padding="14,7" CornerRadius="16"
-              Background="#B31E293B" IsHitTestVisible="False">
-        <TextBlock x:Name="HintText" Text="{DynamicResource RenderPanel.Controls}" Foreground="White" FontSize="12"
-                   TextWrapping="Wrap" TextAlignment="Center" MaxWidth="760"/>
+      <Border x:Name="InteractiveHintCard" VerticalAlignment="Top" HorizontalAlignment="Left" Margin="18,18,0,0" Padding="12,9" CornerRadius="8"
+              Background="#D91A3038" BorderBrush="#526F75" BorderThickness="1" IsHitTestVisible="False">
+        <StackPanel>
+          <TextBlock Text="{DynamicResource RenderPanel.InteractiveTitle}" Foreground="#D8F4EF" FontWeight="SemiBold" FontSize="12"/>
+          <TextBlock x:Name="HintText" Text="{DynamicResource RenderPanel.InteractiveHint}" Foreground="#B9CDD0" FontSize="11" Margin="0,3,0,0"/>
+        </StackPanel>
       </Border>
-      <Border VerticalAlignment="Bottom" Background="White" BorderBrush="{DynamicResource PanelBorderBrush}"
-              BorderThickness="0,1,0,0" Padding="18,12">
+      <Border VerticalAlignment="Bottom" HorizontalAlignment="Center" Margin="0,0,0,64" Padding="6" CornerRadius="10"
+              Background="#EA142A31" BorderBrush="#4A6870" BorderThickness="1">
+        <StackPanel Orientation="Horizontal">
+          <Button x:Name="OrbitLeftButton" Style="{StaticResource ViewportToolButton}" Click="OrbitLeft_Click"
+                  Content="{DynamicResource RenderPanel.OrbitLeft}" ToolTip="{DynamicResource RenderPanel.OrbitLeftHint}"/>
+          <Button x:Name="OrbitRightButton" Style="{StaticResource ViewportToolButton}" Click="OrbitRight_Click"
+                  Content="{DynamicResource RenderPanel.OrbitRight}" ToolTip="{DynamicResource RenderPanel.OrbitRightHint}"/>
+          <Button x:Name="FrameModelButton" Style="{StaticResource ViewportToolButton}" Click="FrameModel_Click"
+                  Content="{DynamicResource RenderPanel.FrameModel}" ToolTip="{DynamicResource RenderPanel.FrameModelHint}"/>
+        </StackPanel>
+      </Border>
+      <Border VerticalAlignment="Bottom" Background="#12232C" BorderBrush="#38505A"
+              BorderThickness="0,1,0,0" Padding="18,9">
         <DockPanel>
           <StackPanel x:Name="RenderProgressPanel" DockPanel.Dock="Right" Width="285" Margin="16,0,0,0"
                       Visibility="Collapsed">
@@ -775,7 +841,7 @@
           </StackPanel>
           <TextBlock Text="&#xE9D9;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center"
                      Foreground="{DynamicResource AccentBrush}" Margin="0,0,10,0"/>
-          <TextBlock x:Name="StatusText" Foreground="{DynamicResource PrimaryTextBrush}" FontSize="13.5"
+          <TextBlock x:Name="StatusText" Foreground="#D7E8E7" FontSize="12"
                      TextTrimming="CharacterEllipsis" VerticalAlignment="Center" Text="{DynamicResource RenderPanel.Idle}"/>
         </DockPanel>
       </Border>

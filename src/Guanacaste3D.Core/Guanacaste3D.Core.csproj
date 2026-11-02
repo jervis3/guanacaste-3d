@@ -12,4 +12,7 @@
   <ItemGroup>
     <InternalsVisibleTo Include="rendertool" />
   </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="resources\ai-scene-fidelity.es.txt" LogicalName="Guanacaste3D.AiSceneFidelity.es.txt" WithCulture="false" />
+  </ItemGroup>
 </Project>

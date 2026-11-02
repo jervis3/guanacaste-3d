@@ -160,8 +160,8 @@ internal static partial class InteractionChecks
                   titleBar.Visibility == Visibility.Collapsed && ribbon.Visibility == Visibility.Collapsed &&
                   globalStatus.Visibility == Visibility.Collapsed && return3D.Visibility == Visibility.Visible,
                 "Immersive Render hides the BIM chrome and palettes while leaving a visible 3D return");
-            Check(Math.Abs(imageHost.TranslatePoint(new Point(), panel).X - 475) < 4,
-                "The Render studio has its own resizable 470px sidebar and a separate mode rail");
+            Check(Math.Abs(imageHost.TranslatePoint(new Point(), panel).X - 375) < 4,
+                "The Render studio keeps a compact resizable sidebar and a separate mode rail");
             Check(panel.Background is SolidColorBrush { Color: { R: < 60, G: < 60, B: < 70 } },
                 "The independent Render studio uses a dark photographic theme");
             var sectionTabs = (TabControl)panel.FindName("SectionTabs");
@@ -264,6 +264,13 @@ internal static partial class InteractionChecks
                 "The Render tab displays the project as interactive 3D geometry");
             Check(typeof(RenderPanel).GetField("_preview", PrivateInstance)!.GetValue(panel) is null,
                 "Opening Render does not start the progressive preview worker");
+            var preview = (System.Windows.Controls.Primitives.ToggleButton)panel.FindName("PreviewToggle");
+            preview.IsChecked = true;
+            var previewImage = (Image)panel.FindName("PreviewImage");
+            Check(WaitFor(() => previewImage.Source is WriteableBitmap, 60),
+                "The preview button renders the current camera on demand");
+            preview.IsChecked = false;
+            Check(viewport.Visibility == Visibility.Visible, "Leaving preview restores the interactive model");
             SaveBitmap("artifacts/interaction-evidence/render-workspace-dark.png");
             var before = ((PerspectiveCamera)viewport.Camera!).Position;
             var camera = Field<Guanacaste3D.Core.Navigation.NavigationCamera>("_navigation");
@@ -272,6 +279,53 @@ internal static partial class InteractionChecks
             var navigator = panel.GetType().GetProperty("Navigator", PrivateInstance | System.Reflection.BindingFlags.Public)!.GetValue(panel)!;
             ((Action?)navigator.GetType().GetField("Changed", PrivateInstance)!.GetValue(navigator))?.Invoke();
             Check(((PerspectiveCamera)viewport.Camera!).Position != before, "Moving the shared camera updates the interactive viewport");
+            var orbitButton = (Button)panel.FindName("OrbitRightButton");
+            var beforeOrbit = ((PerspectiveCamera)viewport.Camera!).Position;
+            orbitButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Check(((PerspectiveCamera)viewport.Camera!).Position != beforeOrbit,
+                "The visible orbit control rotates the actual interactive camera");
+            var beforeWheel = camera.Position;
+            imageHost.RaiseEvent(new MouseWheelEventArgs(Mouse.PrimaryDevice, Environment.TickCount, 120)
+            {
+                RoutedEvent = UIElement.MouseWheelEvent
+            });
+            Check(camera.Position != beforeWheel, "A wheel event on the Render surface moves the shared camera");
+            var navigatorType = navigator.GetType();
+            navigatorType.GetField("_dragButton", PrivateInstance)!.SetValue(navigator, MouseButton.Middle);
+            navigatorType.GetField("_pressPoint", PrivateInstance)!.SetValue(navigator, new Point(100, 100));
+            navigatorType.GetField("_last", PrivateInstance)!.SetValue(navigator, new Point(100, 100));
+            navigatorType.GetField("_dragged", PrivateInstance)!.SetValue(navigator, false);
+            var beforeDrag = camera.Position;
+            navigatorType.GetMethod("ProcessPointerMove", PrivateInstance)!.Invoke(navigator,
+                [new Point(150, 120), ModifierKeys.Shift]);
+            Check(camera.Position != beforeDrag, "Shift and middle-button dragging orbits the Render camera");
+            navigatorType.GetField("_dragButton", PrivateInstance)!.SetValue(navigator, null);
+            typeof(RenderPanel).GetField("_showingFinal", PrivateInstance)!.SetValue(panel, true);
+            typeof(RenderPanel).GetField("_rendering", PrivateInstance)!.SetValue(panel, true);
+            typeof(RenderPanel).GetMethod("ShowInteractiveScene", PrivateInstance)!.Invoke(panel, [false]);
+            orbitButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Check(viewport.Visibility == Visibility.Visible &&
+                  !(bool)typeof(RenderPanel).GetField("_showingFinal", PrivateInstance)!.GetValue(panel)!,
+                "Navigating during a render reveals the model without stopping the render job");
+            typeof(RenderPanel).GetField("_rendering", PrivateInstance)!.SetValue(panel, false);
+            var showImageButton = (Button)panel.FindName("ShowImageButton");
+            showImageButton.IsEnabled = true;
+            typeof(RenderPanel).GetMethod("ResetRenderedImageForDocument", PrivateInstance)!.Invoke(panel, null);
+            Check(!showImageButton.IsEnabled && viewport.Visibility == Visibility.Visible,
+                "Opening another project clears the previous render image and returns to 3D navigation");
+            camera.Position = new System.Numerics.Vector3(8.5f, -6, 1.5f);
+            camera.LookAt(new System.Numerics.Vector3(8.5f, 0, 1.5f));
+            panel.GetType().GetMethod("OnCameraChanged", PrivateInstance)!.Invoke(panel, null);
+            var entryType = panel.GetType().GetNestedType("GalleryEntry", BindingFlags.NonPublic)!;
+            var textureKey = (string)tiles.Children.OfType<Button>().First().Tag;
+            var materialEntry = Activator.CreateInstance(entryType, textureKey, "Test", 1d, 0.3d, false, 0.82d, 0d)!;
+            var applyDrop = panel.GetType().GetMethod("ApplyDroppedMaterial", PrivateInstance)!;
+            var dropped = (bool)applyDrop.Invoke(panel, [materialEntry, new Point(imageHost.ActualWidth / 2, imageHost.ActualHeight / 2)])!;
+            Check(dropped && Field<DocumentSession>("_session").Document.RenderMaterials.Any(item => item.ElementId is not null && item.TexturePath == textureKey),
+                "Dropping a gallery material on a wall assigns it specifically to that element");
+            Field<DocumentSession>("_session").Undo();
+            Check(!Field<DocumentSession>("_session").Document.RenderMaterials.Any(item => item.ElementId is not null && item.TexturePath == textureKey),
+                "One undo removes the dropped material assignment");
 
             // A mesh dropped on the window: the import dialog is accepted automatically, as the user would press Import.
             var model = Path.Combine(folder, "tree.obj");

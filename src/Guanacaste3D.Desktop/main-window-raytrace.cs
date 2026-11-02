@@ -84,11 +84,18 @@ public partial class MainWindow
         {
             var document = window.ModelDisplayDocument();
             var textures = RenderTextureLibrary.Previews3D(document.RenderMaterials, window._filePath);
+            var scopedTextures = new Dictionary<(Guid, SurfaceKind), (System.Windows.Media.ImageSource Image, double Size)>();
+            foreach (var assignment in document.RenderMaterials.Where(item => item.ElementId is not null))
+            {
+                var preview = RenderTextureLibrary.Previews3D([assignment with { ElementId = null }], window._filePath);
+                if (preview.TryGetValue(assignment.Category, out var image))
+                    scopedTextures[(assignment.ElementId!.Value, assignment.Category)] = image;
+            }
             var links = window._links.Visible().ToArray();
             var clay = window._renderClay;
             return Task.Run(() =>
             {
-                var snapshot = ModelSceneSnapshot.Build(document, clay, false, false, textures);
+                var snapshot = ModelSceneSnapshot.Build(document, clay, false, false, textures, includeGround: true, scopedTextures: scopedTextures);
                 var models = snapshot.Models.ToList();
                 foreach (var (link, loaded) in links)
                     models.AddRange(ScenePresentation.ToWpfModels(loaded.Proxy, loaded.Model.Materials, link.Placement, clay));
@@ -98,6 +105,14 @@ public partial class MainWindow
         public int SceneVersion => window._sceneVersion;
         public SceneQuery? Query => window._query;
         public IReadOnlyList<RenderMaterialAssignment> RenderMaterials => window._session.Document.RenderMaterials;
+        public IReadOnlyList<RenderSceneBookmark> RenderScenes => window._session.Document.RenderScenes;
+        /// <summary>Persists a scene in the active document.</summary>
+        public void AddRenderScene(string name, RenderSetup setup) => window._session.AddRenderScene(name, setup);
+        /// <summary>Deletes a scene from the active document.</summary>
+        public void RemoveRenderScene(Guid id) => window._session.RemoveRenderScene(id);
+        /// <summary>Resolves a material drop against the active project model.</summary>
+        public (Guid ElementId, SurfaceKind Category)? PickRenderMaterial(Point position, FrameworkElement surface) =>
+            window.PickRenderMaterial(position, surface);
         public string? ProjectFilePath => window._filePath;
 
         /// <summary>Limits the neutral material override to rendered scenes.</summary>

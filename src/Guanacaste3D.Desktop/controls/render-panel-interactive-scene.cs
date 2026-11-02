@@ -17,24 +17,32 @@ public partial class RenderPanel
         var request = ++_interactiveSceneRequest;
         try
         {
-            var snapshot = await source.GetInteractiveSceneAsync();
-            if (request != _interactiveSceneRequest || source != _source ||
-                version != source.SceneVersion || !IsVisible) return;
-            InteractiveViewport.Children.Clear();
-            InteractiveViewport.Children.Add(new ModelVisual3D { Content = new AmbientLight(Color.FromRgb(150, 150, 150)) });
-            InteractiveViewport.Children.Add(new ModelVisual3D
+            var snapshot = await source.GetInteractiveSceneAsync().ConfigureAwait(false);
+            if (Dispatcher.HasShutdownStarted || Dispatcher.HasShutdownFinished) return;
+            await Dispatcher.InvokeAsync(() =>
             {
-                Content = new DirectionalLight(Color.FromRgb(255, 246, 232), new Vector3D(-0.5, -1, -0.4))
+                if (request != _interactiveSceneRequest || source != _source ||
+                    version != source.SceneVersion || !IsVisible) return;
+                InteractiveViewport.Children.Clear();
+                InteractiveViewport.Children.Add(new ModelVisual3D { Content = new AmbientLight(Color.FromRgb(150, 150, 150)) });
+                InteractiveViewport.Children.Add(new ModelVisual3D
+                {
+                    Content = new DirectionalLight(Color.FromRgb(255, 246, 232), new Vector3D(-0.5, -1, -0.4))
+                });
+                foreach (var model in snapshot.Models)
+                    InteractiveViewport.Children.Add(new ModelVisual3D { Content = model });
+                UpdateInteractiveCamera();
             });
-            foreach (var model in snapshot.Models)
-                InteractiveViewport.Children.Add(new ModelVisual3D { Content = model });
-            UpdateInteractiveCamera();
         }
         catch (Exception exception)
         {
             System.Diagnostics.Trace.TraceError("The interactive render scene could not be built: {0}", exception);
-            if (request == _interactiveSceneRequest && source == _source && IsVisible)
-                StatusText.Text = UiText.Get("RenderPanel.ModelViewFailed");
+            if (!Dispatcher.HasShutdownStarted && !Dispatcher.HasShutdownFinished)
+                _ = Dispatcher.BeginInvoke(() =>
+                {
+                    if (request == _interactiveSceneRequest && source == _source && IsVisible)
+                        StatusText.Text = UiText.Get("RenderPanel.ModelViewFailed");
+                });
         }
     }
 
@@ -50,6 +58,7 @@ public partial class RenderPanel
     {
         InteractiveViewport.Visibility = interactive ? Visibility.Visible : Visibility.Collapsed;
         FinalImageBorder.Visibility = interactive ? Visibility.Collapsed : Visibility.Visible;
+        InteractiveHintCard.Visibility = interactive ? Visibility.Visible : Visibility.Collapsed;
         if (interactive) UpdateInteractiveCamera();
     }
 }

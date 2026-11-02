@@ -18,6 +18,19 @@ public partial class RenderPanel
 {
     // A slow previous grading request must never overwrite a newer slider/filter change.
     private int _refinishVersion;
+    private int _renderDocumentVersion;
+
+    /// <summary>Discards a previous project's image and cancels its render when another project is opened.</summary>
+    internal void ResetRenderedImageForDocument()
+    {
+        _renderDocumentVersion++;
+        _refinishVersion++;
+        _cancel?.Cancel();
+        _lastFinal = null;
+        _showingFinal = false;
+        SaveButton.IsEnabled = CopyButton.IsEnabled = ShowImageButton.IsEnabled = false;
+        ShowInteractiveScene(true);
+    }
 
     /// <summary>Re-applies exposure and grading to a finished render without rendering again.</summary>
     private async void RefinishFinal()
@@ -70,7 +83,10 @@ public partial class RenderPanel
     private async Task RenderFinalAsync()
     {
         if (_source is null) return;
+        if (PreviewToggle.IsChecked == true) PreviewToggle.IsChecked = false;
+        var documentVersion = _renderDocumentVersion;
         var scene = await _source.GetSceneAsync();
+        if (documentVersion != _renderDocumentVersion) return;
         if (scene is null)
         {
             StatusText.Text = UiText.Get("RenderPanel.EmptyScene");
@@ -108,7 +124,7 @@ public partial class RenderPanel
         _session?.Dispose();
         _session = new RenderSession(scene, camera, settings, job);
         _lastFinal = null;
-        SaveButton.IsEnabled = CopyButton.IsEnabled = false;
+        SaveButton.IsEnabled = CopyButton.IsEnabled = ShowImageButton.IsEnabled = false;
         _cancel = new CancellationTokenSource();
         SetRendering(true);
         StartRenderTelemetry();
@@ -121,8 +137,8 @@ public partial class RenderPanel
         });
         session.FrameReady += frame => Dispatcher.BeginInvoke(DispatcherPriority.Render, () =>
         {
-            if (session != _session) return;
-            Show(frame);
+            if (session != _session || documentVersion != _renderDocumentVersion) return;
+            if (_showingFinal) Show(frame);
             RenderProgress.Value = Math.Clamp(frame.Progress, 0, 1);
             _estimatedRemaining = frame.Remaining;
             if (!frame.IsFinal)
@@ -143,6 +159,7 @@ public partial class RenderPanel
             SetRendering(false);
             StopRenderTelemetry(result?.Elapsed);
         }
+        if (documentVersion != _renderDocumentVersion) return;
         if (result is null)
         {
             _showingFinal = false;
@@ -155,6 +172,7 @@ public partial class RenderPanel
         if (_lastFinal is not null) RenderProgress.Value = Math.Clamp(_lastFinal.Progress, 0, 1);
         RenderRemainingText.Text = "—";
         SaveButton.IsEnabled = CopyButton.IsEnabled = _lastFinal is not null;
+        ShowImageButton.IsEnabled = _lastFinal is not null;
         if (result.StoppedForMemory)
             StatusText.Text = UiText.Format("RenderPanel.MemoryStop", result.Samples);
         else if (result.Cancelled)
@@ -169,6 +187,15 @@ public partial class RenderPanel
             _session = null;
             GC.Collect();
         }
+    }
+
+    /// <summary>Restores the last completed image after the user returns to interactive navigation.</summary>
+    private void ShowImage_Click(object sender, RoutedEventArgs e)
+    {
+        if (_lastFinal is not { } frame) return;
+        _showingFinal = true;
+        Show(frame);
+        ShowInteractiveScene(false);
     }
 
     /// <summary>Keeps render controls consistent while final-image work is active.</summary>

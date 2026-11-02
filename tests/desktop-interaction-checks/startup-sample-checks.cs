@@ -65,10 +65,19 @@ internal static partial class InteractionChecks
             Check(((System.Windows.Media.Media3D.PerspectiveCamera)viewport.Camera).Position != oldPosition,
                 "Render navigation updates the interactive model camera immediately");
             var captured = panel.CaptureSetup(camera);
-            Check(captured.Width == 1920 && captured.Height == 1080 && captured.DayOfYear == setup.DayOfYear &&
-                  Math.Abs(captured.SolarHour - setup.SolarHour) < 1e-6 && captured.Look == setup.Look && !captured.Bloom &&
+            Check(captured.Width == setup.Width && captured.Height == setup.Height && captured.DayOfYear == setup.DayOfYear &&
+                  Math.Abs(captured.SolarHour - setup.SolarHour) < 1e-6 && captured.Look == setup.Look && captured.Bloom == setup.Bloom &&
                   captured.Quality == setup.Quality,
                 "The Render panel shows the sample's size, sun, quality and filters");
+            var savedPosition = camera.Position;
+            session.AddRenderScene("Exterior", captured);
+            typeof(RenderPanel).GetMethod("RefreshRenderScenes", PrivateInstance)!.Invoke(panel, null);
+            var scenePicker = (ComboBox)panel.FindName("ScenePicker");
+            scenePicker.SelectedIndex = 0;
+            camera.Position += new System.Numerics.Vector3(3, 0, 0);
+            ((Button)panel.FindName("OpenSceneButton")).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Check(System.Numerics.Vector3.Distance(camera.Position, savedPosition) < 0.001,
+                "Opening a named render scene restores its saved camera");
 
             // A recent list in a scratch folder: it keeps the newest first and forgets on request.
             var folder = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"g3d-recents-{Guid.NewGuid():N}");

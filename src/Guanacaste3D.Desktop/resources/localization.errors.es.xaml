@@ -7,6 +7,9 @@
   <sys:String x:Key="Error.A wall references a missing grid axis.">Un muro hace referencia a un eje que no existe.</sys:String>
   <sys:String x:Key="Error.The wall centerline must align with the grid axis.">La línea central del muro debe coincidir con el eje.</sys:String>
   <sys:String x:Key="Error.The grid axis name must contain between 1 and 32 characters.">El nombre del eje debe contener entre 1 y 32 caracteres.</sys:String>
+  <sys:String x:Key="Error.The render scene name is invalid.">El nombre de la escena debe contener entre 1 y 120 caracteres.</sys:String>
+  <sys:String x:Key="Error.The render scene does not exist.">La escena seleccionada ya no existe.</sys:String>
+  <sys:String x:Key="Error.The render scene collection is invalid.">La colección de escenas del proyecto no es válida.</sys:String>
   <sys:String x:Key="Error.The grid axis translation must be finite.">El desplazamiento del eje debe ser finito.</sys:String>
   <sys:String x:Key="Error.A level cannot be null.">Un nivel no puede estar vacío.</sys:String>
   <sys:String x:Key="Error.A project parameter definition is invalid.">La definición del parámetro no es válida.</sys:String>

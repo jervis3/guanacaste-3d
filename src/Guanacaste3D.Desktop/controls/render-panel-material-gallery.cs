@@ -166,6 +166,8 @@ public partial class RenderPanel
                 ToolTip = $"{texture.Label} · escala {texture.Size:0.##} m" + (texture.Imported ? " · .g3dm PBR" : "")
             };
             button.Click += (_, _) => ApplyGalleryTexture(texture);
+            button.PreviewMouseLeftButtonDown += (_, e) => _galleryDragOrigin = e.GetPosition(button);
+            button.MouseMove += (_, e) => StartGalleryDrag(button, texture, e);
             GalleryTiles.Children.Add(button);
             if (_galleryPreviews.TryGetValue(key, out var cached))
             {

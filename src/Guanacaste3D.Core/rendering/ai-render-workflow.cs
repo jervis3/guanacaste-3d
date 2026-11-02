@@ -54,6 +54,10 @@ public static class AiRenderPromptBuilder
         prompt.AppendLine("Usa la imagen de referencia que adjunto como base para generar UNA nueva imagen arquitectónica.");
         prompt.AppendLine("La referencia determina el punto de vista, perspectiva, proporciones, emplazamiento y composición.");
         prompt.AppendLine("No diseñes una casa nueva: transforma visualmente la MISMA escena de la imagen.");
+        using (var fidelityStream = typeof(AiRenderPromptBuilder).Assembly.GetManifestResourceStream("Guanacaste3D.AiSceneFidelity.es.txt")
+            ?? throw new InvalidOperationException("The localized AI fidelity instructions are missing."))
+        using (var fidelityReader = new StreamReader(fidelityStream, Encoding.UTF8))
+            prompt.AppendLine(fidelityReader.ReadToEnd());
         prompt.AppendLine();
         prompt.AppendLine("## Estilo solicitado");
         prompt.AppendLine(style);

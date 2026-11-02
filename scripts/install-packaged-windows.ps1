@@ -11,6 +11,8 @@ if ($EnableThumbnails -and $PreserveThumbnailRegistration) {
 $source = Join-Path $PSScriptRoot 'application'
 $installRoot = Join-Path $env:LOCALAPPDATA 'Programs\Guanacaste 3D'
 $executable = Join-Path $installRoot 'Guanacaste3D.Desktop.exe'
+$uninstaller = Join-Path $installRoot 'uninstall-guanacaste3d.ps1'
+$manifest = Join-Path $installRoot 'installed-files.txt'
 if (-not (Test-Path -LiteralPath (Join-Path $source 'Guanacaste3D.Desktop.exe'))) { throw 'The application payload is missing. Extract the entire ZIP before installing.' }
 $running = Get-CimInstance Win32_Process -Filter "Name='Guanacaste3D.Desktop.exe'" | Where-Object { $_.ExecutablePath -eq $executable }
 if ($running) { throw 'Save your project and close Guanacaste 3D before installing this update.' }
@@ -20,6 +22,14 @@ if ($EnableThumbnails) {
 }
 New-Item -ItemType Directory -Path $installRoot -Force | Out-Null
 Get-ChildItem -LiteralPath $source -Force | Copy-Item -Destination $installRoot -Recurse -Force
+Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'uninstall-guanacaste3d.ps1') -Destination $uninstaller -Force
+Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'uninstall-messages.es.psd1') -Destination $installRoot -Force
+Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'register-thumbnails.ps1') -Destination $installRoot -Force
+$sourcePrefix = [System.IO.Path]::GetFullPath($source).TrimEnd('\') + '\'
+$installedFiles = @(Get-ChildItem -LiteralPath $source -File -Recurse | ForEach-Object { $_.FullName.Substring($sourcePrefix.Length) })
+if (Test-Path -LiteralPath $manifest) { $installedFiles += @(Get-Content -LiteralPath $manifest) }
+$installedFiles += @('uninstall-guanacaste3d.ps1', 'uninstall-messages.es.psd1', 'register-thumbnails.ps1', 'installed-files.txt')
+$installedFiles | Where-Object { $_ } | Sort-Object -Unique | Set-Content -LiteralPath $manifest -Encoding UTF8
 $shell = New-Object -ComObject WScript.Shell
 $shortcut = $shell.CreateShortcut((Join-Path $env:APPDATA 'Microsoft\Windows\Start Menu\Programs\Guanacaste 3D.lnk'))
 $shortcut.TargetPath = $executable
@@ -46,4 +56,16 @@ elseif (-not $PreserveThumbnailRegistration) {
     & (Join-Path $PSScriptRoot 'register-thumbnails.ps1') -Unregister
     Write-Output 'Explorer thumbnails disabled by default. Use -EnableThumbnails only if you accept in-process rendering risks.'
 }
+$uninstallKey = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\Guanacaste3D'
+if (-not (Test-Path -LiteralPath $uninstallKey)) { New-Item -Path $uninstallKey -Force | Out-Null }
+$applicationVersion = (Get-Item -LiteralPath $executable).VersionInfo.ProductVersion.Split('+')[0]
+$windowsPowerShell = Join-Path $env:SystemRoot 'System32\WindowsPowerShell\v1.0\powershell.exe'
+New-ItemProperty -Path $uninstallKey -Name DisplayName -Value 'Guanacaste 3D' -PropertyType String -Force | Out-Null
+New-ItemProperty -Path $uninstallKey -Name DisplayVersion -Value $applicationVersion -PropertyType String -Force | Out-Null
+New-ItemProperty -Path $uninstallKey -Name Publisher -Value 'Guanacaste 3D' -PropertyType String -Force | Out-Null
+New-ItemProperty -Path $uninstallKey -Name InstallLocation -Value $installRoot -PropertyType String -Force | Out-Null
+New-ItemProperty -Path $uninstallKey -Name DisplayIcon -Value "`"$executable`",0" -PropertyType String -Force | Out-Null
+New-ItemProperty -Path $uninstallKey -Name UninstallString -Value "`"$windowsPowerShell`" -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$uninstaller`"" -PropertyType String -Force | Out-Null
+New-ItemProperty -Path $uninstallKey -Name NoModify -Value 1 -PropertyType DWord -Force | Out-Null
+New-ItemProperty -Path $uninstallKey -Name NoRepair -Value 1 -PropertyType DWord -Force | Out-Null
 Write-Output "Installed Guanacaste 3D at $executable."

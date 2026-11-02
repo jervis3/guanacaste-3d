@@ -315,7 +315,10 @@ internal static partial class SurfacePatterns
         var ay = MathF.Abs(normal.Y);
         var az = MathF.Abs(normal.Z);
         if (az >= ax && az >= ay) return (Vector3.UnitX, Vector3.UnitY);
-        return ax >= ay ? (Vector3.UnitY, Vector3.UnitZ) : (Vector3.UnitX, Vector3.UnitZ);
+        var along = new Vector3(normal.Y, -normal.X, 0);
+        if (along.LengthSquared() < 1e-12f) return (Vector3.UnitX, Vector3.UnitZ);
+        if (ax >= ay ? along.Y < 0 : along.X < 0) along = -along;
+        return (Vector3.Normalize(along), Vector3.UnitZ);
     }
 
     private static readonly System.Collections.Concurrent.ConcurrentDictionary<(SurfacePattern, float), float> Means = new();
@@ -350,7 +353,8 @@ internal static partial class SurfacePatterns
         var ay = MathF.Abs(normal.Y);
         var az = MathF.Abs(normal.Z);
         if (az >= ax && az >= ay) return (position.X, position.Y);
-        return ax >= ay ? (position.Y, position.Z) : (position.X, position.Z);
+        var (along, _) = PlaneTangents(normal);
+        return (Vector3.Dot(position, along), position.Z);
     }
 
     /// <summary>Smooth 2D value noise in [0, 1].</summary>

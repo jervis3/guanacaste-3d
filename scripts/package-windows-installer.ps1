@@ -14,6 +14,8 @@ dotnet publish (Join-Path $projectRoot 'src\Guanacaste3D.Desktop\Guanacaste3D.De
 if ($LASTEXITCODE -ne 0) { throw 'The Windows application did not publish.' }
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'install-packaged-windows.ps1') -Destination (Join-Path $package 'install.ps1') -Force
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'register-thumbnails.ps1') -Destination $package -Force
+Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'uninstall-guanacaste3d.ps1') -Destination $package -Force
+Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'uninstall-messages.es.psd1') -Destination $package -Force
 & (Join-Path $PSScriptRoot 'package-runtime.ps1') -Destination $package
 @'
 @echo off

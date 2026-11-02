@@ -496,6 +496,7 @@ StairRailingChecks.Run(Check);
 TwoStoreyHouseChecks.Run(Check);
 ToiletFamilyChecks.Run(Check);
 RenderDetailChecks.Run(Check);
+RenderSceneBookmarkChecks.Run(Check);
 ElectricalChecks.Run(Check);
 CatalogChecks.Run(Check);
 PbrMaterialAuditChecks.Run(Check);

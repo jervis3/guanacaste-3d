@@ -316,7 +316,8 @@ public partial class MainWindow
         // While the pointer is over the 3D view or render preview, W A S D Q E fly the camera instead of triggering tools.
         if (NavigationOwnsKey(e.Key))
         {
-            base.OnPreviewKeyDown(e);
+            ResetShortcutBuffer();
+            e.Handled = true;
             return;
         }
         if (TryHandleDirectWallLengthKey(e))

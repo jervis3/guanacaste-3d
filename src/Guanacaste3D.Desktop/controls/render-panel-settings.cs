@@ -307,17 +307,20 @@ public partial class RenderPanel
                           $" · {width}×{height}";
     }
 
-    /// <summary>Propagates navigation to the live preview and abandons obsolete final-image display state.</summary>
+    /// <summary>Returns to the navigable model on camera movement while retaining any active render job.</summary>
     private void OnCameraChanged()
     {
         if (_source is null) return;
-        if (_showingFinal && !_rendering)
+        if (PreviewToggle.IsChecked == true) PreviewToggle.IsChecked = false;
+        if (_showingFinal)
         {
-            // Moving again leaves the finished picture and returns to the live preview.
             _showingFinal = false;
             ShowInteractiveScene(true);
-            RenderProgressPanel.Visibility = Visibility.Collapsed;
-            RenderTelemetryPanel.Visibility = Visibility.Collapsed;
+            if (!_rendering)
+            {
+                RenderProgressPanel.Visibility = Visibility.Collapsed;
+                RenderTelemetryPanel.Visibility = Visibility.Collapsed;
+            }
             if (PreviewToggle.IsChecked == true) ResumePreview();
         }
         UpdateInteractiveCamera();
@@ -334,6 +337,9 @@ public partial class RenderPanel
         if (PreviewToggle.IsChecked == true)
         {
             _showingFinal = false;
+            PreviewImage.Source = null;
+            _bitmap = null;
+            ShowInteractiveScene(false);
             RenderProgressPanel.Visibility = Visibility.Collapsed;
             RenderTelemetryPanel.Visibility = Visibility.Collapsed;
             if (IsVisible) ResumePreview();
@@ -341,6 +347,11 @@ public partial class RenderPanel
         else
         {
             _preview?.Suspend();
+            if (!_showingFinal)
+            {
+                ShowInteractiveScene(true);
+                if (!_rendering) StatusText.Text = UiText.Get("RenderPanel.Idle");
+            }
         }
     }
 

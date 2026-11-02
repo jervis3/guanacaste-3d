@@ -33,6 +33,8 @@
   <sys:String x:Key="Documentation.DeleteAxis">Eliminar eje</sys:String>
   <sys:String x:Key="Transaction.SetPlanTagVisibility">Mostrar u ocultar etiquetas del plano</sys:String>
   <sys:String x:Key="Transaction.AddGridAxis">Crear eje</sys:String>
+  <sys:String x:Key="Transaction.AddRenderScene">Guardar escena de render</sys:String>
+  <sys:String x:Key="Transaction.RemoveRenderScene">Eliminar escena de render</sys:String>
   <sys:String x:Key="Transaction.EditGridAxis">Editar eje</sys:String>
   <sys:String x:Key="Transaction.BindWallGridAxis">Vincular o desvincular muro del eje</sys:String>
   <sys:String x:Key="Transaction.RemoveGridAxis">Eliminar eje</sys:String>

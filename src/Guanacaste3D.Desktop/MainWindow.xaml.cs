@@ -263,6 +263,7 @@ public partial class MainWindow : Window
         _selectedViewId = null;
         _filePath = filename;
         RenderPanelControl.SetProjectFilePath(_filePath);
+        RenderPanelControl.ResetRenderedImageForDocument();
         // Prevent an async sky load from a previous document from leaking into the new project.
         RenderPanelControl.ClearHdriForDocument();
         RenderPanelControl.ClearLutForDocument();

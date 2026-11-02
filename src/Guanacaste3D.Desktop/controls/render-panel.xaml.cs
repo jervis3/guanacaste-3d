@@ -88,7 +88,9 @@ public partial class RenderPanel : UserControl
         source.SceneChanged += () => Dispatcher.BeginInvoke(RefreshScene);
         source.SceneChanged += () => Dispatcher.BeginInvoke(RefreshInteractiveScene);
         source.SceneChanged += () => Dispatcher.BeginInvoke(RefreshMaterialRows);
+        source.SceneChanged += () => Dispatcher.BeginInvoke(RefreshRenderScenes);
         RefreshMaterialRows();
+        RefreshRenderScenes();
         source.QueryChanged += () => Dispatcher.BeginInvoke(ApplyCollision);
         ApplyCollision();
     }
@@ -119,6 +121,7 @@ public partial class RenderPanel : UserControl
             return;
         }
         ShowInteractiveScene(!_showingFinal);
+        RefreshRenderScenes();
         RefreshInteractiveScene();
         if (_preview is null && PreviewToggle.IsChecked == true) StartPreview();
         else if (PreviewToggle.IsChecked == true && !_showingFinal) ResumePreview();
@@ -254,7 +257,7 @@ public partial class RenderPanel : UserControl
         Dispatcher.BeginInvoke(DispatcherPriority.Render, () =>
         {
             Volatile.Write(ref _framePending, 0);
-            if (_showingFinal || _rendering) return;
+            if (_showingFinal || _rendering || PreviewToggle.IsChecked != true || !IsVisible) return;
             Show(frame);
             StatusText.Text = frame.Samples >= frame.TargetSamples
                 ? UiText.Format("RenderPanel.PreviewReady", frame.Samples)

@@ -17,9 +17,10 @@ internal sealed record ModelSceneSnapshot(IReadOnlyList<GeometryModel3D> Models,
     public static ModelSceneSnapshot Build(BuildingDocument document, bool clay, bool xray, bool showEdges,
         IReadOnlyDictionary<SurfaceKind, (ImageSource Image, double Size)>? textures,
         Vector3? shadowSun = null, BuildingDocument? hiddenDocument = null, IReadOnlySet<Guid>? hiddenIds = null,
-        ModelDetailLevel detail = ModelDetailLevel.Medium, bool thickLines = true)
+        ModelDetailLevel detail = ModelDetailLevel.Medium, bool thickLines = true, bool includeGround = false,
+        IReadOnlyDictionary<(Guid, SurfaceKind), (ImageSource Image, double Size)>? scopedTextures = null)
     {
-        var scene = BuildingMesher.Build(document, includeGround: false, plants: detail == ModelDetailLevel.Fine ? PlantDetail.Render : PlantDetail.Model);
+        var scene = BuildingMesher.Build(document, includeGround: includeGround, plants: detail == ModelDetailLevel.Fine ? PlantDetail.Render : PlantDetail.Model);
         if (detail == ModelDetailLevel.Coarse) scene = SceneDetailFilter.Coarse(scene);
         var indices = new List<int>();
         var minimum = new Vector3(float.PositiveInfinity);
@@ -39,7 +40,9 @@ internal sealed record ModelSceneSnapshot(IReadOnlyList<GeometryModel3D> Models,
         if (!hasGeometry) { minimum = new(-5, -5, 0); maximum = new(5, 5, 3); }
         var thickness = ScenePresentation.EdgeThicknessForBounds(minimum, maximum, thickLines);
         var models = (xray ? ScenePresentation.ToWpfXRay(scene) : clay
-            ? ScenePresentation.ToWpfClay(scene) : ScenePresentation.ToWpfModels(scene, textures)).ToArray();
+            ? ScenePresentation.ToWpfClay(scene) : scopedTextures is { Count: > 0 }
+                ? ScopedScenePresentation.Build(scene, textures, scopedTextures)
+                : ScenePresentation.ToWpfModels(scene, textures)).ToArray();
         // Each edge becomes an eight-sided tube; bound the additional geometry on large models.
         var edgeLimit = scene.TriangleCount > 100_000 ? 10_000 : 80_000;
         var edges = showEdges && !xray
