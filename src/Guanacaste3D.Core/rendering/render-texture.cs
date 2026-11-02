@@ -148,7 +148,14 @@ public sealed partial class RenderTexture
     /// </summary>
     public Vector3 Sample(float u, float v, float footprint)
     {
-        var level = MathF.Log2(MathF.Max(footprint * Math.Max(_widths[0], _heights[0]), 1e-6f));
+        // Invalid UVs must never inject NaN into the lighting integrator.
+        // A heavily blurred texel is a stable fallback for a malformed projection.
+        if (!float.IsFinite(u) || !float.IsFinite(v)) return Mean;
+        // Adding logarithms avoids overflow when a very large but finite
+        // footprint is multiplied by the texture resolution.
+        var level = float.IsFinite(footprint) && footprint > 0
+            ? MathF.Log2(footprint) + MathF.Log2(Math.Max(_widths[0], _heights[0]))
+            : 0f;
         if (level <= 0) return Bilinear(0, u, v);
         var last = _levels.Length - 1;
         if (level >= last) return Bilinear(last, u, v);
@@ -162,7 +169,10 @@ public sealed partial class RenderTexture
     /// <summary>Size in tiles of one texel at the detail level a footprint selects; the step for relief slopes.</summary>
     public float TexelSize(float footprint)
     {
-        var level = Math.Clamp((int)MathF.Log2(MathF.Max(footprint * Math.Max(_widths[0], _heights[0]), 1e-6f)), 0, _levels.Length - 1);
+        var level = float.IsFinite(footprint) && footprint > 0
+            ? Math.Clamp((int)MathF.Floor(MathF.Log2(footprint) +
+                MathF.Log2(Math.Max(_widths[0], _heights[0]))), 0, _levels.Length - 1)
+            : 0;
         return 1f / Math.Max(_widths[level], _heights[level]);
     }
 
