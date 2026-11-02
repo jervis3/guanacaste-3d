@@ -365,6 +365,28 @@ try { PolygonTriangulator.Triangulate([new(0, 0), new(1, 1), new(2, 2)]); }
 catch (ArgumentException) { failed = true; }
 Check(failed, "Degenerate outlines are rejected by the triangulator");
 
+// A local floor outline can be placed far from the project origin without losing its area.
+var distantL = lShape.Select(point => new Point2(point.X + 1_000_000_000, point.Y + 1_000_000_000)).ToArray();
+var distantTriangles = PolygonTriangulator.Triangulate(distantL);
+var distantArea = distantTriangles.Sum(t =>
+    Math.Abs(PolygonTriangulator.SignedDoubleArea([distantL[t.A], distantL[t.B], distantL[t.C]])) / 2);
+Check(distantTriangles.Count == 4 &&
+      Math.Abs(PolygonTriangulator.SignedDoubleArea(distantL) / 2 - 18) < 1e-9 &&
+      Math.Abs(distantArea - 18) < 1e-9,
+    "Large project coordinates retain precise floor areas and triangulation");
+foreach (var invalidOutline in new Point2[][]
+{
+    [new(0, 0), new(double.NaN, 1), new(0, 2)],
+    [new(0, 0), new(double.PositiveInfinity, 1), new(0, 2)],
+    [new(0, 0), new(double.MaxValue, 0), new(0, double.MaxValue)]
+})
+{
+    var rejected = false;
+    try { PolygonTriangulator.Triangulate(invalidOutline); }
+    catch (ArgumentException) { rejected = true; }
+    Check(rejected, "Triangulation rejects non-finite coordinates or overflowed areas");
+}
+
 var renderSession = new DocumentSession(BuildingDocument.Create("Render"));
 var renderLevel = renderSession.Document.Levels[0].Id;
 var renderWall = renderSession.AddWall(renderLevel, new Point2(0, 0), new Point2(8, 0));
