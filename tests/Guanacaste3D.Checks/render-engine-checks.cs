@@ -161,6 +161,24 @@ static class RenderEngineChecks
         check(rgba.Width == 2 && rgba.Height == 1 && rgba.HasAlpha &&
               rgba.Alpha(0.25f, 0.5f) > 0.99f && rgba.Alpha(0.75f, 0.5f) < 0.01f,
             "Valid RGBA cut-out textures retain their dimensions and alpha coverage");
+
+        // Color maps must make the same safe mip choice as roughness/height maps:
+        // extreme finite footprints are fully blurred, not accidentally sharp.
+        var color = RenderTexture.FromBgra32(2, 2,
+            [0, 0, 255, 255, 0, 0, 0, 255, 0, 0, 0, 255, 0, 0, 0, 255]);
+        var near = color.Sample(.25f, .75f, 0f);
+        var far = color.Sample(.25f, .75f, float.MaxValue);
+        check(near.X > .99f && far.X > .22f && far.X < .28f &&
+              MathF.Abs(color.TexelSize(float.MaxValue) - 1f) < 1e-6f,
+            "Extreme finite color texture footprints use the coarsest mip and texel size");
+        var invalidUv = color.Sample(float.NaN, .75f, 0f);
+        var invalidFootprint = color.Sample(.25f, .75f, float.NaN);
+        check(float.IsFinite(invalidUv.X) && float.IsFinite(invalidUv.Y) &&
+              float.IsFinite(invalidUv.Z) &&
+              Vector3.Distance(invalidUv, color.Mean) < 1e-6f &&
+              Vector3.Distance(invalidFootprint, near) < 1e-6f &&
+              MathF.Abs(color.TexelSize(float.NaN) - .5f) < 1e-6f,
+            "Malformed color UVs and footprints never propagate NaN into PBR shading");
     }
 
     private static void Sky(Action<bool, string> check)
