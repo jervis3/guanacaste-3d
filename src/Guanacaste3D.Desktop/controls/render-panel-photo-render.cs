@@ -119,8 +119,9 @@ public partial class RenderPanel
         }
 
         // After a batch the camera and filters go back to what they were, so the next photo is not affected;
-        // after a single render the finished picture stays on screen.
-        if (saved.Count > 1 && ReferenceEquals(source, _source))
+        // after a single render the finished picture stays on screen. This depends on the number of requested
+        // photos, not the number successfully saved (failed/cancelled batches must restore the view too).
+        if (targets.Length > 1 && ReferenceEquals(source, _source))
         {
             _applyingPhoto = true;
             _navigator?.ApplyCamera(new System.Numerics.Vector3((float)original.CameraX, (float)original.CameraY, (float)original.CameraZ),

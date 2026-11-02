@@ -31,6 +31,14 @@ static class RenderPhotoChecks
         check(session.Document.RenderScenes[0].Name == "Fachada norte" && session.Document.RenderScenes[0].Thumbnail == "BBBB",
             "Renaming a photo keeps its preview");
 
+        session.UpdateRenderPhoto(id, setup: warm);
+        check(session.Document.RenderScenes[0].Thumbnail == "BBBB",
+            "Reapplying the same photo setup preserves its preview");
+        session.UpdateRenderPhoto(id, setup: warm with { ExposureStops = 0.4 });
+        check(session.Document.RenderScenes[0].Thumbnail is null,
+            "Changing a photo's camera or filters without a new preview invalidates its stale thumbnail");
+        session.UpdateRenderPhoto(id, setup: warm, thumbnail: "BBBB");
+
         session.AddRenderPhoto("Interior", first with { CameraX = 0 }, null, index: 0);
         check(session.Document.RenderScenes[0].Name == "Interior" && session.Document.RenderScenes[1].Id == id,
             "A duplicated photo can be inserted next to its source");
