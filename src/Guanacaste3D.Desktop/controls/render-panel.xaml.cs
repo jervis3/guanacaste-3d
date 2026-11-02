@@ -88,6 +88,7 @@ public partial class RenderPanel : UserControl
         _navigator.LumionControls = true;
         InitializePhotos();
         InitializeLens();
+        InitializeModes();
         _navigator.Changed += OnCameraChanged;
         source.SceneChanged += () => Dispatcher.BeginInvoke(RefreshScene);
         source.SceneChanged += () => Dispatcher.BeginInvoke(RefreshInteractiveScene);

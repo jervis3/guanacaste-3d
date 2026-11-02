@@ -322,7 +322,7 @@ public sealed partial class PathTracer
         var halfHeight = MathF.Tan(Math.Clamp(_camera.VerticalFieldOfViewDegrees, 5f, 150f) * MathF.PI / 360);
         var halfWidth = halfHeight * Width / Height;
         CameraBasis basis;
-        if (_camera.CorrectVerticals && MathF.Abs(forward.Z) < 0.97f)
+        if (_camera.CorrectVerticals && !_camera.Panoramic && MathF.Abs(forward.Z) < 0.97f)
         {
             var horizontal = Vector3.Normalize(new Vector3(forward.X, forward.Y, 0));
             var rightLevel = Vector3.Normalize(Vector3.Cross(horizontal, Vector3.UnitZ));
@@ -342,6 +342,7 @@ public sealed partial class PathTracer
             var (sin, cos) = MathF.SinCos(roll);
             basis = basis with { Right = basis.Right * cos + basis.Up * sin, Up = basis.Up * cos - basis.Right * sin };
         }
+        if (_camera.Panoramic) return basis;
         // Shifts are fractions of the frame height: the sensor slides behind the lens, so lines stay parallel.
         return basis with
         {
@@ -350,14 +351,30 @@ public sealed partial class PathTracer
         };
     }
 
+    /// <summary>
+    /// The direction through a point of the image (x and y from −1 to 1): a flat sensor for an ordinary lens, or the
+    /// longitude and latitude of an equirectangular 360° panorama.
+    /// </summary>
+    private Vector3 ViewDirection(in CameraBasis basis, float x, float y)
+    {
+        if (!_camera.Panoramic)
+            return basis.Forward + basis.Right * (x * basis.HalfWidth + basis.HorizontalShift) +
+                   basis.Up * (y * basis.HalfHeight + basis.VerticalShift);
+        var longitude = x * MathF.PI;
+        var latitude = y * MathF.PI / 2;
+        var (sinLon, cosLon) = MathF.SinCos(longitude);
+        var (sinLat, cosLat) = MathF.SinCos(latitude);
+        return basis.Forward * (cosLat * cosLon) + basis.Right * (cosLat * sinLon) + basis.Up * sinLat;
+    }
+
     /// <summary>Creates the primary ray through continuous pixel coordinates, including thin-lens blur.</summary>
     private (Vector3 Origin, Vector3 Direction) PrimaryRay(in CameraBasis basis, float column, float row,
         ref Sampler sampler)
     {
         var x = 2 * column / Width - 1;
         var y = 1 - 2 * row / Height;
-        var unscaled = basis.Forward + basis.Right * (x * basis.HalfWidth + basis.HorizontalShift) + basis.Up * (y * basis.HalfHeight + basis.VerticalShift);
-        if (_camera.ApertureRadius <= 0) return (_camera.Position, Vector3.Normalize(unscaled));
+        var unscaled = ViewDirection(basis, x, y);
+        if (_camera.ApertureRadius <= 0 || _camera.Panoramic) return (_camera.Position, Vector3.Normalize(unscaled));
         var lens = Sampling.Disk(sampler.NextFloat(), sampler.NextFloat()) * _camera.ApertureRadius;
         var origin = _camera.Position + basis.Right * lens.X + basis.Up * lens.Y;
         var focus = _camera.Position + unscaled * _camera.EffectiveFocusDistance;
@@ -381,8 +398,7 @@ public sealed partial class PathTracer
                 var camera = _camera with { ApertureRadius = 0 };
                 var x = 2 * (column + 0.5f) / Width - 1;
                 var y = 1 - 2 * (row + 0.5f) / Height;
-                var direction = Vector3.Normalize(basis.Forward + basis.Right * (x * basis.HalfWidth + basis.HorizontalShift) +
-                                                  basis.Up * (y * basis.HalfHeight + basis.VerticalShift));
+                var direction = Vector3.Normalize(ViewDirection(basis, x, y));
                 var origin = camera.Position;
                 var found = false;
                 var travelled = 0f;
@@ -789,8 +805,7 @@ public sealed partial class PathTracer
                 var index = row * Width + column;
                 var x = 2 * (column + 0.5f) / Width - 1;
                 var y = 1 - 2 * (row + 0.5f) / Height;
-                var direction = Vector3.Normalize(basis.Forward + basis.Right * (x * basis.HalfWidth + basis.HorizontalShift) +
-                                                  basis.Up * (y * basis.HalfHeight + basis.VerticalShift));
+                var direction = Vector3.Normalize(ViewDirection(basis, x, y));
                 var origin = _camera.Position;
                 var travelled = 0f;
                 hits[index].Depth = float.PositiveInfinity;

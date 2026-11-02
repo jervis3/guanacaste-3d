@@ -288,6 +288,8 @@ public partial class RenderPanel
             CorrectVerticals = VerticalsCheck.IsChecked == true,
             ApertureRadius = radius,
             FocusDistance = focus,
+            // A panorama sees every direction from the camera position; a lens opening has no meaning there.
+            Panoramic = PanoramaMode,
             RollDegrees = (float)RollSlider.Value,
             ShiftX = (float)(ShiftXSlider.Value / 100),
             ShiftY = (float)(ShiftYSlider.Value / 100)
@@ -297,6 +299,7 @@ public partial class RenderPanel
     /// <summary>Reads the requested output dimensions before applying quality scaling.</summary>
     private (int Width, int Height) SelectedBaseSize()
     {
+        if (PanoramaMode) return (4096, 2048);
         var tag = Mode(SizePicker).Split('x');
         if (tag.Length == 2 && int.TryParse(tag[0], out var w) && int.TryParse(tag[1], out var h) && w > 0 && h > 0) return (w, h);
         var width = Math.Max(640, (int)ImageHost.ActualWidth);

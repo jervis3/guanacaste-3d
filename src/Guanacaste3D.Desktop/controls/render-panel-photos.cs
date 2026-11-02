@@ -57,8 +57,38 @@ public partial class RenderPanel
         }
         PhotoCards.Children.Clear();
         for (var index = 0; index < photos.Count; index++) PhotoCards.Children.Add(BuildPhotoCard(photos[index], index + 1));
-        PhotoEmptyHint.Visibility = photos.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+        // Lumion keeps ten camera slots per set: the free ones are shown so a click (or Ctrl+number) fills the next.
+        for (var number = photos.Count + 1; number <= SlotCount; number++) PhotoCards.Children.Add(BuildEmptySlot(number, number == photos.Count + 1));
+        PhotoEmptyHint.Visibility = Visibility.Collapsed;
         PhotoCountText.Text = photos.Count switch { 0 => "", 1 => "1 foto", _ => $"{photos.Count} fotos" };
+    }
+
+    private const int SlotCount = 10;
+
+    /// <summary>A numbered, empty camera slot; only the next free one can be filled by a click, the others keep their order.</summary>
+    private FrameworkElement BuildEmptySlot(int number, bool next)
+    {
+        var label = new StackPanel { VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Center };
+        label.Children.Add(new TextBlock
+        {
+            Text = (number % 10).ToString(CultureInfo.InvariantCulture), FontSize = 22, FontWeight = FontWeights.SemiBold,
+            HorizontalAlignment = HorizontalAlignment.Center, Foreground = new SolidColorBrush(Color.FromRgb(0x5E, 0x78, 0x8A))
+        });
+        label.Children.Add(new TextBlock
+        {
+            Text = next ? "Guardar la vista" : "Libre", FontSize = 10.5, HorizontalAlignment = HorizontalAlignment.Center,
+            Foreground = new SolidColorBrush(Color.FromRgb(next ? (byte)0x8F : (byte)0x5E, next ? (byte)0xA6 : (byte)0x78, next ? (byte)0xB9 : (byte)0x8A))
+        });
+        var slot = new Border
+        {
+            Width = 138, Height = 106, Margin = new Thickness(0, 0, 8, 0), CornerRadius = new CornerRadius(8), Child = label,
+            Background = new SolidColorBrush(Color.FromArgb(40, 255, 255, 255)), BorderBrush = CardBorderIdle,
+            BorderThickness = new Thickness(1), Cursor = next ? Cursors.Hand : Cursors.Arrow,
+            ToolTip = next ? $"Guarda la vista actual en la cámara {number % 10} (Ctrl+{number % 10})" : $"Cámara {number % 10} libre",
+            Tag = number
+        };
+        if (next) slot.MouseLeftButtonDown += (_, e) => { AddPhoto(); e.Handled = true; };
+        return slot;
     }
 
     private FrameworkElement BuildPhotoCard(RenderSceneBookmark photo, int number)

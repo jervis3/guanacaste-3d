@@ -23,6 +23,9 @@ public readonly record struct RenderCamera(Vector3 Position, Vector3 Target, flo
     /// <summary>Lens shift as a fraction of the frame height: positive moves the view up, keeping verticals parallel.</summary>
     public float ShiftY { get; init; }
 
+    /// <summary>Renders a full 360° × 180° equirectangular panorama from the camera position (use a 2:1 image).</summary>
+    public bool Panoramic { get; init; }
+
     /// <summary>Frames the mesh bounds from a south-east, elevated three-quarter viewpoint.</summary>
     public static RenderCamera FrameBounds(Vector3 min, Vector3 max, float azimuthDegrees = -50,
         float elevationDegrees = 28, float distanceScale = 1)

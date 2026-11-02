@@ -995,6 +995,8 @@
           </StackPanel>
         </Grid>
       </Border>
+      <!-- Mode switch, movie timeline and panorama bar are built in render-panel-modes.cs. -->
+      <Grid x:Name="ModeOverlayHost"/>
       <Border VerticalAlignment="Bottom" Background="#12232C" BorderBrush="#38505A"
               BorderThickness="0,1,0,0" Padding="18,9">
         <DockPanel>

@@ -107,6 +107,18 @@ static class RenderPhotoChecks
         check(Math.Abs(plain.Depth[middle] - rolled.Depth[middle]) < 0.5f && differing > plain.Depth.Length / 20,
             "Rolling the camera turns the picture about its centre");
 
+        // A 360° panorama (odd sizes put a pixel exactly on the view axis): the middle looks where the camera does,
+        // and the picture covers the sky as well as the building.
+        const int pw = 65, ph = 33;
+        var flat = new PathTracer(scene, pw, ph, framed).CaptureFeatures();
+        var pano = new PathTracer(scene, pw, ph, framed with { Panoramic = true }).CaptureFeatures();
+        var centre = (ph / 2) * pw + pw / 2;
+        check(Math.Abs(pano.Depth[centre] - flat.Depth[centre]) < 0.02f * Math.Max(1, flat.Depth[centre]),
+            "The middle of a panorama looks where the camera looks");
+        var hits = pano.Depth.Count(float.IsFinite);
+        check(hits > pano.Depth.Length / 20 && hits < pano.Depth.Length - pano.Depth.Length / 20,
+            "A panorama shows the building and the sky around it");
+
         var lens = new RenderSetup { RollDegrees = 12, ShiftX = -0.1, ShiftY = 0.2, FocusDistance = 8 };
         lens.Validate();
         var rejected = 0;

@@ -48,11 +48,16 @@ public partial class RenderPanel
         for (var i = 0; i < _path.Marks.Count; i++)
             MarksList.Items.Add(UiText.Format("RenderPanel.MarkName", i + 1, i == 0 ? 0 : _path.Marks[i].SecondsFromPrevious));
         MarksList.SelectedIndex = Math.Min(selected, MarksList.Items.Count - 1);
+        _playTime = Math.Min(_playTime, _path.Duration);
+        RedrawTimeline();
     }
 
     /// <summary>Updates walkthrough controls for the selected camera mark.</summary>
-    private void MarksList_SelectionChanged(object sender, SelectionChangedEventArgs e) =>
+    private void MarksList_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
         GoToMarkButton.IsEnabled = RemoveMarkButton.IsEnabled = MarksList.SelectedIndex >= 0;
+        RedrawTimeline();
+    }
 
     /// <summary>Applies the selected camera mark to the shared model and render camera.</summary>
     private void GoToMark_Click(object sender, RoutedEventArgs e)
@@ -95,12 +100,14 @@ public partial class RenderPanel
         }
         _tourStart = DateTime.UtcNow;
         PlayTourButton.Content = UiText.Get("RenderPanel.StopTour");
+        SyncPlayButton(true);
         _tourTimer = new DispatcherTimer(DispatcherPriority.Render) { Interval = TimeSpan.FromMilliseconds(33) };
         _tourTimer.Tick += (_, _) =>
         {
             var seconds = (float)(DateTime.UtcNow - _tourStart).TotalSeconds;
             var (position, target, fieldOfView) = _path.Sample(seconds);
             ApplyCamera(position, target, fieldOfView);
+            UpdatePlayhead(seconds);
             if (seconds >= _path.Duration) StopTour();
         };
         _tourTimer.Start();
@@ -112,6 +119,7 @@ public partial class RenderPanel
         _tourTimer?.Stop();
         _tourTimer = null;
         PlayTourButton.Content = UiText.Get("RenderPanel.PlayTour");
+        SyncPlayButton(false);
     }
 
     /// <summary>Exports a bounded image sequence from the camera path with cancellation and memory checks.</summary>
