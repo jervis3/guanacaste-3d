@@ -1,4 +1,4 @@
-@{
+﻿@{
     Title = 'Guanacaste 3D'
     Running = 'Guarda tu trabajo y cierra Guanacaste 3D antes de desinstalarlo.'
     MissingManifest = 'No se encontró la lista de archivos instalados. No se eliminaron archivos.'
