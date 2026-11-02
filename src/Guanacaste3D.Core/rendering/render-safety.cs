@@ -54,8 +54,20 @@ public static class RenderSafety
     }
 
     /// <summary>Bytes a render of this size is expected to need on top of the scene itself.</summary>
-    public static long EstimateBytes(int width, int height, long sceneTriangles, long sceneBytes) =>
-        RenderSettings.EstimateImageBytes(width, height) + (long)width * height * 16 + sceneBytes + sceneTriangles * 80;
+    public static long EstimateBytes(int width, int height, long sceneTriangles, long sceneBytes)
+    {
+        if (width < 0 || height < 0) throw new ArgumentOutOfRangeException(nameof(width));
+        if (sceneTriangles < 0) throw new ArgumentOutOfRangeException(nameof(sceneTriangles));
+        if (sceneBytes < 0) throw new ArgumentOutOfRangeException(nameof(sceneBytes));
+
+        // 66 bytes of render accumulators + 16 bytes of auxiliary image data per pixel.
+        // Saturate instead of wrapping a large imported scene into a negative "safe" estimate.
+        var fixedCost = sceneTriangles > (long.MaxValue - sceneBytes) / 80
+            ? long.MaxValue : sceneBytes + sceneTriangles * 80;
+        var pixels = (long)width * height;
+        return pixels > (long.MaxValue - fixedCost) / 82
+            ? long.MaxValue : fixedCost + pixels * 82;
+    }
 
     /// <summary>
     /// Returns the largest size not exceeding the requested one that fits the free memory, keeping the aspect ratio.

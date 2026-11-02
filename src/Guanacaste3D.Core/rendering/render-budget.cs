@@ -87,14 +87,23 @@ public static class QualityPlanner
             notes.Add(PlanNote.BatteryLowered);
         }
 
-        var budget = (long)(hardware.AvailableMemoryBytes * MemoryShare);
-        var sceneCost = sceneBytes + sceneTriangles * BytesPerSceneTriangle;
+        if (sceneTriangles < 0) throw new ArgumentOutOfRangeException(nameof(sceneTriangles));
+        if (sceneBytes < 0) throw new ArgumentOutOfRangeException(nameof(sceneBytes));
+        var budget = (long)(Math.Max(0, hardware.AvailableMemoryBytes) * MemoryShare);
+        var sceneCost = sceneTriangles > (long.MaxValue - sceneBytes) / BytesPerSceneTriangle
+            ? long.MaxValue : sceneBytes + sceneTriangles * BytesPerSceneTriangle;
         if (sceneCost > budget * 0.6) notes.Add(PlanNote.SceneNearBudget);
 
         var width = outputWidth;
         var height = outputHeight;
-        // Working buffers for the image plus the 4-byte output.
-        long Cost(int w, int h) => sceneCost + RenderSettings.EstimateImageBytes(w, h) + (long)w * h * 4;
+        // 66 bytes of render accumulators + 4 bytes of output per pixel.
+        // Saturation prevents an enormous scene or requested image from appearing to fit.
+        long Cost(int w, int h)
+        {
+            var pixels = (long)w * h;
+            return pixels > (long.MaxValue - sceneCost) / 70
+                ? long.MaxValue : sceneCost + pixels * 70;
+        }
         var reduced = false;
         while (Cost(width, height) > budget && width > MinimumWidth && height > MinimumWidth * 9 / 16)
         {
