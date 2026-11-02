@@ -97,6 +97,9 @@ jobs:
           foreach ($call in $callSites) {
             if ($call -notmatch '-AllowInProcess') { throw "Unsafe thumbnail registration call site: $call" }
           }
+      - name: Verify uninstaller preserves native projects and PBR material packages
+        shell: pwsh
+        run: ./tests/installer-checks/uninstall-file-checks.ps1
       - name: Restore
         run: dotnet restore Guanacaste3D.slnx
       - name: Compile
