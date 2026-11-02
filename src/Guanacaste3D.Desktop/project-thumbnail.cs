@@ -162,14 +162,27 @@ internal static class ProjectThumbnail
         return bitmap;
     }
 
-    /// <summary>Writes a preview as PNG, replacing an older cached image.</summary>
+    /// <summary>Publishes a complete PNG cache file atomically, preserving the previous image on failure.</summary>
     public static void Save(BitmapSource image, string path)
     {
-        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-        var encoder = new PngBitmapEncoder();
-        encoder.Frames.Add(BitmapFrame.Create(image));
-        using var stream = File.Create(path);
-        encoder.Save(stream);
+        var destination = Path.GetFullPath(path);
+        var directory = Path.GetDirectoryName(destination)!;
+        Directory.CreateDirectory(directory);
+        // A unique sibling file keeps concurrent thumbnail generations independent.
+        // The final same-directory rename prevents Home from observing a partial PNG.
+        var temporary = Path.Combine(directory, $".{Path.GetFileName(destination)}.{Guid.NewGuid():N}.tmp");
+        try
+        {
+            var encoder = new PngBitmapEncoder();
+            encoder.Frames.Add(BitmapFrame.Create(image));
+            using (var stream = new FileStream(temporary, FileMode.CreateNew, FileAccess.Write, FileShare.None))
+                encoder.Save(stream);
+            File.Move(temporary, destination, overwrite: true);
+        }
+        finally
+        {
+            if (File.Exists(temporary)) File.Delete(temporary);
+        }
     }
 
     /// <summary>Loads a cached PNG without locking it; invalid caches are ignored.</summary>
@@ -177,7 +190,7 @@ internal static class ProjectThumbnail
     {
         try
         {
-            using var stream = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.Read);
+            using var stream = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.Read | FileShare.Delete);
             if (stream.Length is < 24 or > MaximumCachedPngBytes) return null;
 
             // Validate the PNG signature and IHDR dimensions before WPF allocates pixels.
