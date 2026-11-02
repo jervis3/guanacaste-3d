@@ -197,7 +197,7 @@ internal static class ProjectThumbnail
             var image = new BitmapImage();
             image.BeginInit();
             image.CacheOption = BitmapCacheOption.OnLoad;
-            image.CreateOptions = BitmapCreateOptions.IgnoreImageCache;
+            // StreamSource does not use the URI image cache (IgnoreImageCache requires UriSource).
             image.StreamSource = stream;
             image.EndInit();
             image.Freeze();
@@ -206,7 +206,6 @@ internal static class ProjectThumbnail
         catch (Exception ex) when (ex is IOException or NotSupportedException or UnauthorizedAccessException
             or ArgumentException or FileFormatException)
         {
-            Console.Error.WriteLine("PNG CACHE DEBUG: " + ex);
             return null;
         }
     }
