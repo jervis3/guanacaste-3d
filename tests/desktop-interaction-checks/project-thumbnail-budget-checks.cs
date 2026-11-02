@@ -38,7 +38,30 @@ internal static partial class InteractionChecks
               mixedFaces.Any(index => denseMixed[index] == SurfaceKind.WallConcrete),
             "Mixed high-density models remain bounded and retain architecture and decorative context");
 
+        ProjectThumbnailRenderChecks(thumbnail);
         ProjectThumbnailCacheLoadChecks(thumbnail);
+    }
+
+    /// <summary>The allocation-free bounds pass must preserve actual preview pixels.</summary>
+    private static void ProjectThumbnailRenderChecks(Type thumbnail)
+    {
+        var faceType = thumbnail.GetNestedType("Face", BindingFlags.Public | BindingFlags.NonPublic)!;
+        var face = Activator.CreateInstance(faceType,
+            new System.Windows.Point(0, 0),
+            new System.Windows.Point(1, 0),
+            new System.Windows.Point(0.5, 1),
+            0.0,
+            System.Windows.Media.Color.FromRgb(255, 0, 0))!;
+        var faces = Array.CreateInstance(faceType, 1);
+        faces.SetValue(face, 0);
+        var render = thumbnail.GetMethod("Render", BindingFlags.Static | BindingFlags.Public)!;
+        var bitmap = (System.Windows.Media.Imaging.BitmapSource)render.Invoke(null, [faces])!;
+        Check(bitmap.PixelWidth == 384 && bitmap.PixelHeight == 384,
+            "Home preview retains its expected 384-by-384 dimensions");
+        var pixel = new byte[4];
+        bitmap.CopyPixels(new System.Windows.Int32Rect(192, 192, 1, 1), pixel, 4, 0);
+        Check(pixel[2] > 200 && pixel[1] < 40 && pixel[0] < 40,
+            "Home preview still paints the projected architectural face at its center");
     }
 
     /// <summary>Corrupt or unexpectedly large cached images must never break the Home screen.</summary>
