@@ -46,7 +46,7 @@ public sealed partial class DocumentSession
         return photo.Id;
     }
 
-    /// <summary>Replaces the effects, camera, name or preview of a photo; null arguments keep the current value.</summary>
+    /// <summary>Replaces a photo's effects, camera, name or preview. A changed setup without a new preview clears the stale thumbnail; renaming keeps it.</summary>
     public void UpdateRenderPhoto(Guid id, RenderSetup? setup = null, string? name = null, string? thumbnail = null)
     {
         var at = Document.RenderScenes.FindIndex(scene => scene.Id == id);
@@ -58,7 +58,7 @@ public sealed partial class DocumentSession
         {
             Setup = setup ?? current.Setup,
             Name = name is null ? current.Name : ValidPhotoName(name),
-            Thumbnail = thumbnail ?? current.Thumbnail
+            Thumbnail = thumbnail ?? (setup is not null && setup != current.Setup ? null : current.Thumbnail)
         };
         RenderPhotosChanged?.Invoke(this, EventArgs.Empty);
     }
