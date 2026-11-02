@@ -44,6 +44,11 @@ public partial class RenderPanel
         ShiftXSlider.Value = setup.ShiftX * 100;
         ShiftYSlider.Value = setup.ShiftY * 100;
         FocusSlider.Value = Math.Min(FocusSlider.Maximum, setup.FocusDistance);
+        ApertureCheck.IsChecked = setup.FNumber > 0;
+        if (setup.FNumber > 0) ApertureSlider.Value = Math.Clamp(setup.FNumber, ApertureSlider.Minimum, ApertureSlider.Maximum);
+        AperturePanel.Visibility = setup.FNumber > 0 ? System.Windows.Visibility.Visible : System.Windows.Visibility.Collapsed;
+        ContrastSlider.Value = setup.ContrastAdjust;
+        SaturationSlider.Value = setup.SaturationAdjust;
         ArtificialLightsCheck.IsChecked = setup.ArtificialLights;
         StoneDetailCheck.IsChecked = setup.StoneMicrogeometry;
         HdriYawSlider.Value = setup.EnvironmentYawDegrees;
@@ -96,7 +101,8 @@ public partial class RenderPanel
             Vignette = VignetteCheck.IsChecked == true, CorrectVerticals = VerticalsCheck.IsChecked == true,
             DepthOfField = DepthOfFieldSlider.Value,
             RollDegrees = RollSlider.Value, ShiftX = ShiftXSlider.Value / 100, ShiftY = ShiftYSlider.Value / 100,
-            FocusDistance = FocusSlider.Value, ArtificialLights = ArtificialLightsCheck.IsChecked == true,
+            FocusDistance = FocusSlider.Value, FNumber = ApertureCheck.IsChecked == true ? ApertureSlider.Value : 0,
+            ContrastAdjust = ContrastSlider.Value, SaturationAdjust = SaturationSlider.Value, ArtificialLights = ArtificialLightsCheck.IsChecked == true,
             StoneMicrogeometry = StoneDetailCheck.IsChecked == true,
             EnvironmentPath = _hdriFilePath,
             EnvironmentYawDegrees = HdriYawSlider.Value,

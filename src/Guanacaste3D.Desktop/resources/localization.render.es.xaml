@@ -151,6 +151,11 @@
   <sys:String x:Key="RenderPanel.ResetLens">Restablecer lente</sys:String>
   <sys:String x:Key="RenderPanel.FieldOfViewFormat">Campo de visión vertical: {0:0.#}°</sys:String>
   <sys:String x:Key="RenderPanel.FocusAuto">Auto</sys:String>
+  <sys:String x:Key="RenderPanel.PickFocus">Enfocar con un clic en la vista</sys:String>
+  <sys:String x:Key="RenderPanel.PickFocusActive">Haz clic en lo que quieres enfocar…</sys:String>
+  <sys:String x:Key="RenderPanel.ApertureOn">Desenfoque por apertura (f/)</sys:String>
+  <sys:String x:Key="RenderPanel.ContrastAdjust">Contraste</sys:String>
+  <sys:String x:Key="RenderPanel.SaturationAdjust">Saturación</sys:String>
   <sys:String x:Key="RenderPanel.Navigation">Navegación</sys:String>
   <sys:String x:Key="RenderPanel.Collisions">Chocar con muros y objetos</sys:String>
   <sys:String x:Key="RenderPanel.CollisionsHint">Apagado: la cámara atraviesa muros. Encendido: se detiene y se desliza junto a ellos.</sys:String>

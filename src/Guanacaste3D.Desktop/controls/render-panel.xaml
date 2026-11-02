@@ -451,6 +451,18 @@
                     <Slider x:Name="ShadowsSlider" Minimum="-1" Maximum="1" Value="0" TickFrequency="0.05"
                             IsSnapToTickEnabled="True" ValueChanged="Finish_SliderChanged"/>
                   </DockPanel>
+                  <TextBlock Style="{StaticResource PanelLabel}" Text="{DynamicResource RenderPanel.ContrastAdjust}"/>
+                  <DockPanel>
+                    <TextBlock Style="{StaticResource SliderValue}" Text="{Binding Value, ElementName=ContrastSlider, StringFormat={}{0:+0.00;-0.00;0}}"/>
+                    <Slider x:Name="ContrastSlider" Minimum="-1" Maximum="1" Value="0" TickFrequency="0.05"
+                            IsSnapToTickEnabled="True" ValueChanged="Finish_SliderChanged"/>
+                  </DockPanel>
+                  <TextBlock Style="{StaticResource PanelLabel}" Text="{DynamicResource RenderPanel.SaturationAdjust}"/>
+                  <DockPanel>
+                    <TextBlock Style="{StaticResource SliderValue}" Text="{Binding Value, ElementName=SaturationSlider, StringFormat={}{0:+0.00;-0.00;0}}"/>
+                    <Slider x:Name="SaturationSlider" Minimum="-1" Maximum="1" Value="0" TickFrequency="0.05"
+                            IsSnapToTickEnabled="True" ValueChanged="Finish_SliderChanged"/>
+                  </DockPanel>
                   <TextBlock Style="{StaticResource PanelLabel}" Text="{DynamicResource RenderPanel.Vibrance}"/>
                   <DockPanel>
                     <TextBlock Style="{StaticResource SliderValue}" Text="{Binding Value, ElementName=VibranceSlider, StringFormat={}{0:0%}}"/>
@@ -543,6 +555,15 @@
                   <DockPanel>
                     <TextBlock x:Name="FocusValueText" Style="{StaticResource SliderValue}" Text="Auto"/>
                     <Slider x:Name="FocusSlider" Minimum="0" Maximum="100" Value="0" TickFrequency="0.5" IsSnapToTickEnabled="True"
+                            ValueChanged="Lens_SliderChanged"/>
+                  </DockPanel>
+                  <Button Content="{DynamicResource RenderPanel.PickFocus}" Click="PickFocus_Click" x:Name="PickFocusButton"
+                          Style="{StaticResource PanelButton}" HorizontalAlignment="Left" Margin="0,6,0,0"/>
+                  <CheckBox x:Name="ApertureCheck" Style="{StaticResource PanelCheck}" IsChecked="False"
+                            Content="{DynamicResource RenderPanel.ApertureOn}" Checked="Aperture_Changed" Unchecked="Aperture_Changed"/>
+                  <DockPanel x:Name="AperturePanel" Visibility="Collapsed">
+                    <TextBlock x:Name="ApertureValueText" Style="{StaticResource SliderValue}" Text="f/2.8"/>
+                    <Slider x:Name="ApertureSlider" Minimum="1.2" Maximum="22" Value="2.8" TickFrequency="0.1" IsSnapToTickEnabled="True"
                             ValueChanged="Lens_SliderChanged"/>
                   </DockPanel>
                   <TextBlock Style="{StaticResource PanelHint}" Text="{DynamicResource RenderPanel.LensHint}" Margin="0,2,0,0"/>

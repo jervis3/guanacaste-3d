@@ -32,6 +32,18 @@ public sealed record RenderSetup
     /// <summary>Distance in meters to the plane of sharp focus; 0 focuses on whatever is at the centre of the view.</summary>
     public double FocusDistance { get; init; }
 
+    /// <summary>
+    /// Lens opening as an f-number (1.2 to 32). Zero keeps everything in focus unless the older
+    /// <see cref="DepthOfField"/> amount is used; a small number blurs what is far from the focus distance.
+    /// </summary>
+    public double FNumber { get; init; }
+
+    /// <summary>Contrast on top of the style, −1 (flat) to 1 (punchy); 0 leaves the style alone.</summary>
+    public double ContrastAdjust { get; init; }
+
+    /// <summary>Saturation on top of the style, −1 (grey) to 1 (doubled); 0 leaves the style alone.</summary>
+    public double SaturationAdjust { get; init; }
+
     public LightingScenario Scenario { get; init; } = LightingScenario.Sunny;
 
     /// <summary>Day of the year for the sun (1 = January 1).</summary>
@@ -129,7 +141,7 @@ public sealed record RenderSetup
         double[] finite = [CameraX, CameraY, CameraZ, YawDegrees, PitchDegrees, FieldOfViewDegrees, SolarHour, Latitude,
             CloudCover, ExposureStops, Temperature, DepthOfField, Highlights, Shadows, Vibrance, Tint, Glare, Fog, Sharpen,
             ChromaticAberration, FilmGrain, EnvironmentYawDegrees, EnvironmentExposureStops, LutStrength,
-            Turbidity, CloudDirectionDegrees, SunStrength, SkyStrength, RollDegrees, ShiftX, ShiftY, FocusDistance];
+            Turbidity, CloudDirectionDegrees, SunStrength, SkyStrength, RollDegrees, ShiftX, ShiftY, FocusDistance, FNumber, ContrastAdjust, SaturationAdjust];
         if (finite.Any(value => !double.IsFinite(value)) || Math.Abs(CameraX) > 1e6 || Math.Abs(CameraY) > 1e6 ||
             Math.Abs(CameraZ) > 1e6 || PitchDegrees is < -90 or > 90 || FieldOfViewDegrees is < 5 or > 150 ||
             !Enum.IsDefined(Scenario) || DayOfYear is < 1 or > 366 || SolarHour is < 0 or > 24 || Latitude is < -90 or > 90 ||
@@ -141,7 +153,8 @@ public sealed record RenderSetup
             EnvironmentYawDegrees is < 0 or > 360 || EnvironmentExposureStops is < -4 or > 4 ||
             Turbidity is < 1.7 or > 10 || CloudSeed > 1023 || CloudDirectionDegrees is < -180 or > 180 ||
             RollDegrees is < -45 or > 45 || ShiftX is < -0.5 or > 0.5 || ShiftY is < -0.5 or > 0.5 ||
-            FocusDistance is < 0 or > 1000 ||
+            FocusDistance is < 0 or > 1000 || (FNumber != 0 && FNumber is < 1 or > 32) ||
+            ContrastAdjust is < -1 or > 1 || SaturationAdjust is < -1 or > 1 ||
             SunStrength is < 0 or > 2 || SkyStrength is < 0 or > 2 ||
             (SkyPresetId is not null && RenderLooks.Skies.All(sky => sky.Id != SkyPresetId)) ||
             LutStrength is < 0 or > 1 ||

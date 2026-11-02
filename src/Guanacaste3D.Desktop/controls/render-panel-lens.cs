@@ -54,6 +54,7 @@ public partial class RenderPanel
         FocalValueText.Text = $"{focal:0} mm";
         FieldOfViewText.Text = string.Format(CultureInfo.CurrentCulture, UiText.Get("RenderPanel.FieldOfViewFormat"),
             verticalFieldOfView);
+        ApertureValueText.Text = $"f/{ApertureSlider.Value:0.0}";
         FocusValueText.Text = FocusSlider.Value <= 0 ? UiText.Get("RenderPanel.FocusAuto") : $"{FocusSlider.Value:0.#} m";
     }
 
@@ -81,5 +82,43 @@ public partial class RenderPanel
         ShiftYSlider.Value = 0;
         FocusSlider.Value = 0;
         FocalSlider.Value = FocalLengthOf(45);
+    }
+
+    private bool _pickingFocus;
+
+    /// <summary>Shows or hides the f-number slider; the blur only exists while the aperture is on.</summary>
+    private void Aperture_Changed(object sender, RoutedEventArgs e)
+    {
+        AperturePanel.Visibility = ApertureCheck.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
+        if (_ready && _source is not null) OnCameraChanged();
+    }
+
+    /// <summary>The next click on the view sets the focus distance to the surface under the cursor.</summary>
+    private void PickFocus_Click(object sender, RoutedEventArgs e)
+    {
+        if (_source is null) return;
+        _pickingFocus = true;
+        ImageHost.Cursor = System.Windows.Input.Cursors.Cross;
+        StatusText.Text = UiText.Get("RenderPanel.PickFocusActive");
+        ImageHost.PreviewMouseLeftButtonDown -= PickFocus_MouseDown;
+        ImageHost.PreviewMouseLeftButtonDown += PickFocus_MouseDown;
+    }
+
+    private void PickFocus_MouseDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+    {
+        if (!_pickingFocus) return;
+        _pickingFocus = false;
+        ImageHost.Cursor = null;
+        ImageHost.PreviewMouseLeftButtonDown -= PickFocus_MouseDown;
+        e.Handled = true;
+        if (_source?.Query is not { } query) return;
+        var point = e.GetPosition(ImageHost);
+        var camera = _source.Camera;
+        var ray = camera.PixelRay((float)point.X, (float)point.Y, (float)ImageHost.ActualWidth, (float)ImageHost.ActualHeight);
+        if (query.Pick(camera.Position, ray) is not { } distance) return;
+        // The picked distance is along the ray; focus is measured along the view axis.
+        var along = distance * System.Numerics.Vector3.Dot(ray, camera.Forward);
+        FocusSlider.Value = Math.Clamp(Math.Round(along * 2) / 2, 0.5, FocusSlider.Maximum);
+        if (ApertureCheck.IsChecked != true) ApertureCheck.IsChecked = true;
     }
 }

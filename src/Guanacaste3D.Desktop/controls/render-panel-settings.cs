@@ -279,10 +279,14 @@ public partial class RenderPanel
         if (_source?.Query is { } query && query.Pick(camera.Position, camera.Forward) is { } distance) focus = Math.Max(0.5f, distance);
         // A focus distance set by hand wins over the point at the centre of the view.
         if (FocusSlider is { Value: > 0 } manual) focus = (float)manual.Value;
+        // A real lens opening (focal length over twice the f-number) wins over the older blur amount.
+        var radius = ApertureCheck.IsChecked == true
+            ? PhotographicCamera.ApertureRadius(FocalLengthOf(camera.FieldOfViewDegrees), ApertureSlider.Value)
+            : (float)(DepthOfFieldSlider.Value / 100 * 0.25);
         return camera.ToRenderCamera(focus) with
         {
             CorrectVerticals = VerticalsCheck.IsChecked == true,
-            ApertureRadius = (float)(DepthOfFieldSlider.Value / 100 * 0.25),
+            ApertureRadius = radius,
             FocusDistance = focus,
             RollDegrees = (float)RollSlider.Value,
             ShiftX = (float)(ShiftXSlider.Value / 100),

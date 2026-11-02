@@ -111,12 +111,18 @@ static class RenderPhotoChecks
         lens.Validate();
         var rejected = 0;
         foreach (var bad in new[] { lens with { RollDegrees = 60 }, lens with { ShiftY = 0.8 }, lens with { ShiftX = double.NaN },
-                     lens with { FocusDistance = -1 } })
+                     lens with { FocusDistance = -1 }, lens with { FNumber = 0.5 }, lens with { FNumber = 40 },
+                     lens with { ContrastAdjust = 2 }, lens with { SaturationAdjust = -2 } })
         {
             try { bad.Validate(); }
             catch (InvalidDataException) { rejected++; }
         }
-        check(rejected == 4, "Lens settings outside their range are rejected");
+        check(rejected == 8, "Lens, aperture and grading settings outside their range are rejected");
+        (lens with { FNumber = 2.8, ContrastAdjust = 0.3, SaturationAdjust = -0.2 }).Validate();
+        (lens with { FNumber = 0 }).Validate();
+        var opening = PhotographicCamera.ApertureRadius(50, 2);
+        check(Math.Abs(opening - 0.0125f) < 1e-5 && PhotographicCamera.ApertureRadius(50, 8) < opening,
+            "A wider aperture opens the lens more, which blurs what is out of focus");
 
         var focal35 = PhotographicCamera.VerticalFieldOfView(35);
         check(Math.Abs(PhotographicCamera.FocalLength(focal35) - 35) < 1e-3, "Focal length and field of view convert both ways");

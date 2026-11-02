@@ -89,6 +89,8 @@ public partial class RenderPanel
             // from whichever photographic filter was selected previously.
             BloomCheck.IsChecked = styled.Bloom > 0;
             VignetteCheck.IsChecked = styled.Vignette > 0;
+            ContrastSlider.Value = 0;
+            SaturationSlider.Value = 0;
             HighlightsSlider.Value = styled.Highlights;
             ShadowsSlider.Value = styled.Shadows;
             VibranceSlider.Value = styled.Vibrance;
@@ -115,8 +117,13 @@ public partial class RenderPanel
     };
 
     /// <summary>The style's colour grading with the panel's effect sliders on top.</summary>
-    private ImageFinish WithEffects(ImageFinish finish) => RenderLooks.Style(SelectedStyle()).Apply(finish) with
+    private ImageFinish WithEffects(ImageFinish finish)
     {
+        var styled = RenderLooks.Style(SelectedStyle()).Apply(finish);
+        return styled with
+    {
+        Contrast = Math.Max(0.2f, styled.Contrast * (1 + 0.5f * (float)ContrastSlider.Value)),
+        Saturation = Math.Max(0f, styled.Saturation * (1 + (float)SaturationSlider.Value)),
         Highlights = (float)HighlightsSlider.Value,
         Shadows = (float)ShadowsSlider.Value,
         Vibrance = (float)VibranceSlider.Value,
@@ -130,4 +137,5 @@ public partial class RenderPanel
         Lut = SelectedLut(),
         LutStrength = (float)LutStrengthSlider.Value
     };
+    }
 }
