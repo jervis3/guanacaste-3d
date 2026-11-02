@@ -186,7 +186,7 @@ internal static class ProjectThumbnail
             return image;
         }
         catch (Exception ex) when (ex is IOException or NotSupportedException or UnauthorizedAccessException
-            or ArgumentException)
+            or ArgumentException or FileFormatException)
         {
             return null;
         }
