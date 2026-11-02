@@ -101,6 +101,33 @@ internal static partial class InteractionChecks
                 encoder.Save(stream);
             Check(Load(valid) is System.Windows.Media.Imaging.BitmapSource,
                 "Valid cached PNG still loads correctly");
+
+            // A reader holding the previous cache entry must see its complete original
+            // bytes while a writer atomically publishes a new PNG at the same path.
+            var save = thumbnail.GetMethod("Save", BindingFlags.Static | BindingFlags.Public)!;
+            var replaced = Path.Combine(directory, "replaced.png");
+            save.Invoke(null, [source, replaced]);
+            using (var reader = File.Open(replaced, FileMode.Open, FileAccess.Read, FileShare.Read | FileShare.Delete))
+            {
+                var original = new byte[checked((int)reader.Length)];
+                reader.ReadExactly(original);
+                var newImage = System.Windows.Media.Imaging.BitmapSource.Create(1, 1, 96, 96,
+                    System.Windows.Media.PixelFormats.Pbgra32, null, new byte[] { 255, 0, 0, 255 }, 4);
+                save.Invoke(null, [newImage, replaced]);
+                reader.Position = 0;
+                var retained = new byte[original.Length];
+                reader.ReadExactly(retained);
+                Check(original.SequenceEqual(retained),
+                    "An open thumbnail reader keeps the complete previous PNG during atomic replacement");
+            }
+
+            var updated = (System.Windows.Media.Imaging.BitmapSource)Load(replaced)!;
+            var pixel = new byte[4];
+            updated.CopyPixels(pixel, 4, 0);
+            Check(pixel.SequenceEqual(new byte[] { 255, 0, 0, 255 }),
+                "Home thumbnail cache reloads the newly published PNG after replacement");
+            Check(!Directory.EnumerateFiles(directory, "*.tmp").Any(),
+                "Atomic thumbnail publishing leaves no temporary cache files");
         }
         finally
         {
