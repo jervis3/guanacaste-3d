@@ -29,6 +29,7 @@
   <ItemGroup>
     <!-- Window.Icon reads the same icon through a pack URI at run time. -->
     <Resource Include="resources\brand\guanacaste3d.ico" />
+    <Content Include="resources\brand\guanacaste3d.ico" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <Resource Include="resources\brand\guanacaste3d-logo.png" />
     <!-- Shipped render textures, loaded from disk next to the executable by RenderTextureLibrary. -->
     <Content Include="resources\textures\*.png" CopyToOutputDirectory="PreserveNewest" />

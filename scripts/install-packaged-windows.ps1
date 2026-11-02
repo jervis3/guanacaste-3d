@@ -35,7 +35,7 @@ $shell = New-Object -ComObject WScript.Shell
 $shortcut = $shell.CreateShortcut((Join-Path $env:APPDATA 'Microsoft\Windows\Start Menu\Programs\Guanacaste 3D.lnk'))
 $shortcut.TargetPath = $executable
 $shortcut.WorkingDirectory = $installRoot
-$shortcut.IconLocation = "$executable,0"
+$shortcut.IconLocation = "$(Join-Path $installRoot 'resources\brand\guanacaste3d.ico'),0"
 $shortcut.Save()
 $types = @{ '.g3d' = 'Project'; '.g3' = 'Project'; '.g3dt' = 'Template'; '.g3df' = 'Family'; '.g3dx' = 'Exchange' }
 foreach ($extension in $types.Keys) {

@@ -65,8 +65,8 @@ try {
     $shortcut.TargetPath = $installedExecutable
     $shortcut.WorkingDirectory = $installRoot
     $shortcut.Description = 'Guanacaste 3D BIM authoring application'
-    # The executable embeds the brand icon (ApplicationIcon); pointing at it keeps the Start menu tile in sync.
-    $shortcut.IconLocation = "$installedExecutable,0"
+    # A dedicated icon path refreshes the shell's cached executable icon on upgrade.
+    $shortcut.IconLocation = "$(Join-Path $installRoot 'resources\brand\guanacaste3d.ico'),0"
     $shortcut.Save()
 
     $nativeFileTypes = @(
