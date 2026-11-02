@@ -36,19 +36,44 @@ public sealed class RenderScalarMap
             var nextHeight = (height + 1) / 2;
             var down = new byte[nextWidth * nextHeight];
             var source = levels[^1];
-            for (var y = 0; y < nextHeight; y++)
-                for (var x = 0; x < nextWidth; x++)
-                {
-                    var sum = 0;
-                    var count = 0;
-                    for (var yy = 2 * y; yy < Math.Min(height, 2 * y + 2); yy++)
-                        for (var xx = 2 * x; xx < Math.Min(width, 2 * x + 2); xx++)
-                        {
-                            sum += source[yy * width + xx];
-                            count++;
-                        }
-                    down[y * nextWidth + x] = (byte)((sum + count / 2) / count);
-                }
+            // A 3x3 texture becomes 2x2 before 1x1. Averaging 2x2 source
+            // blocks gives the corner texel four times the weight of others
+            // at the final mip, making distant roughness/metalness drift.
+            // Filter the exact source area represented by each output texel.
+            // Even dimensions retain the fast, bit-identical 2x2 box filter.
+            if ((width & 1) == 0 && (height & 1) == 0)
+            {
+                for (var y = 0; y < nextHeight; y++)
+                    for (var x = 0; x < nextWidth; x++)
+                    {
+                        var offset = (2 * y) * width + 2 * x;
+                        var sum = source[offset] + source[offset + 1] +
+                                  source[offset + width] + source[offset + width + 1];
+                        down[y * nextWidth + x] = (byte)((sum + 2) / 4);
+                    }
+            }
+            else
+            {
+                for (var y = 0; y < nextHeight; y++)
+                    for (var x = 0; x < nextWidth; x++)
+                    {
+                        var left = (double)x * width / nextWidth;
+                        var right = (double)(x + 1) * width / nextWidth;
+                        var top = (double)y * height / nextHeight;
+                        var bottom = (double)(y + 1) * height / nextHeight;
+                        double weightedSum = 0;
+                        for (var yy = (int)top; yy < Math.Ceiling(bottom); yy++)
+                            for (var xx = (int)left; xx < Math.Ceiling(right); xx++)
+                            {
+                                var area = (Math.Min(right, xx + 1) - Math.Max(left, xx)) *
+                                           (Math.Min(bottom, yy + 1) - Math.Max(top, yy));
+                                weightedSum += source[yy * width + xx] * area;
+                            }
+                        var average = weightedSum / ((right - left) * (bottom - top));
+                        down[y * nextWidth + x] = (byte)Math.Clamp(
+                            Math.Round(average, MidpointRounding.AwayFromZero), 0, 255);
+                    }
+            }
             levels.Add(down);
             widths.Add(nextWidth);
             heights.Add(nextHeight);
