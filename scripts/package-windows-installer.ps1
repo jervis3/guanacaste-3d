@@ -3,7 +3,7 @@
 Builds a downloadable Windows application installer with optional in-process file thumbnails and an offline runtime prerequisite.
 #>
 [CmdletBinding()]
-param([string]$Version = '0.24.0')
+param([string]$Version = '0.25.0')
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $PSScriptRoot
 $packageRoot = Join-Path $projectRoot "artifacts\release-$Version"
