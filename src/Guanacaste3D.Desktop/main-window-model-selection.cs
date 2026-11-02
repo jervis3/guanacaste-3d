@@ -117,6 +117,8 @@ public partial class MainWindow
             PlaceFromView(ray, hit);
             return;
         }
+        // A plain click replaces a multiple selection (SA, Ctrl+A) with the one element under the cursor.
+        _viewSelection = null;
         // Linked models are not editable, and a click in the sky clears the selection.
         if (hit is not { } picked)
         {
@@ -249,14 +251,31 @@ public partial class MainWindow
     private void RebuildModelSelection()
     {
         ClearModelSelectionVisuals();
+        var thickness = EdgeThickness();
+        // Several elements selected together (SA, Ctrl+A): every one is outlined and tinted blue, with no dimensions.
+        if (_viewSelection is { Count: > 0 } many)
+        {
+            _shownSelection = CurrentSelection();
+            var edges = new List<EdgeSegment>();
+            var faces = new List<Vector3>();
+            foreach (var id in many)
+            {
+                if (ElementTypeSelection.KindOf(_session.Document, id) is not { } kind) continue;
+                edges.AddRange(Picker.Outline(kind, id));
+                faces.AddRange(Picker.Fill(kind, id));
+            }
+            AddSelectionVisual(ScenePresentation.ToWpfEdges(edges, Matrix4x4.Identity, thickness * 1.5f, SelectionBlue));
+            AddSelectionVisual(BlueTint(faces));
+            return;
+        }
         if (CurrentSelection() is not { } selection) return;
         _shownSelection = selection;
         var outline = Picker.Outline(selection.Kind, selection.Id);
         var dimensions = Picker.Dimensions(selection.Kind, selection.Id);
         if (outline.Count == 0) return;
 
-        var thickness = EdgeThickness();
-        AddSelectionVisual(ScenePresentation.ToWpfEdges(outline, Matrix4x4.Identity, thickness * 1.5f, Color.FromRgb(0, 115, 230)));
+        AddSelectionVisual(BlueTint(Picker.Fill(selection.Kind, selection.Id)));
+        AddSelectionVisual(ScenePresentation.ToWpfEdges(outline, Matrix4x4.Identity, thickness * 1.5f, SelectionBlue));
         AddSelectionVisual(ScenePresentation.ToWpfEdges(dimensions.Select(line => new EdgeSegment(line.A, line.B)),
             Matrix4x4.Identity, thickness * 0.6f, Color.FromRgb(30, 110, 200)));
 
@@ -276,6 +295,22 @@ public partial class MainWindow
             ModelOverlay.Children.Add(chip);
             _dimensionChips.Add((chip, (line.A + line.B) / 2));
         }
+    }
+
+    private static readonly Color SelectionBlue = Color.FromRgb(0, 115, 230);
+
+    /// <summary>A translucent blue skin over the given triangles, so a selected element reads as coloured blue, as in Revit.</summary>
+    private static GeometryModel3D? BlueTint(List<Vector3> triangles)
+    {
+        if (triangles.Count == 0) return null;
+        var mesh = new MeshGeometry3D();
+        for (var i = 0; i < triangles.Count; i++)
+        {
+            mesh.TriangleIndices.Add(i);
+            mesh.Positions.Add(ScenePresentation.ToWpf(triangles[i]));
+        }
+        var material = new EmissiveMaterial(new SolidColorBrush(Color.FromArgb(95, 0, 115, 230)));
+        return new GeometryModel3D(mesh, material) { BackMaterial = material };
     }
 
     /// <summary>Attaches one selection geometry instance and tracks it for subsequent removal.</summary>

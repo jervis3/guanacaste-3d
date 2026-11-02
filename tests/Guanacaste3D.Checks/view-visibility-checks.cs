@@ -36,5 +36,30 @@ static class ViewVisibilityChecks
                 "View visibility and templates survive project save and reopen");
         }
         finally { File.Delete(path); }
+        RunSameTypeChecks(check);
+    }
+
+    /// <summary>Checks Revit-style "select all of the same type" and the batch removal that follows it.</summary>
+    static void RunSameTypeChecks(Action<bool, string> check)
+    {
+        var session = new DocumentSession(BuildingDocument.Create("Same type"));
+        var level = session.Document.Levels[0].Id;
+        var a = session.AddWall(level, new(0, 0), new(4, 0));
+        var b = session.AddWall(level, new(0, 3), new(4, 3));
+        var c = session.AddWall(level, new(0, 6), new(4, 6));
+        var otherType = BuiltInWallTypes.Exterior300Id;
+        var index = session.Document.Walls.FindIndex(wall => wall.Id == c);
+        session.Document.Walls[index] = session.Document.Walls[index] with { WallTypeId = otherType };
+
+        var same = ElementTypeSelection.SameType(session.Document, [a]);
+        check(same.SetEquals([a, b]), "Select all of the same type picks the walls sharing the wall type and not other types");
+        check(ElementTypeSelection.KindOf(session.Document, c) == Guanacaste3D.Core.Navigation.PickedKind.Wall &&
+              ElementTypeSelection.KindOf(session.Document, Guid.NewGuid()) is null,
+            "An id resolves to its element kind, or to nothing");
+
+        check(session.RemoveElements([.. same]) == 2 && session.Document.Walls.Count == 1 &&
+              session.Document.Walls[0].Id == c, "Removing a type selection deletes every member");
+        session.Undo();
+        check(session.Document.Walls.Count == 3, "Undo restores the whole removed type selection in one step");
     }
 }

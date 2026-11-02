@@ -161,6 +161,32 @@ public sealed class ElementPicker
     public List<EdgeSegment> Outline(PickedKind kind, Guid id)
         => OutlinePrisms(Of(kind, id));
 
+    /// <summary>
+    /// The faces of an element's prism as triangles (three corners each, counted in groups of three), for tinting a
+    /// selection. Caps are fanned from the first corner, which is exact for convex footprints.
+    /// </summary>
+    public List<Vector3> Fill(PickedKind kind, Guid id)
+    {
+        var result = new List<Vector3>();
+        foreach (var prism in Of(kind, id))
+        {
+            var ring = prism.Footprint;
+            for (var i = 0; i < ring.Length; i++)
+            {
+                var a = ring[i];
+                var b = ring[(i + 1) % ring.Length];
+                result.AddRange([new(a, prism.Bottom), new(b, prism.Bottom), new(b, prism.Top),
+                    new(a, prism.Bottom), new(b, prism.Top), new(a, prism.Top)]);
+            }
+            for (var i = 1; i < ring.Length - 1; i++)
+            {
+                result.AddRange([new(ring[0], prism.Top), new(ring[i], prism.Top), new(ring[i + 1], prism.Top)]);
+                result.AddRange([new(ring[0], prism.Bottom), new(ring[i + 1], prism.Bottom), new(ring[i], prism.Bottom)]);
+            }
+        }
+        return result;
+    }
+
     /// <summary>Builds a hosted opening's preview edges without indexing the rest of the project.</summary>
     public static List<EdgeSegment> OpeningOutline(Wall wall, WallOpening opening, float levelElevation) =>
         OutlinePrisms([WallPrism(PickedKind.Opening, opening.Id, wall.Id, wall, opening.Begin, opening.End,

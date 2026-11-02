@@ -270,29 +270,39 @@ public partial class MainWindow
         if (_dimensionChips.Count > 0) PositionDimensionChips();
     }
 
-    /// <summary>When the E key was last pressed, for the E then H hide sequence.</summary>
-    private DateTime? _eKeyAt;
+    /// <summary>The first key of a two-key Revit shortcut and when it was pressed.</summary>
+    private Key? _sequenceKey;
+    private DateTime _sequenceAt;
 
     /// <summary>
-    /// E then H, pressed one after the other, hides the selection in the active view. E still flies the camera in 3D;
-    /// the H is taken only when it follows an E within a moment.
+    /// Revit's two-letter shortcuts, typed one key after the other: EH hides the selected elements in the active view, VH
+    /// hides their whole categories, and SA selects every element of the same type. E and S still fly the camera in 3D;
+    /// the second key is taken only when it follows the first within a moment.
     /// </summary>
     private bool TryHideSequence(KeyEventArgs e)
     {
         if (Keyboard.Modifiers != ModifierKeys.None || Keyboard.FocusedElement is TextBox)
         {
-            _eKeyAt = null;
+            _sequenceKey = null;
             return false;
         }
-        if (e.Key == Key.E)
+        var previous = _sequenceKey is { } first && DateTime.UtcNow - _sequenceAt < TimeSpan.FromSeconds(1.5) ? first : (Key?)null;
+        _sequenceKey = null;
+        if (e.Key is Key.E or Key.V or Key.S)
         {
-            _eKeyAt = DateTime.UtcNow;
+            _sequenceKey = e.Key;
+            _sequenceAt = DateTime.UtcNow;
             return false;
         }
-        var pressedE = _eKeyAt is { } at && DateTime.UtcNow - at < TimeSpan.FromSeconds(1.5);
-        _eKeyAt = null;
-        if (e.Key != Key.H || !pressedE) return false;
-        HideSelectionInView();
+        Action? command = (previous, e.Key) switch
+        {
+            (Key.E, Key.H) => HideSelectionInView,
+            (Key.V, Key.H) => HideCategoryInView,
+            (Key.S, Key.A) => SelectSameTypeInView,
+            _ => null
+        };
+        if (command is null) return false;
+        command();
         return true;
     }
 
@@ -378,7 +388,14 @@ public partial class MainWindow
         }
         else if (e.Key == Key.Escape && CancelTopoPointTool()) e.Handled = true;
         else if (e.Key == Key.Escape && _drawingWall) { HandleWallEscape(); e.Handled = true; }
-        else if (e.Key == Key.Escape) { _viewSelection = null; SetWallTool(false); e.Handled = true; }
+        else if (e.Key == Key.Escape)
+        {
+            var hadGroup = _viewSelection is { Count: > 0 };
+            _viewSelection = null;
+            SetWallTool(false);
+            if (hadGroup) UpdateModelSelection(true);
+            e.Handled = true;
+        }
         else if (e.Key == Key.F2 && _selectedGridId is Guid gridId) { RenameGridAxis(gridId); e.Handled = true; }
         else if (e.Key == Key.F2 && _selectedViewId is Guid viewId) { RenameView(viewId); e.Handled = true; }
         else if (e.Key == Key.Delete) { Delete_Click(this, new RoutedEventArgs()); e.Handled = true; }

@@ -103,6 +103,7 @@
   <sys:String x:Key="Transaction.RotateWall">Rotar muro</sys:String>
   <sys:String x:Key="Transaction.RemoveOpening">Eliminar abertura</sys:String>
   <sys:String x:Key="Transaction.RemoveWall">Eliminar muro</sys:String>
+  <sys:String x:Key="Transaction.RemoveElements">Eliminar elementos seleccionados</sys:String>
   <sys:String x:Key="Transaction.Rename">Renombrar proyecto</sys:String>
   <sys:String x:Key="Transaction.AddParameter">Crear parámetro</sys:String>
   <sys:String x:Key="Transaction.UpdateParameter">Modificar parámetro</sys:String>

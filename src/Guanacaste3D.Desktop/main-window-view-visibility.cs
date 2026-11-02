@@ -44,15 +44,59 @@ public partial class MainWindow
             .Concat(document.StructuralElements.Where(element => OnLevel(element.LevelId)).Select(element => element.Id))
             .ToHashSet();
         StatusText.Text = string.Format(GetText("ViewSelection.Count"), _viewSelection.Count);
+        UpdateModelSelection(true);
     }
 
-    /// <summary>Hides the selected elements in the active view only.</summary>
-    private void HideSelectionInView()
+    /// <summary>Hides the selected elements in the active view only (Revit's EH, "Hide Element").</summary>
+    private void HideSelectionInView() => HideInView(SelectedIds());
+
+    /// <summary>
+    /// Hides every element of the selected elements' categories in the active view (Revit's VH, "Hide Category"): a wall
+    /// selected hides all walls, whatever their type.
+    /// </summary>
+    private void HideCategoryInView() => HideInView(SelectedCategoryIds());
+
+    private void HideInView(List<Guid> ids)
     {
-        if (ActiveProjectView() is not { } view || SelectedIds() is not { Count: > 0 } ids) return;
+        if (ActiveProjectView() is not { } view || ids.Count == 0) return;
         _session.SetViewVisibility(view.Id, [.. view.HiddenElementIds, .. ids], view.IsolatedElementIds);
         _viewSelection = null;
         ApplyViewVisibility();
+        StatusText.Text = string.Format(GetText("ViewSelection.HiddenElements"), ids.Count);
+    }
+
+    /// <summary>
+    /// Selects every element of exactly the same type as the selected ones (Revit's SA, "Select All Instances"), so they
+    /// can be hidden, deleted or isolated together. Only what the active view shows is selected.
+    /// </summary>
+    private void SelectSameTypeInView()
+    {
+        var seeds = SelectedIds();
+        if (ActiveProjectView() is not { } view || seeds.Count == 0)
+        {
+            StatusText.Text = GetText("ViewSelection.NothingToSelect");
+            return;
+        }
+        var visible = ModelElementIds(ViewVisibility.Apply(_session.Document, view)).ToHashSet();
+        _viewSelection = ElementTypeSelection.SameType(_session.Document, seeds).Where(visible.Contains).ToHashSet();
+        StatusText.Text = string.Format(GetText("ViewSelection.SameType"), _viewSelection.Count);
+        RefreshProperties();
+        RenderPlan();
+        UpdateModelSelection(true);
+    }
+
+    /// <summary>Deletes the multiple selection (SA, Ctrl+A) as one undoable step; false when there is none.</summary>
+    private bool DeleteViewSelection()
+    {
+        if (_viewSelection is not { Count: > 0 } set) return false;
+        var removed = _session.RemoveElements(set);
+        _viewSelection = null;
+        _selectedWallId = _selectedOpeningId = _selectedFloorId = _selectedColumnId = _selectedStructuralId = null;
+        _selectedWallOffset = null;
+        _picker = null;
+        RefreshAll();
+        StatusText.Text = string.Format(GetText("ViewSelection.Deleted"), removed);
+        return true;
     }
 
     /// <summary>Shows only the selected elements in the active view.</summary>

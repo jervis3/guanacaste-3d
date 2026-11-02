@@ -193,6 +193,10 @@
   <sys:String x:Key="ViewTemplate.None">No hay plantillas guardadas</sys:String>
 
   <!-- Keyboard selection in a view -->
+  <sys:String x:Key="ViewSelection.SameType">{0} elementos del mismo tipo seleccionados (Supr eliminar, EH ocultar, VH ocultar categoría)</sys:String>
+  <sys:String x:Key="ViewSelection.NothingToSelect">Seleccione primero un elemento para usar SA (seleccionar todo del mismo tipo)</sys:String>
+  <sys:String x:Key="ViewSelection.HiddenElements">{0} elementos ocultos en esta vista (Ctrl+Mayús+H mostrar todo)</sys:String>
+  <sys:String x:Key="ViewSelection.Deleted">{0} elementos eliminados</sys:String>
   <sys:String x:Key="ViewSelection.Count">{0} elementos seleccionados en esta vista (Ctrl+H ocultar, Ctrl+Mayús+H mostrar todo)</sys:String>
   <sys:String x:Key="RenderPanel.Controls">Clic derecho: mirar · Rueda: acercar al cursor · Botón central: mover · Shift + central: orbitar selección o proyecto · Clic izquierdo: seleccionar · W A S D: volar · Q E: bajar y subir · Shift: rápido</sys:String>
   <sys:String x:Key="RenderPanel.InteractiveTitle">Vista 3D interactiva</sys:String>

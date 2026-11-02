@@ -126,6 +126,7 @@ public partial class MainWindow
     /// <summary>Deletes the selected supported BIM element and its dependent geometry.</summary>
     private void Delete_Click(object sender, RoutedEventArgs e)
     {
+        if (DeleteViewSelection()) return;
         if (_selectedGridId is Guid gridId)
         {
             _session.RemoveGridAxis(gridId);
