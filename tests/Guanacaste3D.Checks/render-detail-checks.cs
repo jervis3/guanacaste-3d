@@ -74,6 +74,17 @@ static class RenderDetailChecks
         check(Math.Abs(height.TexelSize(float.MaxValue) - 1f) < .001f &&
               Math.Abs(height.Sample(.25f, .75f, float.MaxValue) - .5f) < .01f,
             "Finite extreme footprints select the coarsest mip without overflow");
+        // Distant PBR maps must preserve area coverage, not overweight the
+        // bottom-right texel of odd-sized textures as successive mips shrink.
+        var oddPixels = new byte[9];
+        oddPixels[4] = 255;
+        var odd = RenderScalarMap.FromGray(3, 3, oddPixels);
+        check(odd.LevelCount == 3 &&
+              Math.Abs(odd.Sample(.5f, .5f, 10f) - 1f / 9f) < .012f,
+            "Odd-sized scalar maps preserve the source-area mean at distant mips");
+        var constant = RenderScalarMap.FromGray(5, 3, Enumerable.Repeat((byte)73, 15).ToArray());
+        check(Math.Abs(constant.Sample(.17f, .68f, 10f) - 73f / 255f) < .001f,
+            "Odd-sized uniform roughness and metalness remain constant through all mip levels");
         check(ReferenceEquals((new RenderMaterial { HeightMap = height, TextureRelief = .7f }).Sanitized().HeightMap, height),
             "Sanitization retains the height channel");
     }
