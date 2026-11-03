@@ -99,6 +99,8 @@ internal static partial class InteractionChecks
                   warnings.All(warning => warning.Code != "DuplicateWalls"),
                 $"Reviewing the house's warnings works ({warnings.Count} found: {string.Join(", ", warnings.Select(warning => warning.Code).Distinct())})");
 
+            if (Environment.GetEnvironmentVariable("G3D_PROFILE") == "1") ProfileRefresh();
+
             // Each ribbon command does what it says on the longest real wall of the house.
             var longest = session.Document.Walls.Where(wall => !wall.Pinned).OrderByDescending(wall => wall.Length).First();
             Wall Current() => session.Document.Walls.Single(wall => wall.Id == longest.Id);
@@ -153,6 +155,25 @@ internal static partial class InteractionChecks
     }
 
     /// <summary>
+    /// Opt-in diagnostic (G3D_PROFILE=1): times each stage of the redraw that follows every edit, on the real house,
+    /// because the model itself changes in about 0.1 s and the rest is the interface catching up.
+    /// </summary>
+    private static void ProfileRefresh()
+    {
+        foreach (var stage in new[]
+                 {
+                     "SynchronizeModelViewGraphics", "UpdateWindowTitle", "RefreshLevelPicker", "RefreshViewShortcuts",
+                     "RefreshTree", "RefreshProperties", "RenderPlan", "Render3D", "RefreshExtendedWorkflows"
+                 })
+        {
+            var timer = System.Diagnostics.Stopwatch.StartNew();
+            Invoke(stage);
+            Pump();
+            Console.WriteLine($"PROFILE: {stage,-32} {timer.ElapsedMilliseconds,6} ms");
+        }
+    }
+
+    /// <summary>
     /// Random ribbon commands on random real walls of the house, on both levels, one seed after another. Every command
     /// redraws a scene of about 400,000 triangles, so the run has a time budget instead of a fixed length.
     /// </summary>
@@ -163,6 +184,9 @@ internal static partial class InteractionChecks
             "AllowJoin", "MiterJoin", "ButtJoin", "SquareOff", "DisallowJoin", "Pin", "FlipWall", "DetachAll",
             "Copy", "Cut", "Paste", "CopyElement", "Rotate", "Undo", "Redo"
         ];
+        // Rotating a pinned wall shows a warning box that waits for the user; the window offers a sink for checks.
+        var warnings = new List<string>();
+        SetField("_rotationWarningSink", (Action<string, string>)((message, _) => warnings.Add(message)));
         var budget = System.Diagnostics.Stopwatch.StartNew();
         var failures = new List<string>();
         var executed = 0;
@@ -172,9 +196,7 @@ internal static partial class InteractionChecks
             for (var step = 0; step < 30 && budget.Elapsed < TimeSpan.FromSeconds(100); step++)
             {
                 var wall = session.Document.Walls[random.Next(session.Document.Walls.Count)];
-                // A wall that is pinned makes Rotate and Duplicate show their warning box, which waits for the user.
                 var command = commands[random.Next(commands.Length)];
-                if (wall.Pinned && command is "Rotate" or "CopyElement") command = "Pin";
                 // Reach the wall's level the way the user does; now and then clear the selection altogether.
                 Invoke("SelectElement", wall.Id);
                 if (random.Next(10) == 0) SetField("_selectedWallId", null);
