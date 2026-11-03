@@ -92,6 +92,33 @@ static class IfcChecks
               IfcExporter.ToStep(courtyardDocument, stamp) == courtyardStep,
             "IFC4 space profile preserves a courtyard void and deterministic ring geometry");
 
+        // A clockwise slab footprint is valid in the native model, but IFC swept
+        // profiles must have a counter-clockwise outer boundary. Verify the actual
+        // exported polyline coordinates, not just the presence of a profile entity.
+        var clockwiseSlabDocument = BuildingDocument.Create("Clockwise IFC slab");
+        var clockwiseBoundary = new List<Point2>
+        {
+            new(0, 0), new(0, 4), new(6, 4), new(6, 0)
+        };
+        clockwiseSlabDocument.Floors.Add(new FloorSlab(Guid.NewGuid(),
+            clockwiseSlabDocument.Levels[0].Id, "Clockwise slab", clockwiseBoundary, 0.25));
+        var clockwiseSlabStep = IfcExporter.ToStep(clockwiseSlabDocument, stamp);
+        var planarPoints = Regex.Matches(clockwiseSlabStep,
+                @"(?m)^#(\d+)=IFCCARTESIANPOINT\(\(([^,()]+),([^,()]+)\)\);$")
+            .ToDictionary(match => int.Parse(match.Groups[1].Value),
+                match => new Point2(
+                    double.Parse(match.Groups[2].Value, System.Globalization.CultureInfo.InvariantCulture),
+                    double.Parse(match.Groups[3].Value, System.Globalization.CultureInfo.InvariantCulture)));
+        var slabPolyline = Regex.Match(clockwiseSlabStep,
+            @"=IFCPOLYLINE\(\((#\d+(?:,#\d+)+)\)\);");
+        var exportedRing = Regex.Matches(slabPolyline.Groups[1].Value, @"#(\d+)")
+            .Select(match => planarPoints[int.Parse(match.Groups[1].Value)]).ToArray();
+        check(exportedRing.Length == 5 &&
+              exportedRing[0].DistanceTo(exportedRing[^1]) < 1e-9 &&
+              Guanacaste3D.Core.Geometry.PolygonTriangulator.SignedDoubleArea(exportedRing[..^1]) > 0 &&
+              clockwiseSlabDocument.Floors[0].Boundary.SequenceEqual(clockwiseBoundary),
+            "IFC clockwise slab exports a counter-clockwise closed profile without modifying the BIM document");
+
         // A roof slab must not be mislabeled as a floor in downstream BIM tools.
         // Ceiling, water and terrain currently have no matching IfcSlab predefined type.
         var slabForType = house.Floors[0];
