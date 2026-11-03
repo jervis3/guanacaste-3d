@@ -75,6 +75,18 @@ public partial class MainWindow
             GetText("Prompt.Accept"), GetText("Prompt.Cancel"), "3; 0; 3");
         if (text is null) return;
         var parts = text.Split([';', ' '], StringSplitOptions.RemoveEmptyEntries);
+        // "r; 6; 60": a radial array of 6 members, 60 degrees apart, about the start of the selected wall.
+        if (parts.Length == 3 && parts[0].Equals("r", StringComparison.OrdinalIgnoreCase))
+        {
+            if (!TryReadNumber(parts[1], out var members) || !TryReadNumber(parts[2], out var step) || members != Math.Floor(members))
+            {
+                StatusText.Text = GetText("Status.InvalidNumber");
+                return;
+            }
+            var center = _session.Document.Walls.Single(wall => wall.Id == id).Start;
+            RunWallEdit(() => _session.ArrayWallsRadial([id], (int)members, center, step), "Status.WallArrayed");
+            return;
+        }
         if (parts.Length != 3 || !TryReadNumber(parts[0], out var count) || !TryReadNumber(parts[1], out var deltaX) ||
             !TryReadNumber(parts[2], out var deltaY) || count != Math.Floor(count))
         {

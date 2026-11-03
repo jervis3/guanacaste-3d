@@ -378,7 +378,7 @@
   <sys:String x:Key="Prompt.Offset.Title">Desfasar muro</sys:String>
   <sys:String x:Key="Prompt.Offset.Label">Distancia en metros (positiva hacia la izquierda del sentido del muro):</sys:String>
   <sys:String x:Key="Prompt.Array.Title">Matriz de muros</sys:String>
-  <sys:String x:Key="Prompt.Array.Label">Cantidad total, separación X y separación Y en metros (por ejemplo 3; 0; 3):</sys:String>
+  <sys:String x:Key="Prompt.Array.Label">Lineal: cantidad total, separación X y separación Y en metros (3; 0; 3). Radial: r; cantidad; ángulo en grados (r; 6; 60):</sys:String>
   <sys:String x:Key="Properties.ApplyWall">Aplicar al muro</sys:String>
   <sys:String x:Key="Properties.ApplyType">Asignar tipo</sys:String>
   <sys:String x:Key="Properties.MoveXY">Desplazamiento X / Y (m)</sys:String>

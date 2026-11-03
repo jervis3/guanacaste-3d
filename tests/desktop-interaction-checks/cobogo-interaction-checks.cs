@@ -155,6 +155,50 @@ internal static partial class InteractionChecks
             Check(session.Document.Walls.Count == wallCount && session.Document.Openings.Count == openingCount,
                 "Cut removes the pasted wall with its openings");
 
+            // Commands that ask for numbers or text, answered the way a person would, on the house's real walls.
+            var responder = typeof(MainWindow).Assembly.GetType("Guanacaste3D.Desktop.TextPrompt")!
+                .GetField("Responder", BindingFlags.NonPublic | BindingFlags.Static)!;
+            void Answer(params string?[] replies)
+            {
+                var queue = new Queue<string?>(replies);
+                responder.SetValue(null, (Func<string, string?>)(_ => queue.Count > 0 ? queue.Dequeue() : null));
+            }
+            try
+            {
+                Invoke("SelectElement", longest.Id);
+                var count = session.Document.Walls.Count;
+                Answer("3; 0; 2");
+                Invoke("ExecuteApplicationCommand", "Array");
+                Check(session.Document.Walls.Count == count + 2, "The Array command makes a linear array of three from the house's longest wall");
+                Invoke("SelectElement", longest.Id);
+                Answer("r; 4; 90");
+                Invoke("ExecuteApplicationCommand", "Array");
+                Check(session.Document.Walls.Count == count + 5, "The Array command also makes a radial array of four");
+                Invoke("SelectElement", longest.Id);
+                Answer("0.5");
+                Invoke("ExecuteApplicationCommand", "Offset");
+                Check(session.Document.Walls.Count == count + 6, "The Offset command copies the wall half a meter to its left");
+                Answer("zzz-no-existe", "x");
+                Invoke("ExecuteApplicationCommand", "FindReplace");
+                Check(!string.IsNullOrWhiteSpace(((TextBlock)opened.FindName("StatusText")).Text), "Find and Replace reports when the text is nowhere");
+                var room = session.Document.Rooms[0].Name.Split(' ')[0];
+                Answer(room, "ZONA");
+                Invoke("ExecuteApplicationCommand", "FindReplace");
+                Check(session.Document.Rooms.Any(candidate => candidate.Name.Contains("ZONA")), $"Find and Replace changes '{room}' in the house's rooms");
+                Invoke("ExecuteApplicationCommand", "Numbering");
+                Check(session.Document.Rooms.Select(candidate => candidate.Number).Distinct().Count() == session.Document.Rooms.Count,
+                    "The Numbering command leaves every room with its own number");
+                Invoke("SelectElement", longest.Id);
+                Answer("1.05");
+                Invoke("ExecuteApplicationCommand", "Scale");
+                Invoke("ExecuteApplicationCommand", "AttachTop");
+                Check(session.Document.Walls.Any(), "Scale and Attach Top run on a real wall without failing");
+            }
+            finally
+            {
+                responder.SetValue(null, null);
+            }
+
             CrashProtectionChecks(opened, session);
 
             RandomRibbonOnHouse(session);
