@@ -13,6 +13,7 @@ static class WallEditChecks
         Trim(check);
         Align(check);
         Pin(check);
+        PinnedNeighbours(check);
         Match(check);
     }
 
@@ -204,6 +205,34 @@ static class WallEditChecks
         session.SetWallsPinned([wall], false);
         session.MoveWall(wall, 1, 1);
         check(Near(Wall(session, wall).Start, new Point2(1, 1)), "An unpinned wall moves again");
+    }
+
+    /// <summary>Editing an adjacent wall must never stretch a pinned corner or tee stem.</summary>
+    private static void PinnedNeighbours(Action<bool, string> check)
+    {
+        var (session, level) = NewSession();
+        var moving = session.AddWall(level, new Point2(0, 0), new Point2(4, 0));
+        var pinned = session.AddWall(level, new Point2(4, 0), new Point2(4, 3));
+        session.SetWallsPinned([pinned], true);
+
+        session.OffsetWalls([moving], 1, copy: false);
+        check(Near(Wall(session, pinned).Start, new Point2(4, 0)) &&
+              Near(Wall(session, pinned).End, new Point2(4, 3)),
+            "Offsetting a joined wall leaves the pinned neighbour's endpoints untouched");
+        session.Undo();
+        check(Near(Wall(session, moving).End, new Point2(4, 0)) &&
+              Near(Wall(session, pinned).Start, new Point2(4, 0)),
+            "Undo restores the original corner without moving the pinned neighbour");
+
+        var (teeSession, teeLevel) = NewSession();
+        var host = teeSession.AddWall(teeLevel, new Point2(0, 0), new Point2(4, 0));
+        var stem = teeSession.AddWall(teeLevel, new Point2(2, 0), new Point2(2, 3));
+        teeSession.SetWallsPinned([stem], true);
+
+        teeSession.OffsetWalls([host], 1, copy: false);
+        check(Near(Wall(teeSession, stem).Start, new Point2(2, 0)) &&
+              Near(Wall(teeSession, stem).End, new Point2(2, 3)),
+            "Moving a tee host does not drag the pinned stem");
     }
 
     /// <summary>Matching gives walls the source's type and settings but leaves their place alone.</summary>
