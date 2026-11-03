@@ -219,6 +219,8 @@
   <sys:String x:Key="Schedules.ExportWallLayerQuantities">Exportar capas de muros CSV…</sys:String>
   <sys:String x:Key="Schedules.ExportWallLayerQuantitiesHint">Exporta áreas netas y volúmenes por capa de núcleo, repello y fino, descontando puertas y ventanas. No incluye jambas, encuentros ni pintura.</sys:String>
   <sys:String x:Key="Schedules.NoWalls">El proyecto no contiene muros para exportar.</sys:String>
+  <sys:String x:Key="Schedules.ExportWallLayerSummary">Exportar resumen de capas de muros CSV…</sys:String>
+  <sys:String x:Key="Schedules.ExportWallLayerSummaryHint">Agrupa cantidades netas por nivel, tipo de muro, capa y espesor; incluye número de muros, área y volumen. Excluye jambas, encuentros y pintura.</sys:String>
   <sys:String x:Key="ScheduleFilter.Equal">es igual a</sys:String>
   <sys:String x:Key="ScheduleFilter.NotEqual">no es igual a</sys:String>
   <sys:String x:Key="ScheduleFilter.GreaterThan">es mayor que</sys:String>
