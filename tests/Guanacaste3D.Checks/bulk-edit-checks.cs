@@ -10,6 +10,40 @@ static class BulkEditChecks
         Scale(check, house);
         Renumber(check, house);
         Replace(check, house);
+        AttachTop(check, house);
+    }
+
+    /// <summary>A ground-floor wall under the upper slab is tied to that slab's underside; one with nothing above is refused.</summary>
+    private static void AttachTop(Action<bool, string> check, BuildingDocument house)
+    {
+        var session = new DocumentSession(house.Clone());
+        var levels = session.Document.Levels.ToDictionary(level => level.Id);
+        var attachable = session.Document.Walls
+            .Select(wall => (Wall: wall, Middle: new Point2((wall.Start.X + wall.End.X) / 2, (wall.Start.Y + wall.End.Y) / 2)))
+            .Select(entry => (entry.Wall, Slab: session.Document.Floors.Where(slab => !slab.IsToposolid && !slab.IsPitched && slab.Boundary.Count >= 3 &&
+                    RoomRegionGeometry.Contains(slab.Boundary, entry.Middle) &&
+                    levels[slab.LevelId].Elevation + slab.ElevationOffset - slab.Thickness > levels[entry.Wall.LevelId].Elevation + 0.1)
+                .OrderBy(slab => levels[slab.LevelId].Elevation + slab.ElevationOffset - slab.Thickness).FirstOrDefault()))
+            .Where(entry => entry.Slab is not null && !entry.Wall.Pinned).ToArray();
+        check(attachable.Length > 0, $"The house has {attachable.Length} walls with a flat slab above them");
+
+        var (wall, slab) = attachable[0];
+        var attached = session.AttachWallTopToSlabAbove(wall.Id);
+        var now = session.Document.Walls.Single(candidate => candidate.Id == wall.Id);
+        var underside = levels[slab!.LevelId].Elevation + slab.ElevationOffset - slab.Thickness;
+        check(attached == slab.Id && now.TopLevelId == slab.LevelId &&
+              Math.Abs(levels[now.TopLevelId!.Value].Elevation + now.TopOffset - underside) < 1e-9,
+            "The wall's top is tied to the underside of the slab above it");
+        check(Math.Abs(levels[now.LevelId].Elevation + now.Height - underside) < 1e-6,
+            "The wall's height reaches that underside after regeneration");
+        session.Undo();
+        check(session.Document.Walls.Single(candidate => candidate.Id == wall.Id).TopLevelId == wall.TopLevelId, "Undo releases the attachment");
+
+        var bare = session.AddWall(session.Document.Levels[0].Id, new Point2(900, 900), new Point2(904, 900));
+        check(Throws(() => session.AttachWallTopToSlabAbove(bare)) && Throws(() => session.AttachWallTopToSlabAbove(Guid.NewGuid())),
+            "A wall with nothing above it, and an unknown wall, are refused");
+        session.SetWallsPinned([wall.Id], true);
+        check(Throws(() => session.AttachWallTopToSlabAbove(wall.Id)), "A pinned wall cannot be attached");
     }
 
     private static bool Throws(Action action)

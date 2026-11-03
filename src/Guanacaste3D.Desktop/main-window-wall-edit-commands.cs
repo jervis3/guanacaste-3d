@@ -25,6 +25,8 @@ public partial class MainWindow
             case "Align": BeginAlignPick(); return true;
             case "MatchProperties": BeginMatchPick(); return true;
             case "FlipWall": FlipSelectedWall(); return true;
+            case "AttachTop":
+            case "AttachTopBase": AttachSelectedWallTop(); return true;
             case "DetachTopBase":
             case "DetachAll": DetachSelectedWallTop(); return true;
             default: return false;
@@ -80,6 +82,13 @@ public partial class MainWindow
             return;
         }
         RunWallEdit(() => _session.ArrayWallsLinear([id], (int)count, deltaX, deltaY), "Status.WallArrayed");
+    }
+
+    /// <summary>Ties the selected wall's top to the underside of the slab or roof above it.</summary>
+    private void AttachSelectedWallTop()
+    {
+        if (_selectedWallId is not Guid id) { StatusText.Text = GetText("Status.SelectWallFirst"); return; }
+        RunWallEdit(() => _session.AttachWallTopToSlabAbove(id), "Status.WallTopAttached");
     }
 
     private void FlipSelectedWall()

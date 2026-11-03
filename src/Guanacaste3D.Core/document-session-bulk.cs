@@ -114,3 +114,44 @@ public sealed partial class DocumentSession
         return changed;
     }
 }
+
+public sealed partial class DocumentSession
+{
+    /// <summary>
+    /// Ties the top of a wall to the underside of the flat slab, ceiling or roof that lies directly above the middle of
+    /// the wall, nearest first. The wall keeps following that slab's level when the level moves; pitched roofs are not
+    /// followed along their slope. Returns the slab the wall was attached to.
+    /// </summary>
+    public Guid AttachWallTopToSlabAbove(Guid wallId)
+    {
+        var attachedTo = Guid.Empty;
+        Commit("Transaction.AttachWallTop", document =>
+        {
+            EnsureNotPinned(document, wallId);
+            var index = document.Walls.FindIndex(wall => wall.Id == wallId);
+            if (index < 0) throw new InvalidDataException("The wall does not exist.");
+            var wall = document.Walls[index];
+            var levels = document.Levels.ToDictionary(level => level.Id);
+            var baseElevation = levels[wall.LevelId].Elevation;
+            var middle = new Point2((wall.Start.X + wall.End.X) / 2, (wall.Start.Y + wall.End.Y) / 2);
+
+            var candidates = document.Floors
+                .Where(slab => !slab.IsToposolid && !slab.IsPitched && slab.Kind != FloorKind.Water && slab.Boundary.Count >= 3 &&
+                               RoomRegionGeometry.Contains(slab.Boundary, middle))
+                .Select(slab => (Slab: slab, Underside: levels[slab.LevelId].Elevation + slab.ElevationOffset - slab.Thickness))
+                .Where(candidate => candidate.Underside > baseElevation + 0.1)
+                .OrderBy(candidate => candidate.Underside)
+                .ToArray();
+            if (candidates.Length == 0) throw new InvalidDataException("There is no slab above the wall to attach it to.");
+
+            var (slab, underside) = candidates[0];
+            document.Walls[index] = wall with
+            {
+                TopLevelId = slab.LevelId,
+                TopOffset = underside - levels[slab.LevelId].Elevation
+            };
+            attachedTo = slab.Id;
+        });
+        return attachedTo;
+    }
+}

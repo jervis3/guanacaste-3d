@@ -265,6 +265,7 @@
   <sys:String x:Key="Status.WallDimensionsApplied">Dimensiones del muro actualizadas.</sys:String>
   <sys:String x:Key="Status.SelectWallToJoin">Seleccione un muro para cambiar su unión.</sys:String>
   <sys:String x:Key="Status.WallJoinChanged">Unión del muro actualizada.</sys:String>
+  <sys:String x:Key="Status.WallTopAttached">Parte superior del muro asociada a la cara inferior de la losa o cubierta que tiene encima.</sys:String>
   <sys:String x:Key="Prompt.Scale.Title">Escalar muro</sys:String>
   <sys:String x:Key="Prompt.Scale.Label">Factor de escala entre 0,1 y 10, respecto al inicio del muro seleccionado:</sys:String>
   <sys:String x:Key="Status.WallScaled">Muro escalado.</sys:String>
