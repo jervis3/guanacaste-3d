@@ -18,6 +18,7 @@ public partial class MainWindow
         switch (commandId)
         {
             case "Scale": ScaleSelectedWall(); return true;
+            case "LinearDimension": BeginLinearDimension(); return true;
             case "MaterialTag": ToggleMaterialTags(); return true;
             case "Numbering": RenumberAllRooms(); return true;
             case "FindReplace": FindAndReplaceText(); return true;
@@ -50,6 +51,24 @@ public partial class MainWindow
         if (!TryReadNumber(text, out var factor)) { StatusText.Text = GetText("Status.InvalidNumber"); return; }
         var origin = _session.Document.Walls.Single(wall => wall.Id == id).Start;
         RunWallEdit(() => _session.ScaleWalls([id], origin, factor), "Status.WallScaled");
+    }
+
+    /// <summary>Two wall clicks make the dimension of the clear distance between them.</summary>
+    private void BeginLinearDimension()
+    {
+        Guid? first = null;
+        BeginWallPick(wall =>
+        {
+            if (first is null)
+            {
+                first = wall;
+                StatusText.Text = GetText("Status.PickDimensionSecond");
+                return false;
+            }
+            var owner = first.Value;
+            first = null;
+            return RunWallEdit(() => _session.AddDimensionBetween(owner, wall), "Status.DimensionAdded");
+        }, "Status.PickDimensionFirst");
     }
 
     private void RenumberAllRooms()
