@@ -170,7 +170,7 @@ internal static partial class InteractionChecks
                     try
                     {
                         Console.WriteLine($"Ribbon fuzz: seed={seed} step={step} command={command}");
-                    Invoke("ExecuteApplicationCommand", command);
+                        Invoke("ExecuteApplicationCommand", command);
                         session.Document.Validate();
                         executed++;
                         if (step % 6 == 0)
@@ -192,7 +192,6 @@ internal static partial class InteractionChecks
                 session.SetWallsPinned(leftovers.Length == 0 ? [] : leftovers, false);
                 foreach (var id in leftovers) session.RemoveWall(id);
             }
-
         }
         finally
         {
