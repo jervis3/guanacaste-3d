@@ -35,8 +35,20 @@ static class MassPlacementChecks
 
         check(Throws(() => MassPlacement.InArea([new(0, 0), new(1000, 0), new(1000, 1000), new(0, 1000)], options with { Spacing = 0.5 })) &&
               Throws(() => MassPlacement.AlongPath([new(0, 0)], options)) &&
+              Throws(() => MassPlacement.AlongPath([new(0, 0), new(0, 0), new(0, 0)], options)) &&
               Throws(() => MassPlacement.AlongPath(corner, options with { Spacing = double.NaN })),
             "Mass placement refuses floods, single points and invalid spacing");
+
+        // A near-cap area is permitted by the density estimate; the actual generator must
+        // never return more than the transaction's 2,000-instance hard limit.
+        var bounded = true;
+        try
+        {
+            Point2[] nearCap = [new(0, 0), new(54, 0), new(54, 55), new(0, 55)];
+            bounded = MassPlacement.InArea(nearCap, options with { Spacing = 1 }).Count <= MassPlacement.MaximumInstances;
+        }
+        catch (InvalidDataException) { /* Rejection at the hard limit is also valid. */ }
+        check(bounded, "Area mass placement never exceeds the transaction instance limit");
 
         // One undo step for the lot, each instance at its own size.
         Vector3[] corners = [new(-1, -1, 0), new(1, -1, 0), new(0, 1, 0), new(0, 0, 4)];
