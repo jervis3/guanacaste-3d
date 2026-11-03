@@ -22,7 +22,7 @@ public static class QuantitySchedule
                 .Append(FormatNumber(wall.Length)).Append(',')
                 .Append(FormatNumber(wall.Thickness)).Append(',')
                 .Append(FormatNumber(wall.Height)).Append(',')
-                .Append(FormatNumber(wall.Length * wall.Thickness * wall.Height)).Append(',')
+                .Append(FormatNumber(wall.ElevationArea * wall.Thickness)).Append(',')
                 .Append(FormatNumber(WallGeometry.NetVolume(wall, openings))).Append(',')
                 .Append(openings.Count(o => o.Kind == OpeningKind.Door)).Append(',')
                 .Append(openings.Count(o => o.Kind == OpeningKind.Window)).Append(',')

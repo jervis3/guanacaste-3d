@@ -30,6 +30,8 @@
   <sys:String x:Key="Error.An option with that name already exists.">Ya existe una opción con ese nombre.</sys:String>
   <sys:String x:Key="Error.The option does not exist.">La opción no existe.</sys:String>
   <sys:String x:Key="Error.The primary option cannot be removed; make another one primary first.">La opción principal no se puede eliminar; haga principal otra antes.</sys:String>
+  <sys:String x:Key="Error.The wall profile is invalid.">El perfil del muro no es válido: use de 2 a 64 puntos con distancias crecientes y alturas de al menos 5 cm.</sys:String>
+  <sys:String x:Key="Error.The profile cuts below a door or window of the wall.">El perfil baja por debajo de una puerta o ventana del muro.</sys:String>
   <sys:String x:Key="Error.The render scene does not exist.">La escena seleccionada ya no existe.</sys:String>
   <sys:String x:Key="Error.The render scene preview is too large.">La miniatura de la foto es demasiado grande.</sys:String>
   <sys:String x:Key="Error.The render scene collection is invalid.">La colección de escenas del proyecto no es válida.</sys:String>

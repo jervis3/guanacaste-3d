@@ -162,6 +162,33 @@ internal static partial class InteractionChecks
             }
             Invoke("CancelStructuralTool");
 
+            // Wall profile: the editor opens on the selected wall, presets fill it, Apply shapes the wall and Reset flattens it.
+            T InProfile<T>(string name) where T : FrameworkElement =>
+                (T)System.Windows.LogicalTreeHelper.FindLogicalNode(Field<Window>("_profileWindow"), name)!;
+            void ClickProfile(string name) =>
+                InProfile<System.Windows.Controls.Button>(name).RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent));
+            Invoke("SelectElement", angleA);
+            Invoke("ExecuteApplicationCommand", "EditProfile");
+            Pump();
+            Check(Field<Window?>("_profileWindow")?.IsVisible == true && InProfile<System.Windows.Controls.TextBox>("ProfileText").Text.Contains(';'),
+                "Edit Profile opens the editor on the selected wall with its top as a list of points");
+            InProfile<System.Windows.Controls.TextBox>("ProfileText").Text = "esto no es un perfil";
+            ClickProfile("ProfileApply");
+            Check(session.Document.Walls.Single(wall => wall.Id == angleA).TopProfile is null &&
+                  InProfile<System.Windows.Controls.TextBlock>("ProfileMessage").Text.Length > 0,
+                "Text that is not a profile changes nothing and the editor says so");
+            ClickProfile("ProfileGable");
+            ClickProfile("ProfileApply");
+            var profiled = session.Document.Walls.Single(wall => wall.Id == angleA);
+            Check(profiled.TopProfile is { Count: 3 } && profiled.TopHeightAt(profiled.Length / 2) > profiled.TopHeightAt(0),
+                "The gable preset applied from the editor gives the wall a ridge higher than its ends");
+            Invoke("RenderPlan");
+            Pump();
+            ClickProfile("ProfileClose");
+            Invoke("SelectElement", angleA);
+            Invoke("ExecuteApplicationCommand", "ResetProfile");
+            Check(session.Document.Walls.Single(wall => wall.Id == angleA).TopProfile is null, "Reset Profile flattens the top of the selected wall again");
+
             Invoke("ExecuteApplicationCommand", "RadialDimension");
             Field<Func<Guid, bool>>("_pickWallAction")(session.Document.Walls[0].Id);
             Check(session.Document.Dimensions.Count == dimensionsBefore + 4, "A straight wall gets no radius and the status line says why");
@@ -190,6 +217,15 @@ internal static partial class InteractionChecks
             tabs.SelectedIndex = 4;
             Pump();
             Check(elevationCanvas.Children.Count > 20, $"The elevation tab draws the house when it opens ({elevationCanvas.Children.Count} shapes)");
+            var polygonsFlat = elevationCanvas.Children.OfType<System.Windows.Shapes.Polygon>().Count();
+            tabs.SelectedIndex = 0;
+            Pump();
+            session.SetWallProfile(angleA, WallProfiles.Gable(4, 3));
+            tabs.SelectedIndex = 4;
+            Pump();
+            Check(elevationCanvas.Children.OfType<System.Windows.Shapes.Polygon>().Count() > polygonsFlat,
+                "A wall with a profile is drawn in the elevation as the polygon under its top, not as a rectangle");
+            session.ResetWallProfiles([angleA]);
             var sectionCanvas = (Canvas)opened.FindName("SectionCanvas");
             tabs.SelectedIndex = 5;
             Pump();

@@ -25,7 +25,7 @@ public static class FinishRules
     {
         var voids = openings.Where(opening => opening.WallId == wall.Id)
             .Sum(opening => opening.Width * opening.Height);
-        return Math.Max(0, wall.Length * wall.Height - voids);
+        return Math.Max(0, wall.ElevationArea - voids);
     }
 
     /// <summary>Finished area of a wall: both faces, so the finish applies on each side.</summary>

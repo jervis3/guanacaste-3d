@@ -58,6 +58,31 @@ public sealed record Wall(Guid Id, Guid LevelId, Point2 Start, Point2 End, doubl
     /// <summary>A pinned wall cannot be moved, rotated, mirrored in place, trimmed, aligned or deleted.</summary>
     public bool Pinned { get; init; }
 
+    /// <summary>
+    /// The shape of the wall's top, as points of (distance along the wall, height); null leaves it flat at
+    /// <see cref="Height"/>. The list is never changed after it is set: a changed profile is a new list.
+    /// </summary>
+    public List<Point2>? TopProfile { get; init; }
+
+    /// <summary>The height of the wall's top at a distance along it, following its profile and never above its height.</summary>
+    public double TopHeightAt(double along) =>
+        TopProfile is { Count: > 1 } profile ? Math.Min(Height, WallProfiles.HeightAt(profile, along)) : Height;
+
+    /// <summary>The area of the wall's face in elevation, in square meters, before the openings are taken out.</summary>
+    [JsonIgnore]
+    public double ElevationArea
+    {
+        get
+        {
+            if (TopProfile is not { Count: > 1 } profile) return Length * Height;
+            var stations = profile.Select(point => point.X).Where(x => x > 0 && x < Length).Append(0).Append(Length).Order().ToArray();
+            var area = 0.0;
+            for (var index = 1; index < stations.Length; index++)
+                area += (stations[index] - stations[index - 1]) * (TopHeightAt(stations[index - 1]) + TopHeightAt(stations[index])) / 2;
+            return area;
+        }
+    }
+
     [JsonIgnore] public double Length => Start.DistanceTo(End);
 }
 
@@ -251,6 +276,7 @@ public sealed class BuildingDocument
             if (wall.Id == Guid.Empty || !levelIds.Contains(wall.LevelId) || !wallTypeIds.Contains(wall.WallTypeId) ||
                 !double.IsFinite(wall.Start.X) || !double.IsFinite(wall.Start.Y) ||
                 !double.IsFinite(wall.End.X) || !double.IsFinite(wall.End.Y) ||
+                (wall.TopProfile is not null && !WallProfiles.IsValid(wall.TopProfile)) ||
                 !double.IsFinite(wall.Thickness) || !double.IsFinite(wall.Height) ||
                 wall.Length < 0.05 || wall.Length > 100000 ||
                 wall.Thickness is < 0.05 or > 5 || wall.Height is < 0.1 or > 1000 ||

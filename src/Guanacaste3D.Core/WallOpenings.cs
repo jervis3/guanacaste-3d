@@ -23,7 +23,21 @@ public sealed record WallOpening(Guid Id, Guid WallId, OpeningKind Kind,
 }
 
 /// <summary>A portion of solid wall excluding an opening.</summary>
-public readonly record struct WallSolid(double From, double To, double Bottom, double Top);
+public readonly record struct WallSolid(double From, double To, double Bottom, double Top, double? TopAtFrom = null, double? TopAtTo = null)
+{
+    /// <summary>The height of the top at the start of the solid; for a flat top, the same as everywhere else.</summary>
+    public double TopStart => TopAtFrom ?? Top;
+
+    /// <summary>The height of the top at the end of the solid.</summary>
+    public double TopEnd => TopAtTo ?? Top;
+
+    /// <summary>Whether the top slopes, which makes the solid a wedge rather than a box.</summary>
+    public bool Sloped => Math.Abs(TopStart - TopEnd) > 1e-9;
+
+    /// <summary>The height of the top at a distance along the wall, continuing the slope past either end.</summary>
+    public double TopHeightAt(double along) =>
+        To - From < 1e-9 ? Top : TopStart + (TopEnd - TopStart) * (along - From) / (To - From);
+}
 
 /// <summary>Checks hosted openings and builds rectangular wall-solid sections.</summary>
 public static class WallGeometry
@@ -48,6 +62,7 @@ public static class WallGeometry
                     o.Width < 0.3 || o.Height < 0.3 || o.Sill < 0 ||
                     o.Begin < 0.05 || o.End > host.Length - 0.05 ||
                     o.Sill + o.Height > host.Height - 0.05 ||
+                    (host.TopProfile is not null && Math.Min(host.TopHeightAt(o.Begin), host.TopHeightAt(o.End)) < o.Sill + o.Height + 0.05) ||
                     (o.Kind == OpeningKind.Door && o.Sill != 0))
                     throw new InvalidDataException("An opening exceeds its host wall bounds.");
                 if (i > 0 && sorted[i - 1].End + 0.05 > o.Begin)
@@ -88,7 +103,33 @@ public static class WallGeometry
         if (wall.Length - cursor >= 0.000001)
             parts.Add(new WallSolid(cursor, wall.Length, 0, wall.Height));
 
-        return parts;
+        return wall.TopProfile is { Count: > 1 } profile ? FollowProfile(wall, profile, parts) : parts;
+    }
+
+    /// <summary>
+    /// Cuts every solid that reaches the top of the wall at each point of the profile, so that the top of each piece
+    /// is a straight slope. Solids below an opening stay as they are.
+    /// </summary>
+    private static List<WallSolid> FollowProfile(Wall wall, List<Point2> profile, List<WallSolid> parts)
+    {
+        var result = new List<WallSolid>();
+        foreach (var part in parts)
+        {
+            if (part.Top < wall.Height - 1e-9)
+            {
+                result.Add(part);
+                continue;
+            }
+            var stations = profile.Select(point => point.X).Where(x => x > part.From + 1e-6 && x < part.To - 1e-6)
+                .Append(part.From).Append(part.To).Order().ToArray();
+            for (var index = 1; index < stations.Length; index++)
+            {
+                var from = wall.TopHeightAt(stations[index - 1]);
+                var to = wall.TopHeightAt(stations[index]);
+                result.Add(new WallSolid(stations[index - 1], stations[index], part.Bottom, Math.Max(from, to), from, to));
+            }
+        }
+        return result;
     }
 
     /// <summary>
@@ -102,5 +143,5 @@ public static class WallGeometry
     /// <summary>Calculates net wall volume after subtracting hosted openings.</summary>
     public static double NetVolume(Wall wall, IEnumerable<WallOpening> openings) =>
         Solids(wall, openings).Sum(part =>
-            (part.To - part.From) * (part.Top - part.Bottom)) * wall.Thickness;
+            (part.To - part.From) * ((part.TopStart + part.TopEnd) / 2 - part.Bottom)) * wall.Thickness;
 }

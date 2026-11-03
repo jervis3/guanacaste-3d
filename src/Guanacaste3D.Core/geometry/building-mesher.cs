@@ -252,8 +252,18 @@ public static class BuildingMesher
                     AddGlassWall(mesh, wall, solid.From, solid.To, z + solid.Bottom, z + solid.Top);
                     continue;
                 }
-                AddPrism(mesh, joins.SectionOutline(wall, solid.From, solid.To).Select(point => new Vector2((float)point.X, (float)point.Y)).ToArray(),
-                    (float)(z + solid.Bottom), (float)(z + solid.Top), facade, Face);
+                var outline = joins.SectionOutline(wall, solid.From, solid.To).Select(point => new Vector2((float)point.X, (float)point.Y)).ToArray();
+                if (!solid.Sloped)
+                {
+                    AddPrism(mesh, outline, (float)(z + solid.Bottom), (float)(z + solid.Top), facade, Face);
+                    continue;
+                }
+                // A wedge: the top at each corner is the height of the slope above that corner's place along the wall.
+                var axisX = (wall.End.X - wall.Start.X) / wall.Length;
+                var axisY = (wall.End.Y - wall.Start.Y) / wall.Length;
+                float TopAt(Vector2 corner) => (float)(z + Math.Max(solid.Bottom + 0.001,
+                    solid.TopHeightAt((corner.X - wall.Start.X) * axisX + (corner.Y - wall.Start.Y) * axisY)));
+                AddPrism(mesh, outline, (float)(z + solid.Bottom), (float)(z + solid.Top), facade, Face, TopAt);
             }
             mesh.MarkElement(wall.Id, wallFirst);
             foreach (var opening in openings)
@@ -1127,8 +1137,9 @@ public static class BuildingMesher
 
     /// <summary>Extrudes a simple polygon vertically into a closed, outward-facing prism.</summary>
     private static void AddPrism(SceneMesh mesh, IReadOnlyList<Vector2> outline, float bottom, float top,
-        SurfaceKind kind, Func<Vector2, Vector2, SurfaceKind>? sideKind = null)
+        SurfaceKind kind, Func<Vector2, Vector2, SurfaceKind>? sideKind = null, Func<Vector2, float>? topAt = null)
     {
+        float TopOf(Vector2 corner) => topAt?.Invoke(corner) ?? top;
         var plan = outline.Select(point => new Point2(point.X, point.Y)).ToArray();
         var counterClockwise = PolygonTriangulator.SignedDoubleArea(plan) > 0;
         var ordered = counterClockwise ? outline.ToArray() : outline.Reverse().ToArray();
@@ -1140,7 +1151,7 @@ public static class BuildingMesher
         catch (ArgumentException) { caps = []; }
         foreach (var (ia, ib, ic) in caps)
         {
-            mesh.AddTriangle(Lift(ordered[ia], top), Lift(ordered[ib], top), Lift(ordered[ic], top), kind);
+            mesh.AddTriangle(Lift(ordered[ia], TopOf(ordered[ia])), Lift(ordered[ib], TopOf(ordered[ib])), Lift(ordered[ic], TopOf(ordered[ic])), kind);
             mesh.AddTriangle(Lift(ordered[ic], bottom), Lift(ordered[ib], bottom), Lift(ordered[ia], bottom), kind);
         }
         for (var index = 0; index < ordered.Length; index++)
@@ -1154,7 +1165,7 @@ public static class BuildingMesher
                 var direction = Vector2.Normalize(next - current);
                 side = sideKind((current + next) / 2, new Vector2(direction.Y, -direction.X));
             }
-            mesh.AddQuad(Lift(current, bottom), Lift(next, bottom), Lift(next, top), Lift(current, top), side);
+            mesh.AddQuad(Lift(current, bottom), Lift(next, bottom), Lift(next, TopOf(next)), Lift(current, TopOf(current)), side);
         }
     }
 

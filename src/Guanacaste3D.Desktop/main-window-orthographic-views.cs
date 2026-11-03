@@ -225,19 +225,27 @@ public partial class MainWindow
         var top = ProjectElevation(canvas, level.Elevation + wall.Height, minimumElevation, scale);
         var wallWidth = Math.Max(4, projectedLength * scale);
         var wallType = _session.Document.WallTypes.Single(type => type.Id == wall.WallTypeId);
-        var wallShape = new Rectangle
+        Shape wallShape;
+        if (wall.TopProfile is { Count: > 1 } && projectedLength * scale >= 4)
         {
-            Width = wallWidth,
-            Height = wall.Height * scale,
-            Fill = useCutAppearance
-                ? WallAppearanceRendering.CreateBrush(
-                    wallType.SectionFillColor, wallType.SectionFillPattern)
-                : WallAppearanceRendering.CreateBrush(wallType.PlanFillColor, WallFillPattern.Solid, 0.58),
-            Stroke = Brushes.DarkSlateGray,
-            StrokeThickness = 1
-        };
-        Canvas.SetLeft(wallShape, left);
-        Canvas.SetTop(wallShape, top);
+            // A wall with a profile is drawn as the polygon under it, in the same coordinates as the rectangle it replaces.
+            wallShape = ProfiledWallShape(wall,
+                along => horizontalOffset + (start + (end - start) * along / wall.Length - minimumCoordinate) * scale,
+                height => ProjectElevation(canvas, level.Elevation + height, minimumElevation, scale));
+            Canvas.SetLeft(wallShape, 0);
+            Canvas.SetTop(wallShape, 0);
+        }
+        else
+        {
+            wallShape = new Rectangle { Width = wallWidth, Height = wall.Height * scale };
+            Canvas.SetLeft(wallShape, left);
+            Canvas.SetTop(wallShape, top);
+        }
+        wallShape.Fill = useCutAppearance
+            ? WallAppearanceRendering.CreateBrush(wallType.SectionFillColor, wallType.SectionFillPattern)
+            : WallAppearanceRendering.CreateBrush(wallType.PlanFillColor, WallFillPattern.Solid, 0.58);
+        wallShape.Stroke = Brushes.DarkSlateGray;
+        wallShape.StrokeThickness = 1;
         canvas.Children.Add(wallShape);
 
         if (projectedLength < 0.01) return;

@@ -148,8 +148,16 @@ public sealed partial class DocumentSession
             if (hosted.Any(opening => opening.Begin < station + 0.05 && opening.End > station - 0.05))
                 throw new InvalidDataException("An opening crosses the split point.");
 
-            document.Walls[index] = wall with { End = cut, EndJoin = WallJoinSetting.Miter };
-            document.Walls.Add(wall with { Id = secondId, Start = cut, StartJoin = WallJoinSetting.Miter, Pinned = false });
+            document.Walls[index] = wall with
+            {
+                End = cut, EndJoin = WallJoinSetting.Miter,
+                TopProfile = wall.TopProfile is { } profile ? WallProfiles.KeepBefore(profile, station) : null
+            };
+            document.Walls.Add(wall with
+            {
+                Id = secondId, Start = cut, StartJoin = WallJoinSetting.Miter, Pinned = false,
+                TopProfile = wall.TopProfile is { } rest ? WallProfiles.KeepAfter(rest, station, wall.Length - station) : null
+            });
             foreach (var opening in hosted.Where(opening => opening.Begin >= station))
             {
                 var at = document.Openings.FindIndex(candidate => candidate.Id == opening.Id);
@@ -250,6 +258,7 @@ public sealed partial class DocumentSession
                 document.Walls[index] = wall with
                 {
                     Start = wall.End, End = wall.Start, StartJoin = wall.EndJoin, EndJoin = wall.StartJoin,
+                    TopProfile = wall.TopProfile is { } flipped ? WallProfiles.Mirror(flipped, wall.Length) : null,
                     LocationReference = wall.LocationReference switch
                     {
                         WallLocationReference.ExteriorFace => WallLocationReference.InteriorFace,
