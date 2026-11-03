@@ -90,6 +90,37 @@ public partial class SchedulesWindow
         }
     }
 
+    /// <summary>
+    /// Exports the opening-aware wall layer takeoff without requiring a saved schedule.
+    /// The exported areas exclude reveals, joins and paint, as documented by the Core API.
+    /// </summary>
+    private void ExportWallLayerQuantities_Click(object sender, RoutedEventArgs e)
+    {
+        if (_session.Document.Walls.Count == 0)
+        {
+            StatusText.Text = Text("Schedules.NoWalls");
+            return;
+        }
+        var dialog = new SaveFileDialog
+        {
+            Filter = Text("Parameters.CsvFilter"),
+            FileName = "capas-muros.csv",
+            DefaultExt = ".csv",
+            AddExtension = true
+        };
+        if (dialog.ShowDialog(this) != true) return;
+        try
+        {
+            System.IO.File.WriteAllText(dialog.FileName,
+                WallLayerQuantitySchedule.ToCsv(_session.Document), new System.Text.UTF8Encoding(true));
+            StatusText.Text = Format("Parameters.Exported", dialog.FileName);
+        }
+        catch (Exception exception) when (exception is System.IO.IOException or UnauthorizedAccessException or System.IO.InvalidDataException)
+        {
+            StatusText.Text = Format("Parameters.Rejected", LocalizedErrors.Translate(exception.Message));
+        }
+    }
+
     /// <summary>Exports the evaluated schedule as CSV.</summary>
     private void ExportCsv_Click(object sender, RoutedEventArgs e)
     {
