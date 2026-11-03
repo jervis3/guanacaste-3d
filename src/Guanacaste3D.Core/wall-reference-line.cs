@@ -69,6 +69,9 @@ public static class WallReferenceLine
 
             var wall = walls[indexById[id]];
             var other = walls[indexById[join.Other.Id]];
+            // Reconnecting a moved wall must not drag a pinned neighbour. Leave the corner
+            // disconnected instead; pinning protects geometry even from indirect edits.
+            if (wall.Pinned || other.Pinned) continue;
             if (WallPlacementGeometry.CenterlineIntersection(
                     new WallCenterline(wall.Start, wall.End), new WallCenterline(other.Start, other.End)) is not { } corner)
                 continue;
@@ -85,6 +88,8 @@ public static class WallReferenceLine
         {
             if (!changedSet.Contains(stemId) && !changedSet.Contains(host.Id)) continue;
             var stem = walls[indexById[stemId]];
+            // A tee end may follow its host only when the stem is not pinned.
+            if (stem.Pinned) continue;
             var current = walls[indexById[host.Id]];
             if (WallPlacementGeometry.CenterlineIntersection(
                     new WallCenterline(stem.Start, stem.End), new WallCenterline(current.Start, current.End)) is not { } meeting)
