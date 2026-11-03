@@ -69,5 +69,56 @@ public static class WallLayerQuantitySchedule
         return csv.ToString();
     }
 
+    /// <summary>
+    /// Aggregates opening-aware wall layers by level, wall type, layer and actual thickness.
+    /// This is a net quantity summary, not a joined-wall, reveal or paint estimate.
+    /// Grouping by actual thickness prevents unlike instance overrides from being combined.
+    /// </summary>
+    public static string ToSummaryCsv(BuildingDocument document)
+    {
+        ArgumentNullException.ThrowIfNull(document);
+        document.Validate();
+        var types = document.WallTypes.ToDictionary(type => type.Id);
+        var levels = document.Levels.ToDictionary(level => level.Id);
+        var openings = document.Openings.ToLookup(opening => opening.WallId);
+        var entries = document.Walls.OrderBy(wall => wall.LevelId).ThenBy(wall => wall.Id)
+            .SelectMany(wall => For(wall, types[wall.WallTypeId], openings[wall.Id])
+                .Select((layer, order) => new
+                {
+                    wall.LevelId,
+                    wall.WallTypeId,
+                    layer.Layer,
+                    layer.Thickness,
+                    layer.NetFaceArea,
+                    layer.NetVolume,
+                    Order = order
+                }));
+        var groups = entries.GroupBy(row => new
+            {
+                row.LevelId,
+                row.WallTypeId,
+                row.Layer,
+                row.Thickness,
+                row.Order
+            })
+            .OrderBy(group => group.Key.LevelId)
+            .ThenBy(group => group.Key.WallTypeId)
+            .ThenBy(group => group.Key.Order)
+            .ThenBy(group => group.Key.Thickness);
+        var csv = new StringBuilder("Level,WallTypeId,WallType,Layer,Thickness_m,WallCount,NetFaceArea_m2,NetVolume_m3\n");
+        foreach (var group in groups)
+        {
+            csv.Append(SpreadsheetCsv.Quote(levels[group.Key.LevelId].Name)).Append(',')
+                .Append(group.Key.WallTypeId).Append(',')
+                .Append(SpreadsheetCsv.Quote(types[group.Key.WallTypeId].Name)).Append(',')
+                .Append(group.Key.Layer).Append(',')
+                .Append(Format(group.Key.Thickness)).Append(',')
+                .Append(group.Count().ToString(CultureInfo.InvariantCulture)).Append(',')
+                .Append(Format(group.Sum(row => row.NetFaceArea))).Append(',')
+                .Append(Format(group.Sum(row => row.NetVolume))).AppendLine();
+        }
+        return csv.ToString();
+    }
+
     private static string Format(double value) => value.ToString("0.######", CultureInfo.InvariantCulture);
 }
