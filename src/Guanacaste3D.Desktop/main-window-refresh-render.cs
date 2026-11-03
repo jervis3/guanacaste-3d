@@ -380,6 +380,7 @@ public partial class MainWindow
         else if (Keyboard.Modifiers == ModifierKeys.Control && e.Key == Key.A) { SelectAllInView(); e.Handled = true; }
         else if (Keyboard.Modifiers == ModifierKeys.Control && e.Key == Key.H) { HideSelectionInView(); e.Handled = true; }
         else if (Keyboard.Modifiers == (ModifierKeys.Control | ModifierKeys.Shift) && e.Key == Key.H) { ShowAllInView(); e.Handled = true; }
+        else if (TryHandleClipboardShortcut(e.Key, Keyboard.Modifiers)) e.Handled = true;
         else if (e.Key == Key.W) { SetWallTool(true); e.Handled = true; }
         else if (e.Key == Key.R) { Room_Click(this, new RoutedEventArgs()); e.Handled = true; }
         else if (e.Key == Key.F) { FitPlan_Click(this, new RoutedEventArgs()); e.Handled = true; }

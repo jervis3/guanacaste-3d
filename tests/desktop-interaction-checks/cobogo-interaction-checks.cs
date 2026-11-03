@@ -2,6 +2,7 @@ using System.IO;
 using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using Guanacaste3D.Core;
 using Guanacaste3D.Desktop;
 using Guanacaste3D.Desktop.Controls;
@@ -207,6 +208,21 @@ internal static partial class InteractionChecks
             Invoke("ExecuteApplicationCommand", "Cut");
             Check(session.Document.Walls.Count == wallCount && session.Document.Openings.Count == openingCount,
                 "Cut removes the pasted wall with its openings");
+
+            // The same operations from the keyboard: Ctrl+C, Ctrl+V and Ctrl+X, and nothing without Control.
+            Invoke("SelectElement", longest.Id);
+            Check(!(bool)Invoke("TryHandleClipboardShortcut", Key.C, ModifierKeys.None)! &&
+                  !(bool)Invoke("TryHandleClipboardShortcut", Key.C, ModifierKeys.Control | ModifierKeys.Shift)!,
+                "The letter C alone, or with Shift as well, is not a copy shortcut");
+            Check((bool)Invoke("TryHandleClipboardShortcut", Key.C, ModifierKeys.Control)! &&
+                  (bool)Invoke("TryHandleClipboardShortcut", Key.V, ModifierKeys.Control)! &&
+                  session.Document.Walls.Count == wallCount + 1,
+                "Ctrl+C then Ctrl+V pastes a copy of the selected wall");
+            Check((bool)Invoke("TryHandleClipboardShortcut", Key.X, ModifierKeys.Control)! && session.Document.Walls.Count == wallCount,
+                "Ctrl+X cuts the selected wall");
+            Invoke("TryHandleClipboardShortcut", Key.V, ModifierKeys.Control);
+            Invoke("TryHandleClipboardShortcut", Key.X, ModifierKeys.Control);
+            Check(session.Document.Walls.Count == wallCount, "Ctrl+V after Ctrl+X puts the wall back and a further Ctrl+X takes it away again");
 
             // Commands that ask for numbers or text, answered the way a person would, on the house's real walls.
             var responder = typeof(MainWindow).Assembly.GetType("Guanacaste3D.Desktop.TextPrompt")!

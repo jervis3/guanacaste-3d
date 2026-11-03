@@ -2,6 +2,7 @@ using System.Globalization;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using Guanacaste3D.Core;
 
 namespace Guanacaste3D.Desktop;
@@ -28,6 +29,22 @@ public partial class MainWindow
             case "SelectById": SelectElementByTypedId(); return true;
             case "ReviewWarnings": ShowModelWarnings(); return true;
             case "AreaTag": ShowPlanCategoryTags(TagCategory.Area); return true;
+            default: return false;
+        }
+    }
+
+    /// <summary>
+    /// Ctrl+C copies, Ctrl+X cuts and Ctrl+V pastes the selected wall, as the Modify ribbon's buttons do. Takes the
+    /// modifiers as an argument so it can be exercised without a real keyboard.
+    /// </summary>
+    private bool TryHandleClipboardShortcut(Key key, ModifierKeys modifiers)
+    {
+        if (modifiers != ModifierKeys.Control) return false;
+        switch (key)
+        {
+            case Key.C: CopySelectedWall(cut: false); return true;
+            case Key.X: CopySelectedWall(cut: true); return true;
+            case Key.V: PasteWallClipboard(); return true;
             default: return false;
         }
     }
