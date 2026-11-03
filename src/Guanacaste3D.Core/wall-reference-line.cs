@@ -67,6 +67,21 @@ public static class WallReferenceLine
             MoveEnd(document, indexById, wall.Id, end, corner);
             MoveEnd(document, indexById, other.Id, join.OtherEnd, corner);
         }
+
+        // A tee follows the wall it rests on: its end slides along its own line to the host's new centerline.
+        var changedSet = changed.ToHashSet();
+        foreach (var (stemId, stemEnd, host) in before.Tees.ToArray())
+        {
+            if (!changedSet.Contains(stemId) && !changedSet.Contains(host.Id)) continue;
+            var stem = walls[indexById[stemId]];
+            var current = walls[indexById[host.Id]];
+            if (WallPlacementGeometry.CenterlineIntersection(
+                    new WallCenterline(stem.Start, stem.End), new WallCenterline(current.Start, current.End)) is not { } meeting)
+                continue;
+            var slide = meeting.DistanceTo(EndPoint(stem, stemEnd));
+            if (slide > WallJoinIndex.Tolerance && AcceptsCornerSlide(slide, Math.Max(stem.Thickness, current.Thickness)))
+                MoveEnd(document, indexById, stemId, stemEnd, meeting);
+        }
     }
 
     /// <summary>

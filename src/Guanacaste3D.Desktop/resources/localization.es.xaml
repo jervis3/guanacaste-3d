@@ -263,6 +263,8 @@
   <sys:String x:Key="Properties.LockFixed">Fijo</sys:String>
   <sys:String x:Key="Properties.LockHint">Mantener fija esta dimensión. Al cambiar el área, solo se ajustan las dimensiones no fijas.</sys:String>
   <sys:String x:Key="Status.WallDimensionsApplied">Dimensiones del muro actualizadas.</sys:String>
+  <sys:String x:Key="Status.SelectWallToJoin">Seleccione un muro para cambiar su unión.</sys:String>
+  <sys:String x:Key="Status.WallJoinChanged">Unión del muro actualizada.</sys:String>
   <sys:String x:Key="Properties.ApplyWall">Aplicar al muro</sys:String>
   <sys:String x:Key="Properties.ApplyType">Asignar tipo</sys:String>
   <sys:String x:Key="Properties.MoveXY">Desplazamiento X / Y (m)</sys:String>

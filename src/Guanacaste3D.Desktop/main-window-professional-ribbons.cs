@@ -84,7 +84,8 @@ public partial class MainWindow
             case "CustomizeCommands": CustomizeCommands_Click(this, eventArguments); return true;
             case "CloseHiddenWindows": CloseInactiveViews(); return true;
             case "About": About_Click(this, eventArguments); return true;
-            default: return TryExecutePresentationCommand(commandId) || TryExecuteStructuralCommand(commandId);
+            default: return TryExecutePresentationCommand(commandId) || TryExecuteWallJoinCommand(commandId) ||
+                            TryExecuteStructuralCommand(commandId);
         }
     }
 

@@ -43,6 +43,12 @@ public sealed record Wall(Guid Id, Guid LevelId, Point2 Start, Point2 End, doubl
     /// </summary>
     public WallLocationReference LocationReference { get; init; }
 
+    /// <summary>How the start of the wall treats the wall it meets; a corner uses the settings of both walls.</summary>
+    public WallJoinSetting StartJoin { get; init; }
+
+    /// <summary>How the end of the wall treats the wall it meets.</summary>
+    public WallJoinSetting EndJoin { get; init; }
+
     [JsonIgnore] public double Length => Start.DistanceTo(End);
 }
 
@@ -228,7 +234,8 @@ public sealed class BuildingDocument
                 !double.IsFinite(wall.Thickness) || !double.IsFinite(wall.Height) ||
                 wall.Length < 0.05 || wall.Length > 100000 ||
                 wall.Thickness is < 0.05 or > 5 || wall.Height is < 0.1 or > 1000 ||
-                !Enum.IsDefined(wall.Finish) || !Enum.IsDefined(wall.LocationReference))
+                !Enum.IsDefined(wall.Finish) || !Enum.IsDefined(wall.LocationReference) ||
+                !Enum.IsDefined(wall.StartJoin) || !Enum.IsDefined(wall.EndJoin))
                 throw new InvalidDataException("A wall is invalid or has no associated level.");
         }
         ValidateRooms(levelIds);

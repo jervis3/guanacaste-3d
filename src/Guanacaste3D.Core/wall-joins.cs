@@ -15,7 +15,7 @@ public readonly record struct WallJoin(Wall Other, WallEnd OtherEnd);
 /// on one line. Corners where three or more walls meet, collinear continuations, and near-reversed
 /// walls keep flat ends.
 /// </summary>
-public sealed class WallJoinIndex
+public sealed partial class WallJoinIndex
 {
     /// <summary>Distance in meters below which two wall endpoints count as the same corner.</summary>
     public const double Tolerance = 1e-4;
@@ -37,6 +37,7 @@ public sealed class WallJoinIndex
     public static WallJoinIndex Build(IReadOnlyList<Wall> walls)
     {
         var joins = new Dictionary<(Guid WallId, WallEnd End), WallJoin>();
+        var touching = new HashSet<(Guid WallId, WallEnd End)>();
         var cells = new Dictionary<(Guid LevelId, double X, double Y),
             List<(Wall Wall, WallEnd End, Point2 Corner)>>();
 
@@ -93,6 +94,8 @@ public sealed class WallJoinIndex
                     }
                 }
 
+                if (count >= 1)
+                    touching.Add((wall.Id, end));
                 if (count == 1)
                     joins[(wall.Id, end)] = single;
             }
@@ -109,7 +112,9 @@ public sealed class WallJoinIndex
                 joins.Remove(entry.Key);
         }
 
-        return new WallJoinIndex(joins);
+        var index = new WallJoinIndex(joins);
+        index.ResolveStyles(walls, touching);
+        return index;
     }
 
     /// <summary>Returns the single wall that meets the given wall end in a simple corner, if any.</summary>
@@ -160,6 +165,7 @@ public sealed class WallJoinIndex
         var corner = CornerAt(wall, end);
         var (normalX, normalY) = LeftNormal(wall);
         var half = wall.Thickness / 2;
+        if (TryStyledFaces(wall, end, out var styled)) return styled;
         if (!_joins.TryGetValue((wall.Id, end), out var join))
             return Square(corner, normalX * half, normalY * half);
 

@@ -107,6 +107,7 @@
   <sys:String x:Key="Error.The selected wall type does not exist.">El tipo de muro seleccionado no existe.</sys:String>
   <sys:String x:Key="Error.The wall collection contains duplicate identifiers.">Hay muros con identificadores duplicados.</sys:String>
   <sys:String x:Key="Error.The wall does not exist.">El muro no existe.</sys:String>
+  <sys:String x:Key="Error.The wall join setting is invalid.">El ajuste de unión de muros no es válido.</sys:String>
   <sys:String x:Key="Error.The floor slab does not exist.">La losa no existe.</sys:String>
   <sys:String x:Key="Error.The Revit family has no readable family metadata.">La familia de Revit no tiene metadatos legibles.</sys:String>
   <sys:String x:Key="Error.The Revit family metadata is damaged.">Los metadatos de la familia de Revit están dañados.</sys:String>
