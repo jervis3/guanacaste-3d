@@ -98,14 +98,14 @@ Check(revealRows.Where(row => row.OpeningKind == OpeningKind.Door).All(row => ro
       revealRows.All(row => Math.Abs(row.TotalArea - row.JambArea - row.HeadArea - row.SillArea) < 1e-9),
     "Door thresholds have no sill return and each reveal row reconciles");
 var revealCsv = WallOpeningRevealSchedule.ToCsv(takeoffSession.Document);
-Check(revealCsv.Split('\\n', StringSplitOptions.RemoveEmptyEntries).Length == revealRows.Count + 1 &&
+Check(revealCsv.Split('\n', StringSplitOptions.RemoveEmptyEntries).Length == revealRows.Count + 1 &&
       revealCsv.Contains("TotalRevealArea_m2", StringComparison.Ordinal) &&
       revealCsv == WallOpeningRevealSchedule.ToCsv(takeoffSession.Document),
     "Reveal CSV contains every opening-layer row and is reproducible");
 var noOpeningReveals = takeoffSession.Document.Clone();
 noOpeningReveals.Openings.Clear();
 Check(WallOpeningRevealSchedule.ToCsv(noOpeningReveals)
-        .Split('\\n', StringSplitOptions.RemoveEmptyEntries).Length == 1,
+        .Split('\n', StringSplitOptions.RemoveEmptyEntries).Length == 1,
     "Projects without hosted openings export a header-only reveal schedule");
 
 var invalidLayerOpening = new WallOpening(Guid.NewGuid(), takeoffWallId, OpeningKind.Window, 2, 0.8, 1, 1);
