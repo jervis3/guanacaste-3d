@@ -1133,7 +1133,12 @@ public static class BuildingMesher
         var counterClockwise = PolygonTriangulator.SignedDoubleArea(plan) > 0;
         var ordered = counterClockwise ? outline.ToArray() : outline.Reverse().ToArray();
         var orderedPlan = ordered.Select(point => new Point2(point.X, point.Y)).ToArray();
-        foreach (var (ia, ib, ic) in PolygonTriangulator.Triangulate(orderedPlan))
+        // Far from the origin a float can no longer tell the corners of a thin outline apart, and its caps collapse to
+        // no area. The sides still stand, and one flattened element must not stop the whole model from meshing.
+        IReadOnlyList<(int A, int B, int C)> caps;
+        try { caps = PolygonTriangulator.Triangulate(orderedPlan); }
+        catch (ArgumentException) { caps = []; }
+        foreach (var (ia, ib, ic) in caps)
         {
             mesh.AddTriangle(Lift(ordered[ia], top), Lift(ordered[ib], top), Lift(ordered[ic], top), kind);
             mesh.AddTriangle(Lift(ordered[ic], bottom), Lift(ordered[ib], bottom), Lift(ordered[ia], bottom), kind);

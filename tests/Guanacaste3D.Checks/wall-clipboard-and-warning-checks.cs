@@ -87,6 +87,12 @@ static class WallClipboardAndWarningChecks
         check(codes.Contains("OverlappingWalls"), "Walls running over one another are reported");
         check(codes.Contains("WallGap"), "A wall stopping short of another is reported as a gap");
 
+        var farSession = new DocumentSession(BuildingDocument.Create());
+        farSession.AddWall(farSession.Document.Levels[0].Id, new Point2(250000, 1000000), new Point2(250005, 1000000));
+        var farWarning = ModelWarnings.Analyze(farSession.Document).SingleOrDefault(warning => warning.Code == "FarFromOrigin");
+        check(farWarning is not null && farWarning.Value >= 1000000 && !codes.Contains("FarFromOrigin"),
+            "Walls a million meters from the origin, as in CRTM05 coordinates, are reported as losing 3D precision");
+
         var rooms = session.Document.Clone();
         rooms.Rooms.Add(new Room(Guid.NewGuid(), level, "1", "A", new Point2(0, 0), new Point2(4, 4)));
         rooms.Rooms.Add(new Room(Guid.NewGuid(), level, " 1 ", "B", new Point2(5, 0), new Point2(9, 4)));

@@ -28,6 +28,12 @@ public static class ModelWarnings
     /// <summary>Wall ends this close to another wall without touching it are reported as a gap, in meters.</summary>
     public const double WallGap = 0.15;
 
+    /// <summary>
+    /// Elements farther than this from the origin, in meters, mesh with a visible loss of precision: the 3D view
+    /// stores positions as 32-bit floats, which resolve about 8 mm at this distance and 6 cm at a million.
+    /// </summary>
+    public const double FarFromOrigin = 100000;
+
     /// <summary>Levels with more walls than this skip the pairwise checks, which grow with the square of the count.</summary>
     public const int PairwiseWallLimit = 2000;
 
@@ -39,6 +45,13 @@ public static class ModelWarnings
 
         foreach (var wall in document.Walls.Where(wall => wall.Length < ShortWallLength))
             warnings.Add(new ModelWarning("ShortWall", WarningSeverity.Warning, [wall.Id], wall.Length));
+
+        var far = document.Walls.Where(wall => Math.Max(
+            Math.Max(Math.Abs(wall.Start.X), Math.Abs(wall.Start.Y)), Math.Max(Math.Abs(wall.End.X), Math.Abs(wall.End.Y))) > FarFromOrigin).ToArray();
+        if (far.Length > 0)
+            warnings.Add(new ModelWarning("FarFromOrigin", WarningSeverity.Warning, far.Select(wall => wall.Id).ToArray(),
+                far.Max(wall => Math.Max(Math.Max(Math.Abs(wall.Start.X), Math.Abs(wall.Start.Y)),
+                    Math.Max(Math.Abs(wall.End.X), Math.Abs(wall.End.Y))))));
 
         var hosts = document.Walls.ToDictionary(wall => wall.Id);
         foreach (var opening in document.Openings)

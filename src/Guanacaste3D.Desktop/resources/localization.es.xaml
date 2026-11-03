@@ -295,6 +295,7 @@
   <sys:String x:Key="Warning.TinyRoom">Habitación de solo {0:0.00} m².</sys:String>
   <sys:String x:Key="Warning.DuplicateColumns">Hay {0:0} pilares en la misma posición.</sys:String>
   <sys:String x:Key="Warning.DegenerateSlab">Una losa tiene un contorno no válido.</sys:String>
+  <sys:String x:Key="Warning.FarFromOrigin">Hay muros a {0:0} m del origen: la vista 3D pierde precisión (unos 6 cm a un millón de metros). Acerque el proyecto al origen.</sys:String>
   <sys:String x:Key="ViewCategory.Walls">Muros</sys:String>
   <sys:String x:Key="ViewCategory.Doors">Puertas</sys:String>
   <sys:String x:Key="ViewCategory.Windows">Ventanas</sys:String>
