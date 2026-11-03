@@ -1,5 +1,6 @@
 using Guanacaste3D.Core;
 using Guanacaste3D.Core.Geometry;
+using Guanacaste3D.Core.Interop;
 
 /// <summary>
 /// Property-based checks for the wall editing commands. Instead of one hand-written scenario per command, it builds
@@ -110,6 +111,7 @@ static class RandomizedWallChecks
                 if (ProjectFile.SerializeDocument(ProjectFile.DeserializeDocument(after)) != after)
                     Fail("round trip:", "saving and reopening changed the project");
                 CheckGeometry(session.Document, step % 5 == 0);
+                if (Accepted.Values.Sum() % 6 == 0) CheckExports(session.Document);
             }
             catch (Exception exception)
             {
@@ -125,6 +127,44 @@ static class RandomizedWallChecks
             _ = undoable;
         }
         return steps;
+    }
+
+    /// <summary>
+    /// Every exporter must cope with whatever the commands produce: angled walls, tees, butt joins, pinned and
+    /// flipped walls. Output must be repeatable and must not contain a number the receiving program cannot read.
+    /// </summary>
+    private static void CheckExports(BuildingDocument document)
+    {
+        var stamp = new DateTimeOffset(2026, 11, 3, 12, 0, 0, TimeSpan.Zero);
+        var texts = new Dictionary<string, Func<string>>
+        {
+            ["IFC"] = () => IfcExporter.ToStep(document, stamp),
+            ["DXF"] = () => DxfExporter.ToAscii(document),
+            ["quantities"] = () => QuantitySchedule.ToCsv(document),
+            ["wall layers"] = () => WallLayerQuantitySchedule.ToCsv(document),
+            ["roofs"] = () => RoofQuantitySchedule.ToCsv(document),
+            ["reveals"] = () => WallOpeningRevealSchedule.ToCsv(document)
+        };
+        foreach (var (name, export) in texts)
+        {
+            var first = export();
+            if (first != export()) throw new InvalidDataException($"the {name} export is not repeatable");
+            if (first.Contains("NaN") || first.Contains("Infinity") || first.Contains("∞"))
+                throw new InvalidDataException($"the {name} export contains a number that is not finite");
+        }
+        var ifc = texts["IFC"]();
+        var wallEntities = ifc.Split((char)10).Count(line => line.Contains("=IFCWALL", StringComparison.Ordinal));
+        if (wallEntities < document.Walls.Count)
+            throw new InvalidDataException($"the IFC export has {wallEntities} walls for {document.Walls.Count} in the project");
+
+        var mesh = BuildingMesher.Build(document);
+        var (obj, material) = MeshExporter.ToObj(mesh, "materials.mtl");
+        if (obj.Contains("NaN") || material.Contains("NaN")) throw new InvalidDataException("the OBJ export contains NaN");
+        if (!MeshExporter.ToGlb(mesh, "random").AsSpan().SequenceEqual(MeshExporter.ToGlb(mesh, "random")))
+            throw new InvalidDataException("the GLB export is not repeatable");
+        if (PdfPlanExporter.Export(document, SheetPaperSize.A3, stamp).Length == 0)
+            throw new InvalidDataException("the PDF export is empty");
+        _ = ModelWarnings.Analyze(document);
     }
 
     /// <summary>The first frames of an exception, so a failure points at the code that raised it.</summary>

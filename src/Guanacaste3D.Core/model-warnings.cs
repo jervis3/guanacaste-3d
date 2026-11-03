@@ -65,12 +65,15 @@ public static class ModelWarnings
         {
             var walls = level.ToArray();
             AddDuplicateWalls(walls, warnings);
-            if (walls.Length <= PairwiseWallLimit)
-            {
-                AddOverlappingWalls(walls, warnings);
-                AddWallGaps(walls, warnings);
-            }
+            if (walls.Length <= PairwiseWallLimit) AddWallGaps(walls, warnings);
         }
+
+        // The model audit owns the checks that need a spatial index; its wall gap rule measures to the centerline, so the
+        // body-based WallGap check above stays. Both are shown in the same list.
+        foreach (var issue in ModelAudit.Analyze(document).Where(issue => issue.Code != ModelAuditCode.NearWallGap))
+            warnings.Add(new ModelWarning(issue.Code.ToString(), issue.Code == ModelAuditCode.LowOpeningHeadClearance
+                    ? WarningSeverity.Info : WarningSeverity.Warning,
+                issue.RelatedId is { } related ? [issue.ElementId, related] : [issue.ElementId], issue.ValueMeters));
 
         foreach (var group in document.Rooms.GroupBy(room => (room.LevelId, room.Number.Trim().ToUpperInvariant()))
                      .Where(group => group.Key.Item2.Length > 0 && group.Count() > 1))
@@ -82,8 +85,6 @@ public static class ModelWarnings
                      .Where(group => group.Count() > 1))
             warnings.Add(new ModelWarning("DuplicateColumns", WarningSeverity.Warning, group.Select(column => column.Id).ToArray(), group.Count()));
 
-        foreach (var floor in document.Floors.Where(floor => floor.Boundary.Count < 3 || RoomRegionGeometry.Area(floor.Boundary) < 0.01))
-            warnings.Add(new ModelWarning("DegenerateSlab", WarningSeverity.Warning, [floor.Id]));
 
         return warnings.OrderBy(warning => warning.Severity == WarningSeverity.Warning ? 0 : 1)
             .ThenBy(warning => warning.Code, StringComparer.Ordinal).ToArray();
@@ -103,21 +104,6 @@ public static class ModelWarnings
 
         foreach (var group in walls.GroupBy(Key).Where(group => group.Count() > 1))
             warnings.Add(new ModelWarning("DuplicateWalls", WarningSeverity.Warning, group.Select(wall => wall.Id).ToArray(), group.Count()));
-    }
-
-    /// <summary>Walls that run on top of one another over part of their length, which are not exact duplicates.</summary>
-    private static void AddOverlappingWalls(Wall[] walls, List<ModelWarning> warnings)
-    {
-        for (var i = 0; i < walls.Length; i++)
-        for (var j = i + 1; j < walls.Length; j++)
-        {
-            var shared = WallOverlap.SharedLength(walls[i].Start, walls[i].End, walls[i].Thickness,
-                walls[j].Start, walls[j].End, walls[j].Thickness);
-            if (shared < WallOverlap.MinimumSharedLength) continue;
-            var sameEnds = (walls[i].Start.DistanceTo(walls[j].Start) < 1e-3 && walls[i].End.DistanceTo(walls[j].End) < 1e-3) ||
-                           (walls[i].Start.DistanceTo(walls[j].End) < 1e-3 && walls[i].End.DistanceTo(walls[j].Start) < 1e-3);
-            if (!sameEnds) warnings.Add(new ModelWarning("OverlappingWalls", WarningSeverity.Warning, [walls[i].Id, walls[j].Id], shared));
-        }
     }
 
     /// <summary>A wall end that stops a little short of another wall: almost a corner, but open.</summary>

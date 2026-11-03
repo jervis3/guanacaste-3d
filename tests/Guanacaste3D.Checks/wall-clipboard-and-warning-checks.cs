@@ -93,17 +93,23 @@ static class WallClipboardAndWarningChecks
         check(farWarning is not null && farWarning.Value >= 1000000 && !codes.Contains("FarFromOrigin"),
             "Walls a million meters from the origin, as in CRTM05 coordinates, are reported as losing 3D precision");
 
+        var tight = session.Document.Walls.First(candidate => candidate.Length > 5 && candidate.Id != wall);
+        session.AddOpening(tight.Id, OpeningKind.Door, offset: 3.5, height: tight.Height - 0.07);
         var rooms = session.Document.Clone();
         rooms.Rooms.Add(new Room(Guid.NewGuid(), level, "1", "A", new Point2(0, 0), new Point2(4, 4)));
         rooms.Rooms.Add(new Room(Guid.NewGuid(), level, " 1 ", "B", new Point2(5, 0), new Point2(9, 4)));
         rooms.Rooms.Add(new Room(Guid.NewGuid(), level, "2", "Closet", new Point2(0, 0), new Point2(0.5, 0.5)));
         rooms.Columns.Add(new Column(Guid.NewGuid(), level, new Point2(1, 1), 0.3, 0.3, 3));
         rooms.Columns.Add(new Column(Guid.NewGuid(), level, new Point2(1.0001, 1), 0.3, 0.3, 3));
-        rooms.Floors.Add(new FloorSlab(Guid.NewGuid(), level, "Bad", [new Point2(0, 0), new Point2(1, 0)], 0.2));
         var roomCodes = ModelWarnings.Analyze(rooms).Select(warning => warning.Code).ToHashSet();
         check(roomCodes.Contains("DuplicateRoomNumber") && roomCodes.Contains("TinyRoom") &&
-              roomCodes.Contains("DuplicateColumns") && roomCodes.Contains("DegenerateSlab"),
-            "Duplicate room numbers, tiny rooms, stacked columns and broken slabs are reported");
+              roomCodes.Contains("DuplicateColumns"),
+            "Duplicate room numbers, tiny rooms and stacked columns are reported");
+
+        rooms.Rooms.Add(new Room(Guid.NewGuid(), level, "3", "Overlap", new Point2(3, 0), new Point2(6, 3)));
+        var auditCodes = ModelWarnings.Analyze(rooms).Select(warning => warning.Code).ToHashSet();
+        check(auditCodes.Contains("OverlappingRooms") && auditCodes.Contains("LowOpeningHeadClearance"),
+            "Warnings include the audit's overlapping rooms and low opening head clearance");
 
         var ordered = ModelWarnings.Analyze(rooms);
         check(ordered.SequenceEqual(ModelWarnings.Analyze(rooms), new WarningComparer()) &&
