@@ -26,8 +26,7 @@ public static class WallReferenceLine
     {
         var walls = document.Walls;
         var before = WallJoinIndex.Build(walls);
-        var indexById = new Dictionary<Guid, int>(walls.Count);
-        for (var index = 0; index < walls.Count; index++) indexById[walls[index].Id] = index;
+        var indexById = IndexOf(walls);
 
         var changed = new List<Guid>();
         foreach (var (id, thickness) in thicknesses)
@@ -47,6 +46,18 @@ public static class WallReferenceLine
             changed.Add(id);
         }
 
+        ReconnectCorners(document, indexById, before, changed, AcceptsCornerSlide);
+    }
+
+    /// <summary>
+    /// After some walls moved, closes the corners and tees they had: where exactly two walls met, both ends go to
+    /// the crossing of their centerlines; a tee end slides along its own line to its host. <paramref name="accepts"/>
+    /// receives the slide and the larger thickness and decides whether a corner may follow; null always accepts.
+    /// </summary>
+    internal static void ReconnectCorners(BuildingDocument document, Dictionary<Guid, int> indexById,
+        WallJoinIndex before, IReadOnlyCollection<Guid> changed, Func<double, double, bool>? accepts)
+    {
+        var walls = document.Walls;
         var closed = new HashSet<(Guid, WallEnd, Guid, WallEnd)>();
         foreach (var id in changed)
         foreach (var end in new[] { WallEnd.Start, WallEnd.End })
@@ -62,7 +73,7 @@ public static class WallReferenceLine
                     new WallCenterline(wall.Start, wall.End), new WallCenterline(other.Start, other.End)) is not { } corner)
                 continue;
             var slide = Math.Max(corner.DistanceTo(EndPoint(wall, end)), corner.DistanceTo(EndPoint(other, join.OtherEnd)));
-            if (slide <= WallJoinIndex.Tolerance || !AcceptsCornerSlide(slide, Math.Max(wall.Thickness, other.Thickness)))
+            if (slide <= WallJoinIndex.Tolerance || !Accepted(slide, Math.Max(wall.Thickness, other.Thickness)))
                 continue;
             MoveEnd(document, indexById, wall.Id, end, corner);
             MoveEnd(document, indexById, other.Id, join.OtherEnd, corner);
@@ -79,9 +90,19 @@ public static class WallReferenceLine
                     new WallCenterline(stem.Start, stem.End), new WallCenterline(current.Start, current.End)) is not { } meeting)
                 continue;
             var slide = meeting.DistanceTo(EndPoint(stem, stemEnd));
-            if (slide > WallJoinIndex.Tolerance && AcceptsCornerSlide(slide, Math.Max(stem.Thickness, current.Thickness)))
+            if (slide > WallJoinIndex.Tolerance && Accepted(slide, Math.Max(stem.Thickness, current.Thickness)))
                 MoveEnd(document, indexById, stemId, stemEnd, meeting);
         }
+
+        bool Accepted(double slide, double thickness) => accepts is null || accepts(slide, thickness);
+    }
+
+    /// <summary>Maps each wall id to its position in the document's wall list.</summary>
+    internal static Dictionary<Guid, int> IndexOf(List<Wall> walls)
+    {
+        var indexById = new Dictionary<Guid, int>(walls.Count);
+        for (var index = 0; index < walls.Count; index++) indexById[walls[index].Id] = index;
+        return indexById;
     }
 
     /// <summary>
@@ -96,7 +117,7 @@ public static class WallReferenceLine
     }
 
     /// <summary>Moves one end of a wall; an opening measured from the start keeps its place in the model.</summary>
-    private static void MoveEnd(BuildingDocument document, Dictionary<Guid, int> indexById, Guid wallId, WallEnd end, Point2 point)
+    internal static void MoveEnd(BuildingDocument document, Dictionary<Guid, int> indexById, Guid wallId, WallEnd end, Point2 point)
     {
         var index = indexById[wallId];
         var wall = document.Walls[index];

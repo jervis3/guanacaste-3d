@@ -262,6 +262,7 @@ public sealed partial class DocumentSession
         if (!Document.Walls.Any(w => w.Id == id)) return;
         Commit("Transaction.MoveWall", doc =>
         {
+            EnsureNotPinned(doc, id);
             var index = doc.Walls.FindIndex(w => w.Id == id);
             var wall = doc.Walls[index];
             Point2[] movedCorners = [wall.Start, wall.End];
@@ -337,6 +338,7 @@ public sealed partial class DocumentSession
             throw new InvalidDataException("The wall does not exist.");
         Commit("Transaction.MoveWallEnd", doc =>
         {
+            EnsureNotPinned(doc, id);
             var index = doc.Walls.FindIndex(w => w.Id == id);
             var wall = doc.Walls[index];
             doc.Walls[index] = end == WallEnd.Start ? wall with { Start = point, GridAxisId = null, GridAxisAssociationDisabled = true } : wall with { End = point, GridAxisId = null, GridAxisAssociationDisabled = true };
@@ -369,7 +371,8 @@ public sealed partial class DocumentSession
                 End = new Point2(original.End.X + deltaX, original.End.Y + deltaY),
                 // A copied wall must never inherit a reference constraint from its source.
                 GridAxisId = null,
-                GridAxisAssociationDisabled = true
+                GridAxisAssociationDisabled = true,
+                Pinned = false
             });
             foreach (var opening in doc.Openings.Where(o => o.WallId == id).ToArray())
                 doc.Openings.Add(opening with { Id = Guid.NewGuid(), WallId = newId });
@@ -389,6 +392,7 @@ public sealed partial class DocumentSession
         var radians = degrees * Math.PI / 180;
         Commit("Transaction.RotateWall", doc =>
         {
+            EnsureNotPinned(doc, id);
             var index = doc.Walls.FindIndex(w => w.Id == id);
             var wall = doc.Walls[index];
             var dx = wall.End.X - wall.Start.X;
@@ -418,6 +422,7 @@ public sealed partial class DocumentSession
         if (!Document.Walls.Any(w => w.Id == id)) return;
         Commit("Transaction.RemoveWall", doc =>
         {
+            EnsureNotPinned(doc, id);
             var levelId = doc.Walls.Single(w => w.Id == id).LevelId;
             doc.Openings.RemoveAll(o => o.WallId == id);
             doc.Walls.RemoveAll(w => w.Id == id);

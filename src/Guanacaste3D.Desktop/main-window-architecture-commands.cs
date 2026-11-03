@@ -200,7 +200,8 @@ public partial class MainWindow
             StatusText.Text = GetText("Status.PickWallMissed");
             return true;
         }
-        try { action(id); StatusText.Text = GetText("Status.ElementUpdated"); }
+        // An action that returns false is part-way through a multi-click command and has set its own prompt.
+        try { if (action(id)) StatusText.Text = GetText("Status.ElementUpdated"); }
         catch (InvalidDataException exception) { StatusText.Text = LocalizedErrors.Translate(exception.Message); }
         RefreshAll();
         return true;

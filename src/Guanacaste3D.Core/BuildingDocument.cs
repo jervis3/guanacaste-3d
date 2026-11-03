@@ -49,6 +49,9 @@ public sealed record Wall(Guid Id, Guid LevelId, Point2 Start, Point2 End, doubl
     /// <summary>How the end of the wall treats the wall it meets.</summary>
     public WallJoinSetting EndJoin { get; init; }
 
+    /// <summary>A pinned wall cannot be moved, rotated, mirrored in place, trimmed, aligned or deleted.</summary>
+    public bool Pinned { get; init; }
+
     [JsonIgnore] public double Length => Start.DistanceTo(End);
 }
 
