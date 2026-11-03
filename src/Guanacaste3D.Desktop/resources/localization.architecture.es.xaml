@@ -28,6 +28,12 @@
   <sys:String x:Key="Entity.Skylight">Tragaluz</sys:String>
   <sys:String x:Key="Entity.ReferencePlane">Plano de referencia</sys:String>
   <sys:String x:Key="Entity.RoomSeparator">Separador de ambientes</sys:String>
+  <sys:String x:Key="Entity.DetailLine">Línea de detalle</sys:String>
+  <sys:String x:Key="Entity.FilledRegion">Región rellena</sys:String>
+  <sys:String x:Key="Entity.RevisionCloud">Nube de revisión</sys:String>
+  <sys:String x:Key="Entity.Insulation">Aislamiento</sys:String>
+  <sys:String x:Key="Status.RegionFirstCorner">Haz clic en la primera esquina.</sys:String>
+  <sys:String x:Key="Status.RegionSecondCorner">Haz clic en la esquina opuesta.</sys:String>
   <sys:String x:Key="Entity.AreaBoundary">Límite de área</sys:String>
   <sys:String x:Key="Entity.Area">Área</sys:String>
   <sys:String x:Key="Status.PresetArmed">{0}: haz clic en el plano para colocarlo.</sys:String>

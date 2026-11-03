@@ -142,6 +142,26 @@ internal static partial class InteractionChecks
             Invoke("RenderPlan");
             Pump();
 
+            // The Detail group: each button arms its own tool, and what it draws is shown in the plan and never in 3D.
+            foreach (var (command, kind, mode) in new[]
+                     {
+                         ("DetailLine", StructuralElementKind.DetailLine, "Line"), ("FilledRegion", StructuralElementKind.FilledRegion, "Rectangle"),
+                         ("RevisionCloud", StructuralElementKind.RevisionCloud, "Rectangle"), ("Insulation", StructuralElementKind.Insulation, "Line")
+                     })
+            {
+                Invoke("ExecuteApplicationCommand", command);
+                Check(Field<object>("_structuralTool").ToString() == $"({kind}, {mode})", $"{command} arms a {mode.ToLowerInvariant()} tool for its own kind");
+                var elementsBefore = session.Document.StructuralElements.Count;
+                Invoke("CreateStructuralFromTool", kind, new Point2(580, 580), new Point2(586, 584));
+                Invoke("RenderPlan");
+                Pump();
+                var drawn = session.Document.StructuralElements[^1];
+                Check(session.Document.StructuralElements.Count == elementsBefore + 1 && drawn.Kind == kind && !drawn.HasSolid &&
+                      ((Canvas)opened.FindName("PlanCanvas")).Children.OfType<FrameworkElement>().Any(shape => shape.Tag is Guid tag && tag == drawn.Id),
+                    $"{command} adds its element and the plan draws it");
+            }
+            Invoke("CancelStructuralTool");
+
             Invoke("ExecuteApplicationCommand", "RadialDimension");
             Field<Func<Guid, bool>>("_pickWallAction")(session.Document.Walls[0].Id);
             Check(session.Document.Dimensions.Count == dimensionsBefore + 4, "A straight wall gets no radius and the status line says why");

@@ -31,6 +31,11 @@ public static partial class PdfPlanExporter
         {
             if (element.Kind == StructuralElementKind.ModelText)
                 items.Add(new SheetText(element.Start, element.Name, 2.5, Black));
+            else if (element.Kind is StructuralElementKind.FilledRegion or StructuralElementKind.RevisionCloud)
+                items.Add(new SheetPolygon(element.Footprint, 0.18, Black,
+                    element.Kind == StructuralElementKind.FilledRegion ? (0.85, 0.85, 0.85) : null));
+            else if (element.Kind == StructuralElementKind.Insulation)
+                items.Add(new SheetPolygon(element.Footprint, 0.13, Grey, null));
             else if (element.IsDatumLine)
                 items.Add(new SheetPolyline([element.Start, element.End], 0.13, Grey,
                     Dashed: element.Kind == StructuralElementKind.ReferencePlane));

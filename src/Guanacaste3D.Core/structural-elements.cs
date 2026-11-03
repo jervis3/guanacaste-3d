@@ -86,7 +86,22 @@ public enum StructuralElementKind
     /// <see cref="StructuralElement.GridHeight"/> is the spacing of its landings and <see cref="StructuralElement.Width"/>
     /// the clear width of its doors. The hoistway cuts every floor above its own level that it serves.
     /// </summary>
-    Elevator
+    Elevator,
+
+    /// <summary>A line of drafting drawn in the plan only: it has no solid and never appears in 3D.</summary>
+    DetailLine,
+
+    /// <summary>A rectangle of hatched fill drawn in the plan only, to mark a material or an area on the sheet.</summary>
+    FilledRegion,
+
+    /// <summary>A rectangle outlined with scallops, drawn in the plan only, to flag a change for review.</summary>
+    RevisionCloud,
+
+    /// <summary>
+    /// Batting drawn along a line in the plan, as in a detail of an insulated wall. <see cref="StructuralElement.Width"/>
+    /// is the thickness of the insulation. It has no solid.
+    /// </summary>
+    Insulation
 }
 
 /// <summary>Variant of an element's geometry. Which values apply depends on the element kind.</summary>
@@ -216,12 +231,14 @@ public sealed record StructuralElement(
     /// <summary>Drafting marks and openings have no solid of their own; openings only cut floor slabs.</summary>
     [JsonIgnore] public bool HasSolid => Kind is not (StructuralElementKind.ModelLine or StructuralElementKind.Opening
         or StructuralElementKind.Shaft or StructuralElementKind.ModelText or StructuralElementKind.ReferencePlane
-        or StructuralElementKind.RoomSeparator or StructuralElementKind.AreaBoundary or StructuralElementKind.Area);
+        or StructuralElementKind.RoomSeparator or StructuralElementKind.AreaBoundary or StructuralElementKind.Area
+        or StructuralElementKind.DetailLine or StructuralElementKind.FilledRegion or StructuralElementKind.RevisionCloud
+        or StructuralElementKind.Insulation);
 
     /// <summary>Whether the kind is drafted as a single line between its two points.</summary>
     [JsonIgnore] public bool IsDatumLine => Kind is StructuralElementKind.ReferencePlane
         or StructuralElementKind.RoomSeparator or StructuralElementKind.AreaBoundary
-        or StructuralElementKind.ModelLine;
+        or StructuralElementKind.ModelLine or StructuralElementKind.DetailLine;
 
     /// <summary>Plan area in square meters of an area rectangle; zero for every other kind.</summary>
     [JsonIgnore] public double PlanArea => Kind == StructuralElementKind.Area
@@ -237,7 +254,8 @@ public sealed record StructuralElement(
             var halfDepth = (Depth > 0 ? Depth : Width) / 2;
             var length = Start.DistanceTo(End);
             if (Kind is StructuralElementKind.Opening or StructuralElementKind.Shaft or StructuralElementKind.Dormer
-                    or StructuralElementKind.Skylight or StructuralElementKind.Area or StructuralElementKind.Elevator && length >= 1e-9)
+                    or StructuralElementKind.Skylight or StructuralElementKind.Area or StructuralElementKind.Elevator
+                    or StructuralElementKind.FilledRegion or StructuralElementKind.RevisionCloud && length >= 1e-9)
                 return Geometry.SlabOpenings.Corners(PlanExtent);
             if (length < 1e-9)
             {
@@ -294,7 +312,11 @@ public static class StructuralElementStandards
         StructuralElementKind.CurtainWall => (0.10, 3.0, 0),
         StructuralElementKind.Skylight => (0, 0.15, 0),
         StructuralElementKind.ReferencePlane or StructuralElementKind.RoomSeparator
-            or StructuralElementKind.AreaBoundary or StructuralElementKind.Area => (0, 0, 0),
+            or StructuralElementKind.AreaBoundary or StructuralElementKind.Area
+            or StructuralElementKind.DetailLine or StructuralElementKind.FilledRegion
+            or StructuralElementKind.RevisionCloud => (0, 0, 0),
+        // Batting 10 cm thick, the usual insulation of a masonry wall.
+        StructuralElementKind.Insulation => (0.10, 0, 0),
         // A sweep's width is the host wall's thickness; a reveal is a 2 cm groove at 1 m.
         StructuralElementKind.WallSweep => (0.20, 0.10, 0),
         StructuralElementKind.WallReveal => (0.20, 0.02, 1.0),

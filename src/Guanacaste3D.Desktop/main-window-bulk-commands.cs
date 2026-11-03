@@ -19,6 +19,10 @@ public partial class MainWindow
         {
             case "Scale": ScaleSelectedWall(); return true;
             case "LinearDimension": BeginLinearDimension(); return true;
+            case "DetailLine": BeginKindTool(StructuralElementKind.DetailLine); return true;
+            case "FilledRegion": BeginKindTool(StructuralElementKind.FilledRegion); return true;
+            case "RevisionCloud": BeginKindTool(StructuralElementKind.RevisionCloud); return true;
+            case "Insulation": BeginKindTool(StructuralElementKind.Insulation); return true;
             case "AngularDimension": BeginAngularDimension(); return true;
             case "RadialDimension": BeginCurveDimension(PlanDimensionKind.Radius); return true;
             case "DiameterDimension": BeginCurveDimension(PlanDimensionKind.Diameter); return true;

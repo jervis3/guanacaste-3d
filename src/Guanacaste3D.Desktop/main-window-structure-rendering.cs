@@ -24,6 +24,11 @@ public partial class MainWindow
                 AddAreaOutline(element, selected);
                 continue;
             }
+            if (element.Kind is StructuralElementKind.FilledRegion or StructuralElementKind.RevisionCloud or StructuralElementKind.Insulation)
+            {
+                AddDetailSymbol(element, selected);
+                continue;
+            }
             if (element.Kind == StructuralElementKind.Planting)
             {
                 AddPlantingSymbol(element, selected, preview: false);
@@ -132,6 +137,7 @@ public partial class MainWindow
             StructuralElementKind.ReferencePlane => (Brushes.ForestGreen, 1.0, new DoubleCollection { 10, 3, 2, 3 }),
             StructuralElementKind.RoomSeparator => (Brushes.MediumVioletRed, 1.5, new DoubleCollection { 6, 2 }),
             StructuralElementKind.AreaBoundary => (Brushes.Firebrick, 1.5, new DoubleCollection { 2, 2 }),
+            StructuralElementKind.DetailLine => (Brushes.Black, 1.0, (DoubleCollection?)null),
             _ => (Brushes.Black, 1.5, (DoubleCollection?)null)
         };
         var start = WorldToCanvas(element.Start);
@@ -149,6 +155,85 @@ public partial class MainWindow
         Canvas.SetLeft(label, start.X + 3);
         Canvas.SetTop(label, start.Y - 14);
         PlanCanvas.Children.Add(label);
+    }
+
+    /// <summary>The hatching of a filled region: thin diagonals repeating every 8 pixels.</summary>
+    private static readonly Brush DetailHatch = CreateDetailHatch();
+
+    private static Brush CreateDetailHatch()
+    {
+        var lines = new GeometryDrawing(null, new Pen(Brushes.DimGray, 0.7), Geometry.Parse("M0,8 L8,0 M-1,1 L1,-1 M7,9 L9,7"));
+        var brush = new DrawingBrush(lines)
+        {
+            TileMode = TileMode.Tile, Viewbox = new Rect(0, 0, 8, 8), ViewboxUnits = BrushMappingMode.Absolute,
+            Viewport = new Rect(0, 0, 8, 8), ViewportUnits = BrushMappingMode.Absolute
+        };
+        brush.Freeze();
+        return brush;
+    }
+
+    /// <summary>
+    /// Draws the plan-only drafting symbols: a region hatched with diagonals, a revision cloud with scallops on its
+    /// sides, and insulation as batting waves along its line.
+    /// </summary>
+    private void AddDetailSymbol(StructuralElement element, bool selected)
+    {
+        var stroke = selected ? Brushes.DarkOrange : element.Kind == StructuralElementKind.RevisionCloud ? Brushes.Firebrick : Brushes.Black;
+        var thickness = selected ? 2.5 : 1.2;
+        if (element.Kind == StructuralElementKind.FilledRegion)
+        {
+            PlanCanvas.Children.Add(new Polygon
+            {
+                Points = new PointCollection(element.Footprint.Select(WorldToCanvas)), Fill = DetailHatch,
+                Stroke = stroke, StrokeThickness = thickness, Tag = element.Id
+            });
+            return;
+        }
+        if (element.Kind == StructuralElementKind.RevisionCloud)
+        {
+            var corners = element.Footprint.Select(WorldToCanvas).ToArray();
+            var area = 0.0;
+            for (var index = 0; index < corners.Length; index++)
+            {
+                var next = corners[(index + 1) % corners.Length];
+                area += corners[index].X * next.Y - next.X * corners[index].Y;
+            }
+            // Shoelace area in a y-down canvas is positive for a clockwise outline, where a clockwise arc bulges outward.
+            var sweep = area > 0 ? SweepDirection.Clockwise : SweepDirection.Counterclockwise;
+            var figure = new PathFigure { StartPoint = corners[0], IsClosed = true, IsFilled = false };
+            for (var index = 0; index < corners.Length; index++)
+            {
+                var from = corners[index];
+                var to = corners[(index + 1) % corners.Length];
+                var scallops = Math.Max(1, (int)Math.Round((to - from).Length / 16));
+                var radius = (to - from).Length / scallops * 0.55;
+                for (var step = 1; step <= scallops; step++)
+                    figure.Segments.Add(new ArcSegment(from + (to - from) * step / scallops, new Size(radius, radius), 0, false, sweep, true));
+            }
+            PlanCanvas.Children.Add(new Path { Data = new PathGeometry([figure]), Stroke = stroke, StrokeThickness = thickness, Tag = element.Id });
+            return;
+        }
+        var start = WorldToCanvas(element.Start);
+        var end = WorldToCanvas(element.End);
+        var span = end - start;
+        if (span.Length < 1) return;
+        var along = span / span.Length;
+        var across = new Vector(-along.Y, along.X);
+        // The waves are as tall as the insulation is thick, and never so small that they vanish when zoomed out.
+        var amplitude = Math.Max(3, element.Width * (WorldToCanvas(new Point2(1, 0)) - WorldToCanvas(new Point2(0, 0))).Length / 2);
+        var wave = new PointCollection();
+        var samples = Math.Max(2, (int)(span.Length / (amplitude * 0.5)));
+        for (var step = 0; step <= samples; step++)
+        {
+            var distance = span.Length * step / samples;
+            wave.Add(start + along * distance + across * (amplitude * Math.Sin(distance / amplitude * Math.PI)));
+        }
+        PlanCanvas.Children.Add(new Polyline { Points = wave, Stroke = stroke, StrokeThickness = selected ? 2 : 1, Tag = element.Id });
+        PlanCanvas.Children.Add(new Line
+        {
+            X1 = start.X, Y1 = start.Y, X2 = end.X, Y2 = end.Y, Stroke = Brushes.Transparent,
+            StrokeThickness = Math.Max(8, amplitude * 2), Tag = element.Id
+        });
     }
 
     /// <summary>Draws an area of the area scheme: a dashed rectangle labelled with its name and measured area.</summary>
@@ -208,7 +293,7 @@ public partial class MainWindow
         if (tool.Kind == StructuralElementKind.Planting)
             AddPlantingSymbol(preview, selected: false, preview: true);
         else if (tool.Kind is StructuralElementKind.ReferencePlane or StructuralElementKind.RoomSeparator
-            or StructuralElementKind.AreaBoundary or StructuralElementKind.ModelLine)
+            or StructuralElementKind.AreaBoundary or StructuralElementKind.ModelLine or StructuralElementKind.DetailLine)
             AddStructuralPreviewOutline([origin, pointer]);
         else if (HasDetailedPlanParts(preview))
             foreach (var part in ElementGeometry.Parts(preview).Take(400)) AddStructuralPreviewOutline(part.Footprint);

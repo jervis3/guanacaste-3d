@@ -26,7 +26,8 @@ public partial class MainWindow
             StructuralElementKind.Component or StructuralElementKind.Connection or
             StructuralElementKind.ModelText or StructuralElementKind.Planting => StructuralPlacementMode.Point,
         StructuralElementKind.Skylight or StructuralElementKind.Area or StructuralElementKind.Dormer or
-            StructuralElementKind.Opening or StructuralElementKind.Shaft => StructuralPlacementMode.Rectangle,
+            StructuralElementKind.Opening or StructuralElementKind.Shaft or StructuralElementKind.FilledRegion or
+            StructuralElementKind.RevisionCloud => StructuralPlacementMode.Rectangle,
         _ => StructuralPlacementMode.Line
     };
 
@@ -300,6 +301,10 @@ public partial class MainWindow
         StructuralElementKind.Fascia => "Entity.Fascia",
         StructuralElementKind.SlabEdge => "Entity.SlabEdge",
         StructuralElementKind.Planting => "Entity.Planting",
+        StructuralElementKind.DetailLine => "Entity.DetailLine",
+        StructuralElementKind.FilledRegion => "Entity.FilledRegion",
+        StructuralElementKind.RevisionCloud => "Entity.RevisionCloud",
+        StructuralElementKind.Insulation => "Entity.Insulation",
         _ => null
     };
 }
