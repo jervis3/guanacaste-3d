@@ -148,49 +148,50 @@ internal static partial class InteractionChecks
         SetField("_rotationWarningSink", (Action<string, string>)((message, title) => capturedRotationWarnings++));
         try
         {
-        for (var seed = 1; seed <= 12; seed++)
-        {
-            var random = new Random(seed * 31);
-            var baseX = 400.0 + seed * 40;
-            var angle = random.Next(0, 4) * Math.PI / 6 + random.NextDouble() * 0.2;
-            var length = 3 + random.NextDouble() * 6;
-            var corner = new Point2(baseX + length, 400);
-            session.AddWall(level, new Point2(baseX, 400), corner);
-            session.AddWall(level, corner, new Point2(corner.X + Math.Cos(angle) * length, 400 + Math.Sin(angle) * length));
-            var host = session.AddWall(level, new Point2(baseX, 410), new Point2(baseX + length * 1.5, 410));
-            session.AddWall(level, new Point2(baseX + length * 0.7, 410), new Point2(baseX + length * 0.7, 410 + length));
-            session.AddOpening(host, random.Next(2) == 0 ? OpeningKind.Door : OpeningKind.Window, offset: length * 0.4);
-
-            for (var step = 0; step < 30; step++)
+            for (var seed = 1; seed <= 12; seed++)
             {
-                var mine = session.Document.Walls.Where(wall => !initial.Contains(wall.Id)).Select(wall => wall.Id).ToArray();
-                var selected = mine.Length == 0 || random.Next(8) == 0 ? (Guid?)null : mine[random.Next(mine.Length)];
-                SetField("_selectedWallId", selected);
-                var command = commands[random.Next(commands.Length)];
-                try
+                var random = new Random(seed * 31);
+                var baseX = 400.0 + seed * 40;
+                var angle = random.Next(0, 4) * Math.PI / 6 + random.NextDouble() * 0.2;
+                var length = 3 + random.NextDouble() * 6;
+                var corner = new Point2(baseX + length, 400);
+                session.AddWall(level, new Point2(baseX, 400), corner);
+                session.AddWall(level, corner, new Point2(corner.X + Math.Cos(angle) * length, 400 + Math.Sin(angle) * length));
+                var host = session.AddWall(level, new Point2(baseX, 410), new Point2(baseX + length * 1.5, 410));
+                session.AddWall(level, new Point2(baseX + length * 0.7, 410), new Point2(baseX + length * 0.7, 410 + length));
+                session.AddOpening(host, random.Next(2) == 0 ? OpeningKind.Door : OpeningKind.Window, offset: length * 0.4);
+
+                for (var step = 0; step < 30; step++)
                 {
-                    Invoke("ExecuteApplicationCommand", command);
-                    session.Document.Validate();
-                    executed++;
-                    if (step % 6 == 0)
+                    var mine = session.Document.Walls.Where(wall => !initial.Contains(wall.Id)).Select(wall => wall.Id).ToArray();
+                    var selected = mine.Length == 0 || random.Next(8) == 0 ? (Guid?)null : mine[random.Next(mine.Length)];
+                    SetField("_selectedWallId", selected);
+                    var command = commands[random.Next(commands.Length)];
+                    try
                     {
-                        Invoke("RenderPlan");
-                        Pump();
+                        Console.WriteLine($"Ribbon fuzz: seed={seed} step={step} command={command}");
+                    Invoke("ExecuteApplicationCommand", command);
+                        session.Document.Validate();
+                        executed++;
+                        if (step % 6 == 0)
+                        {
+                            Invoke("RenderPlan");
+                            Pump();
+                        }
+                    }
+                    catch (Exception exception)
+                    {
+                        var cause = (exception as System.Reflection.TargetInvocationException)?.InnerException ?? exception;
+                        failures.Add($"seed {seed} step {step} {command}: {cause.GetType().Name}: {cause.Message}");
+                        break;
                     }
                 }
-                catch (Exception exception)
-                {
-                    var cause = (exception as System.Reflection.TargetInvocationException)?.InnerException ?? exception;
-                    failures.Add($"seed {seed} step {step} {command}: {cause.GetType().Name}: {cause.Message}");
-                    break;
-                }
-            }
 
-            SetField("_selectedWallId", null);
-            var leftovers = session.Document.Walls.Where(wall => !initial.Contains(wall.Id)).Select(wall => wall.Id).ToArray();
-            session.SetWallsPinned(leftovers.Length == 0 ? [] : leftovers, false);
-            foreach (var id in leftovers) session.RemoveWall(id);
-        }
+                SetField("_selectedWallId", null);
+                var leftovers = session.Document.Walls.Where(wall => !initial.Contains(wall.Id)).Select(wall => wall.Id).ToArray();
+                session.SetWallsPinned(leftovers.Length == 0 ? [] : leftovers, false);
+                foreach (var id in leftovers) session.RemoveWall(id);
+            }
 
         }
         finally
