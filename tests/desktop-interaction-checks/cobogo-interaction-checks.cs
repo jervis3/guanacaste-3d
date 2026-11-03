@@ -163,7 +163,8 @@ internal static partial class InteractionChecks
         foreach (var stage in new[]
                  {
                      "SynchronizeModelViewGraphics", "UpdateWindowTitle", "RefreshLevelPicker", "RefreshViewShortcuts",
-                     "RefreshTree", "RefreshProperties", "RenderPlan", "Render3D", "RefreshExtendedWorkflows"
+                     "RefreshTree", "RefreshProperties", "RenderPlan", "Render3D", "RefreshWallTypePicker", "RefreshSchedule",
+                     "RenderSheet", "RenderOrthographicViews", "RefreshExtendedWorkflows"
                  })
         {
             var timer = System.Diagnostics.Stopwatch.StartNew();
