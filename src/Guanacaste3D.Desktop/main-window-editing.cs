@@ -7,6 +7,20 @@ namespace Guanacaste3D.Desktop;
 
 public partial class MainWindow
 {
+    // Optional presentation sink for non-interactive WPF checks. Real users retain the modal warning.
+    private Action<string, string>? _rotationWarningSink;
+
+    private void ShowRotationWarning(string message)
+    {
+        var title = GetText("Dialog.RotateWall");
+        if (_rotationWarningSink is { } sink)
+        {
+            sink(message, title);
+            return;
+        }
+        MessageBox.Show(this, message, title, MessageBoxButton.OK, MessageBoxImage.Warning);
+    }
+
     /// <summary>Duplicates the selected wall with a visible metric offset.</summary>
     private void Duplicate_Click(object sender, RoutedEventArgs e)
     {
@@ -35,7 +49,7 @@ public partial class MainWindow
         }
         catch (InvalidDataException exception)
         {
-            MessageBox.Show(this, LocalizedErrors.Translate(exception.Message), GetText("Dialog.RotateWall"), MessageBoxButton.OK, MessageBoxImage.Warning);
+            ShowRotationWarning(LocalizedErrors.Translate(exception.Message));
         }
     }
 
@@ -72,7 +86,7 @@ public partial class MainWindow
         if (!double.TryParse(RotationInput.Text, NumberStyles.Float, CultureInfo.CurrentCulture, out var angle) ||
             !double.IsFinite(angle))
         {
-            MessageBox.Show(this, GetText("Dialog.InvalidAngle"), GetText("Dialog.RotateWall"));
+            ShowRotationWarning(GetText("Dialog.InvalidAngle"));
             return;
         }
         try
@@ -83,7 +97,7 @@ public partial class MainWindow
         }
         catch (InvalidDataException exception)
         {
-            MessageBox.Show(this, LocalizedErrors.Translate(exception.Message), GetText("Dialog.RotateWall"));
+            ShowRotationWarning(LocalizedErrors.Translate(exception.Message));
         }
     }
 

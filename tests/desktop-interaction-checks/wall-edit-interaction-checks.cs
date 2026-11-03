@@ -65,6 +65,63 @@ internal static partial class InteractionChecks
         Invoke("RenderPlan");
         Pump();
     }
+
+    /// <summary>
+    /// Drives the real Rotate ribbon command without opening a modal window in CI.
+    /// The warning sink is scoped to this check; normal users still see the WPF dialog.
+    /// </summary>
+    private static void RotateRibbonChecks(DocumentSession session)
+    {
+        var level = Field<Guid>("_activeLevelId");
+        var wallId = session.AddWall(level, new Point2(300, 300), new Point2(306, 300));
+        var warnings = new List<string>();
+        SetField("_rotationWarningSink", (Action<string, string>)((message, title) => warnings.Add(message)));
+        Wall Find() => session.Document.Walls.Single(wall => wall.Id == wallId);
+        try
+        {
+            SetField("_selectedWallId", (Guid?)wallId);
+            Invoke("ExecuteApplicationCommand", "Rotate");
+            Check(Find().Start.DistanceTo(new Point2(300, 300)) < 1e-8 &&
+                  Find().End.DistanceTo(new Point2(300, 306)) < 1e-8,
+                "The real Rotate ribbon command turns the selected wall 90 degrees");
+
+            session.Undo();
+            Check(Find().End.DistanceTo(new Point2(306, 300)) < 1e-8,
+                "Undo restores the wall before ribbon rotation");
+            session.Redo();
+            Check(Find().End.DistanceTo(new Point2(300, 306)) < 1e-8,
+                "Redo reapplies the same ribbon rotation");
+
+            session.SetWallsPinned([wallId], true);
+            var beforeRejected = Find();
+            var undoName = session.UndoName;
+            SetField("_selectedWallId", (Guid?)wallId);
+            Invoke("ExecuteApplicationCommand", "Rotate");
+            Check(warnings.Count == 1 && !string.IsNullOrWhiteSpace(warnings[0]),
+                "Rotating a pinned wall reports a warning without opening a modal dialog");
+            Check(Find().Start == beforeRejected.Start && Find().End == beforeRejected.End &&
+                  Find().Pinned && session.UndoName == undoName,
+                "Rejected rotation preserves the pinned wall and undo history");
+
+            SetField("_selectedWallId", null);
+            Invoke("ExecuteApplicationCommand", "Rotate");
+            Check(warnings.Count == 1 && Find().End == beforeRejected.End,
+                "Rotate with no wall selected does not change the wall or show a warning");
+            session.Document.Validate();
+        }
+        finally
+        {
+            SetField("_rotationWarningSink", null);
+            SetField("_selectedWallId", null);
+            if (session.Document.Walls.Any(wall => wall.Id == wallId))
+            {
+                if (Find().Pinned) session.SetWallsPinned([wallId], false);
+                session.RemoveWall(wallId);
+            }
+            Invoke("RenderPlan");
+            Pump();
+        }
+    }
 }
 
 internal static partial class InteractionChecks
@@ -77,62 +134,74 @@ internal static partial class InteractionChecks
     /// </summary>
     private static void RandomizedRibbonChecks(DocumentSession session)
     {
-        // Rotate_Click displays a modal MessageBox when a random pinned/invalid wall rejects rotation.
-        // Keep this fuzz loop non-modal; rotation is exercised by the domain edit regression suite.
+        // Capture rejected rotations without blocking the headless runner; real users keep the modal dialog.
         string[] commands =
         [
             "AllowJoin", "MiterJoin", "ButtJoin", "SquareOff", "DisallowJoin", "Pin", "FlipWall", "DetachAll",
-            "Copy", "Cut", "Paste", "CopyElement"
+            "Copy", "Cut", "Paste", "CopyElement", "Rotate"
         ];
         var level = Field<Guid>("_activeLevelId");
         var initial = session.Document.Walls.Select(wall => wall.Id).ToHashSet();
         var failures = new List<string>();
         var executed = 0;
 
-        for (var seed = 1; seed <= 12; seed++)
+        var capturedRotationWarnings = 0;
+        SetField("_rotationWarningSink", (Action<string, string>)((message, title) => capturedRotationWarnings++));
+        try
         {
-            var random = new Random(seed * 31);
-            var baseX = 400.0 + seed * 40;
-            var angle = random.Next(0, 4) * Math.PI / 6 + random.NextDouble() * 0.2;
-            var length = 3 + random.NextDouble() * 6;
-            var corner = new Point2(baseX + length, 400);
-            session.AddWall(level, new Point2(baseX, 400), corner);
-            session.AddWall(level, corner, new Point2(corner.X + Math.Cos(angle) * length, 400 + Math.Sin(angle) * length));
-            var host = session.AddWall(level, new Point2(baseX, 410), new Point2(baseX + length * 1.5, 410));
-            session.AddWall(level, new Point2(baseX + length * 0.7, 410), new Point2(baseX + length * 0.7, 410 + length));
-            session.AddOpening(host, random.Next(2) == 0 ? OpeningKind.Door : OpeningKind.Window, offset: length * 0.4);
-
-            for (var step = 0; step < 30; step++)
+            for (var seed = 1; seed <= 12; seed++)
             {
-                var mine = session.Document.Walls.Where(wall => !initial.Contains(wall.Id)).Select(wall => wall.Id).ToArray();
-                var selected = mine.Length == 0 || random.Next(8) == 0 ? (Guid?)null : mine[random.Next(mine.Length)];
-                SetField("_selectedWallId", selected);
-                var command = commands[random.Next(commands.Length)];
-                try
+                var random = new Random(seed * 31);
+                var seedBudget = System.Diagnostics.Stopwatch.StartNew();
+                var baseX = 400.0 + seed * 40;
+                var angle = random.Next(0, 4) * Math.PI / 6 + random.NextDouble() * 0.2;
+                var length = 3 + random.NextDouble() * 6;
+                var corner = new Point2(baseX + length, 400);
+                session.AddWall(level, new Point2(baseX, 400), corner);
+                session.AddWall(level, corner, new Point2(corner.X + Math.Cos(angle) * length, 400 + Math.Sin(angle) * length));
+                var host = session.AddWall(level, new Point2(baseX, 410), new Point2(baseX + length * 1.5, 410));
+                session.AddWall(level, new Point2(baseX + length * 0.7, 410), new Point2(baseX + length * 0.7, 410 + length));
+                session.AddOpening(host, random.Next(2) == 0 ? OpeningKind.Door : OpeningKind.Window, offset: length * 0.4);
+
+                for (var step = 0; step < 30; step++)
                 {
-                    Invoke("ExecuteApplicationCommand", command);
-                    session.Document.Validate();
-                    executed++;
-                    if (step % 6 == 0)
+                    var mine = session.Document.Walls.Where(wall => !initial.Contains(wall.Id)).Select(wall => wall.Id).ToArray();
+                    var selected = mine.Length == 0 || random.Next(8) == 0 ? (Guid?)null : mine[random.Next(mine.Length)];
+                    SetField("_selectedWallId", selected);
+                    var command = commands[random.Next(commands.Length)];
+                    try
                     {
-                        Invoke("RenderPlan");
-                        Pump();
+                        Console.WriteLine($"Ribbon fuzz: seed={seed} step={step} command={command}");
+                        Invoke("ExecuteApplicationCommand", command);
+                        if (seedBudget.Elapsed > TimeSpan.FromSeconds(45))
+                            throw new TimeoutException($"Ribbon fuzz seed {seed} exceeded 45 seconds at step {step} ({command}).");
+                        session.Document.Validate();
+                        executed++;
+                        if (step % 6 == 0)
+                        {
+                            Invoke("RenderPlan");
+                            Pump();
+                        }
+                    }
+                    catch (Exception exception)
+                    {
+                        var cause = (exception as System.Reflection.TargetInvocationException)?.InnerException ?? exception;
+                        failures.Add($"seed {seed} step {step} {command}: {cause.GetType().Name}: {cause.Message}");
+                        break;
                     }
                 }
-                catch (Exception exception)
-                {
-                    var cause = (exception as System.Reflection.TargetInvocationException)?.InnerException ?? exception;
-                    failures.Add($"seed {seed} step {step} {command}: {cause.GetType().Name}: {cause.Message}");
-                    break;
-                }
+
+                SetField("_selectedWallId", null);
+                var leftovers = session.Document.Walls.Where(wall => !initial.Contains(wall.Id)).Select(wall => wall.Id).ToArray();
+                session.SetWallsPinned(leftovers.Length == 0 ? [] : leftovers, false);
+                foreach (var id in leftovers) session.RemoveWall(id);
             }
-
-            SetField("_selectedWallId", null);
-            var leftovers = session.Document.Walls.Where(wall => !initial.Contains(wall.Id)).Select(wall => wall.Id).ToArray();
-            session.SetWallsPinned(leftovers.Length == 0 ? [] : leftovers, false);
-            foreach (var id in leftovers) session.RemoveWall(id);
         }
-
+        finally
+        {
+            SetField("_rotationWarningSink", null);
+        }
+        Console.WriteLine($"Randomized rotation warnings captured: {capturedRotationWarnings}");
         Check(failures.Count == 0,
             $"{executed} random ribbon commands on random selections and layouts never throw and keep the project valid" +
             (failures.Count == 0 ? "" : ": " + string.Join(" | ", failures.Take(5))));
