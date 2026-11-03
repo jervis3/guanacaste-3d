@@ -74,6 +74,79 @@ public static class WallOpeningRevealSchedule
         return csv.ToString();
     }
 
+
+    /// <summary>
+    /// Groups rough-opening returns by level, wall type, opening kind, layer and actual
+    /// thickness. Counts distinct openings, not wall-layer rows. This is geometric
+    /// potential only: installed finishes, wrapping, trim and paint are excluded.
+    /// </summary>
+    public static string ToSummaryCsv(BuildingDocument document)
+    {
+        ArgumentNullException.ThrowIfNull(document);
+        document.Validate();
+        var types = document.WallTypes.ToDictionary(type => type.Id);
+        var levels = document.Levels.ToDictionary(level => level.Id);
+        var openings = document.Openings.ToLookup(opening => opening.WallId);
+        var rows = document.Walls.OrderBy(wall => wall.LevelId).ThenBy(wall => wall.Id)
+            .SelectMany(wall => For(wall, types[wall.WallTypeId], openings[wall.Id])
+                .Select(reveal => new
+                {
+                    wall.LevelId,
+                    wall.WallTypeId,
+                    reveal.OpeningId,
+                    reveal.OpeningKind,
+                    reveal.Layer,
+                    reveal.Thickness,
+                    reveal.JambArea,
+                    reveal.HeadArea,
+                    reveal.SillArea
+                }));
+        var groups = rows.GroupBy(row => new
+            {
+                row.LevelId,
+                row.WallTypeId,
+                row.OpeningKind,
+                row.Layer,
+                row.Thickness
+            })
+            .OrderBy(group => group.Key.LevelId)
+            .ThenBy(group => group.Key.WallTypeId)
+            .ThenBy(group => group.Key.OpeningKind)
+            .ThenBy(group => LayerOrder(group.Key.Layer))
+            .ThenBy(group => group.Key.Thickness);
+
+        var csv = new StringBuilder(
+            "Level,WallTypeId,WallType,OpeningKind,Layer,Thickness_m,OpeningCount,JambArea_m2,HeadArea_m2,SillArea_m2,TotalRevealArea_m2\n");
+        foreach (var group in groups)
+        {
+            var jamb = group.Sum(row => row.JambArea);
+            var head = group.Sum(row => row.HeadArea);
+            var sill = group.Sum(row => row.SillArea);
+            csv.Append(SpreadsheetCsv.Quote(levels[group.Key.LevelId].Name)).Append(',')
+                .Append(group.Key.WallTypeId).Append(',')
+                .Append(SpreadsheetCsv.Quote(types[group.Key.WallTypeId].Name)).Append(',')
+                .Append(group.Key.OpeningKind).Append(',')
+                .Append(group.Key.Layer).Append(',')
+                .Append(Format(group.Key.Thickness)).Append(',')
+                .Append(group.Select(row => row.OpeningId).Distinct().Count().ToString(CultureInfo.InvariantCulture)).Append(',')
+                .Append(Format(jamb)).Append(',')
+                .Append(Format(head)).Append(',')
+                .Append(Format(sill)).Append(',')
+                .Append(Format(jamb + head + sill)).AppendLine();
+        }
+        return csv.ToString();
+    }
+
+    private static int LayerOrder(string layer) => layer switch
+    {
+        "LeftFine" => 0,
+        "LeftRepello" => 1,
+        "Core" => 2,
+        "RightRepello" => 3,
+        "RightFine" => 4,
+        _ => 5
+    };
+
     private static string Format(double value) =>
         value.ToString("0.######", CultureInfo.InvariantCulture);
 }
