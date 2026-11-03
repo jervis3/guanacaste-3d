@@ -56,30 +56,38 @@ public static class WallGeometry
         }
     }
 
-    /// <summary>Segments a wall into rectangular solids that exclude its hosted openings.</summary>
+    /// <summary>
+    /// Segments a wall into rectangular solids excluding hosted openings. Validated
+    /// openings do not overlap; sorting once avoids scanning every opening for every
+    /// interval (O(n log n) instead of O(n²) for walls with many hosted families).
+    /// </summary>
     public static IReadOnlyList<WallSolid> Solids(Wall wall, IEnumerable<WallOpening> openings)
     {
         var hosted = openings.ToArray();
         if (hosted.Any(o => o.WallId != wall.Id))
             throw new ArgumentException("The opening does not belong to this wall.");
-        var stops = new List<double> { 0, wall.Length };
-        foreach (var o in hosted) { stops.Add(o.Begin); stops.Add(o.End); }
-        stops.Sort();
+
         var parts = new List<WallSolid>();
-        for (var i = 1; i < stops.Count; i++)
+        var cursor = 0d;
+        foreach (var opening in hosted.OrderBy(o => o.Begin))
         {
-            var a = stops[i - 1]; var b = stops[i];
-            if (b - a < 0.000001) continue;
-            var middle = (a + b) / 2;
-            var opening = hosted.FirstOrDefault(o => o.Begin <= middle && o.End >= middle);
-            if (opening is null) parts.Add(new WallSolid(a, b, 0, wall.Height));
-            else
-            {
-                if (opening.Sill > 0) parts.Add(new WallSolid(a, b, 0, opening.Sill));
-                var top = opening.Sill + opening.Height;
-                if (top < wall.Height) parts.Add(new WallSolid(a, b, top, wall.Height));
-            }
+            // Keep the same minimum interval tolerance as the previous segmenter.
+            if (opening.Begin - cursor >= 0.000001)
+                parts.Add(new WallSolid(cursor, opening.Begin, 0, wall.Height));
+
+            if (opening.Sill > 0)
+                parts.Add(new WallSolid(opening.Begin, opening.End, 0, opening.Sill));
+
+            var top = opening.Sill + opening.Height;
+            if (top < wall.Height)
+                parts.Add(new WallSolid(opening.Begin, opening.End, top, wall.Height));
+
+            cursor = opening.End;
         }
+
+        if (wall.Length - cursor >= 0.000001)
+            parts.Add(new WallSolid(cursor, wall.Length, 0, wall.Height));
+
         return parts;
     }
 
