@@ -149,6 +149,37 @@ public partial class SchedulesWindow
         }
     }
 
+    /// <summary>
+    /// Exports geometric jamb, head and sill returns by wall layer independently
+    /// of saved schedules; this does not estimate applied plaster or trim.
+    /// </summary>
+    private void ExportWallOpeningReveals_Click(object sender, RoutedEventArgs e)
+    {
+        if (_session.Document.Openings.Count == 0)
+        {
+            StatusText.Text = Text("Schedules.NoOpenings");
+            return;
+        }
+        var dialog = new SaveFileDialog
+        {
+            Filter = Text("Parameters.CsvFilter"),
+            FileName = "jambas-huecos-muros.csv",
+            DefaultExt = ".csv",
+            AddExtension = true
+        };
+        if (dialog.ShowDialog(this) != true) return;
+        try
+        {
+            System.IO.File.WriteAllText(dialog.FileName,
+                WallOpeningRevealSchedule.ToCsv(_session.Document), new System.Text.UTF8Encoding(true));
+            StatusText.Text = Format("Parameters.Exported", dialog.FileName);
+        }
+        catch (Exception exception) when (exception is System.IO.IOException or UnauthorizedAccessException or System.IO.InvalidDataException)
+        {
+            StatusText.Text = Format("Parameters.Rejected", LocalizedErrors.Translate(exception.Message));
+        }
+    }
+
     /// <summary>Exports the evaluated schedule as CSV.</summary>
     private void ExportCsv_Click(object sender, RoutedEventArgs e)
     {
