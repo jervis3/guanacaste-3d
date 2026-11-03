@@ -19,6 +19,7 @@ public sealed partial class DocumentSession
         {
             var ids = RequireWalls(document, wallIds);
             if (!copy) foreach (var id in ids) EnsureNotPinned(document, id);
+            var curves = new Dictionary<Guid, Guid>();
             foreach (var id in ids)
             {
                 var source = document.Walls.Single(wall => wall.Id == id);
@@ -30,7 +31,7 @@ public sealed partial class DocumentSession
                     GridAxisId = null, GridAxisAssociationDisabled = true
                 };
                 created.Add(PlaceWall(document, source, mirrored, copy, opening =>
-                    opening with { Offset = source.Length - opening.Offset, FlipHand = !opening.FlipHand }));
+                    opening with { Offset = source.Length - opening.Offset, FlipHand = !opening.FlipHand }, curves));
             }
             foreach (var level in ids.Select(id => document.Walls.Single(wall => wall.Id == id).LevelId).Distinct())
                 RefreshRoomBoundariesIfNeeded(document, level);
@@ -52,6 +53,7 @@ public sealed partial class DocumentSession
             var ids = RequireWalls(document, wallIds);
             if (!copy) foreach (var id in ids) EnsureNotPinned(document, id);
             var before = WallJoinIndex.Build(document.Walls);
+            var curves = new Dictionary<Guid, Guid>();
             foreach (var id in ids)
             {
                 var source = document.Walls.Single(wall => wall.Id == id);
@@ -62,7 +64,7 @@ public sealed partial class DocumentSession
                     End = new Point2(source.End.X + normalX * distance, source.End.Y + normalY * distance),
                     GridAxisId = null, GridAxisAssociationDisabled = true
                 };
-                created.Add(PlaceWall(document, source, moved, copy, opening => opening));
+                created.Add(PlaceWall(document, source, moved, copy, opening => opening, curves));
             }
             if (!copy)
                 WallReferenceLine.ReconnectCorners(document, WallReferenceLine.IndexOf(document.Walls), before, ids, null);
@@ -105,17 +107,19 @@ public sealed partial class DocumentSession
             var ids = RequireWalls(document, wallIds);
             if (document.Walls.Count + ids.Count * (count - 1) > 100000)
                 throw new InvalidDataException("The document exceeds the supported element limits.");
+            var curvesByMember = new Dictionary<int, Dictionary<Guid, Guid>>();
             foreach (var id in ids)
             {
                 var source = document.Walls.Single(wall => wall.Id == id);
                 for (var member = 1; member < count; member++)
                 {
+                    if (!curvesByMember.TryGetValue(member, out var curves)) curvesByMember[member] = curves = [];
                     var copy = source with
                     {
                         Start = place(source.Start, member), End = place(source.End, member),
                         GridAxisId = null, GridAxisAssociationDisabled = true, Pinned = false
                     };
-                    created.Add(PlaceWall(document, source, copy, true, opening => opening));
+                    created.Add(PlaceWall(document, source, copy, true, opening => opening, curves));
                 }
             }
             foreach (var level in ids.Select(id => document.Walls.Single(wall => wall.Id == id).LevelId).Distinct())
@@ -305,7 +309,7 @@ public sealed partial class DocumentSession
 
     /// <summary>Adds a wall (or replaces the source) and the copies of its openings that go with it.</summary>
     private static Guid PlaceWall(BuildingDocument document, Wall source, Wall result, bool copy,
-        Func<WallOpening, WallOpening> openingFor)
+        Func<WallOpening, WallOpening> openingFor, Dictionary<Guid, Guid>? curves = null)
     {
         var hosted = document.Openings.Where(opening => opening.WallId == source.Id).ToArray();
         if (!copy)
@@ -317,7 +321,7 @@ public sealed partial class DocumentSession
         }
 
         var id = Guid.NewGuid();
-        document.Walls.Add(result with { Id = id, Pinned = false });
+        document.Walls.Add((curves is null ? result : CurveGroups.Remap(result, curves)) with { Id = id, Pinned = false });
         foreach (var opening in hosted) document.Openings.Add(openingFor(opening) with { Id = Guid.NewGuid(), WallId = id });
         return id;
     }

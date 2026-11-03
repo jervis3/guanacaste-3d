@@ -49,6 +49,12 @@ public sealed record Wall(Guid Id, Guid LevelId, Point2 Start, Point2 End, doubl
     /// <summary>How the end of the wall treats the wall it meets.</summary>
     public WallJoinSetting EndJoin { get; init; }
 
+    /// <summary>The curved wall this straight piece belongs to; null for an ordinary wall.</summary>
+    public Guid? CurveGroupId { get; init; }
+
+    /// <summary>Radius of the arc the piece follows, in meters; zero for an ordinary wall.</summary>
+    public double CurveRadius { get; init; }
+
     /// <summary>A pinned wall cannot be moved, rotated, mirrored in place, trimmed, aligned or deleted.</summary>
     public bool Pinned { get; init; }
 
@@ -238,7 +244,8 @@ public sealed class BuildingDocument
                 wall.Length < 0.05 || wall.Length > 100000 ||
                 wall.Thickness is < 0.05 or > 5 || wall.Height is < 0.1 or > 1000 ||
                 !Enum.IsDefined(wall.Finish) || !Enum.IsDefined(wall.LocationReference) ||
-                !Enum.IsDefined(wall.StartJoin) || !Enum.IsDefined(wall.EndJoin))
+                !Enum.IsDefined(wall.StartJoin) || !Enum.IsDefined(wall.EndJoin) ||
+                !double.IsFinite(wall.CurveRadius) || wall.CurveRadius < 0 || (wall.CurveGroupId is null && wall.CurveRadius != 0))
                 throw new InvalidDataException("A wall is invalid or has no associated level.");
         }
         ValidateRooms(levelIds);

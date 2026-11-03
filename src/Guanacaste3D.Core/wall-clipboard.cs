@@ -39,10 +39,11 @@ public sealed partial class DocumentSession
                 throw new InvalidDataException("The selected wall type does not exist.");
 
             var newIds = clipboard.Walls.ToDictionary(wall => wall.Id, _ => Guid.NewGuid());
+            var curves = new Dictionary<Guid, Guid>();
             foreach (var wall in clipboard.Walls)
             {
                 var sameLevel = wall.LevelId == targetLevelId;
-                document.Walls.Add(wall with
+                document.Walls.Add(CurveGroups.Remap(wall, curves) with
                 {
                     Id = newIds[wall.Id], LevelId = targetLevelId,
                     Start = new Point2(wall.Start.X + deltaX, wall.Start.Y + deltaY),

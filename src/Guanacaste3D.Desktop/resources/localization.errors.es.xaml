@@ -110,6 +110,8 @@
   <sys:String x:Key="Error.The wall join setting is invalid.">El ajuste de unión de muros no es válido.</sys:String>
   <sys:String x:Key="Error.The view category is invalid.">La categoría de la vista no es válida.</sys:String>
   <sys:String x:Key="Error.The paste distance is invalid.">La distancia de pegado no es válida.</sys:String>
+  <sys:String x:Key="Error.The three points do not form an arc.">Los tres puntos no forman un arco: están en línea o el arco sería casi recto.</sys:String>
+  <sys:String x:Key="Error.The arc is too tight for the thickness of the wall.">El arco es demasiado cerrado para el espesor del muro.</sys:String>
   <sys:String x:Key="Error.Two different elements are needed.">Se necesitan dos elementos distintos.</sys:String>
   <sys:String x:Key="Error.The elements are on different levels.">Los elementos están en niveles distintos.</sys:String>
   <sys:String x:Key="Error.The elements touch or overlap, so there is no distance to measure.">Los elementos se tocan o se solapan: no hay distancia que medir.</sys:String>

@@ -265,18 +265,27 @@ public sealed partial class DocumentSession
             EnsureNotPinned(doc, id);
             var index = doc.Walls.FindIndex(w => w.Id == id);
             var wall = doc.Walls[index];
-            Point2[] movedCorners = [wall.Start, wall.End];
-            doc.Walls[index] = wall with
+            // The pieces of a curved wall travel together; the walls that met it follow its ends.
+            var group = wall.CurveGroupId is { } curve
+                ? doc.Walls.Select((w, position) => (w, position)).Where(entry => entry.w.CurveGroupId == curve).Select(entry => entry.position).ToArray()
+                : [index];
+            var movedCorners = group.SelectMany(position => new[] { doc.Walls[position].Start, doc.Walls[position].End }).ToArray();
+            foreach (var position in group)
             {
-                Start = Translate(wall.Start, deltaX, deltaY),
-                End = Translate(wall.End, deltaX, deltaY),
-                GridAxisId = null, // Manual wall motion releases its reference-datum constraint.
-                GridAxisAssociationDisabled = true
-            };
+                var piece = doc.Walls[position];
+                EnsureNotPinned(doc, piece.Id);
+                doc.Walls[position] = piece with
+                {
+                    Start = Translate(piece.Start, deltaX, deltaY),
+                    End = Translate(piece.End, deltaX, deltaY),
+                    GridAxisId = null, // Manual wall motion releases its reference-datum constraint.
+                    GridAxisAssociationDisabled = true
+                };
+            }
             for (var other = 0; other < doc.Walls.Count; other++)
             {
                 var neighbour = doc.Walls[other];
-                if (other == index || neighbour.LevelId != wall.LevelId) continue;
+                if (group.Contains(other) || neighbour.LevelId != wall.LevelId) continue;
                 var nextStart = FollowCorner(neighbour.Start, movedCorners, deltaX, deltaY);
                 var nextEnd = FollowCorner(neighbour.End, movedCorners, deltaX, deltaY);
                 if (nextStart != neighbour.Start || nextEnd != neighbour.End)
@@ -372,7 +381,9 @@ public sealed partial class DocumentSession
                 // A copied wall must never inherit a reference constraint from its source.
                 GridAxisId = null,
                 GridAxisAssociationDisabled = true,
-                Pinned = false
+                Pinned = false,
+                CurveGroupId = null,
+                CurveRadius = 0
             });
             foreach (var opening in doc.Openings.Where(o => o.WallId == id).ToArray())
                 doc.Openings.Add(opening with { Id = Guid.NewGuid(), WallId = newId });
@@ -422,10 +433,15 @@ public sealed partial class DocumentSession
         if (!Document.Walls.Any(w => w.Id == id)) return;
         Commit("Transaction.RemoveWall", doc =>
         {
-            EnsureNotPinned(doc, id);
-            var levelId = doc.Walls.Single(w => w.Id == id).LevelId;
-            doc.Openings.RemoveAll(o => o.WallId == id);
-            doc.Walls.RemoveAll(w => w.Id == id);
+            var removed = doc.Walls.Single(w => w.Id == id);
+            // A curved wall is one wall: deleting any piece of it deletes the chain.
+            var members = removed.CurveGroupId is { } curve
+                ? doc.Walls.Where(w => w.CurveGroupId == curve).Select(w => w.Id).ToHashSet()
+                : [id];
+            foreach (var member in members) EnsureNotPinned(doc, member);
+            var levelId = removed.LevelId;
+            doc.Openings.RemoveAll(o => members.Contains(o.WallId));
+            doc.Walls.RemoveAll(w => members.Contains(w.Id));
             RefreshRoomBoundariesIfNeeded(doc, levelId);
         });
     }

@@ -128,9 +128,11 @@ static class RandomizedWallChecks
             _ = undoable;
         }
         // Whatever the sequence did, undoing all of it brings the house back exactly as it was drawn.
+        // Undo keeps the last 40 steps, so the house is only reachable while the history has not been trimmed.
+        var trimmed = session.UndoNames.Count >= 40;
         var guard = 0;
         while (session.CanUndo && guard++ < 10000) session.Undo();
-        if (ProjectFile.SerializeDocument(session.Document) != houseJson)
+        if (!trimmed && ProjectFile.SerializeDocument(session.Document) != houseJson)
             failures.TryAdd("undo all", $"seed {seed}: undoing every command did not bring the house back exactly");
         return steps;
     }
@@ -155,8 +157,11 @@ static class RandomizedWallChecks
         {
             var first = export();
             if (first != export()) throw new InvalidDataException($"the {name} export is not repeatable");
-            if (first.Contains("NaN") || first.Contains("Infinity") || first.Contains("∞"))
-                throw new InvalidDataException($"the {name} export contains a number that is not finite");
+            // Text between quotes is not a number, and an IFC global id is a random string that contains "NaN" now and then.
+            var numbers = System.Text.RegularExpressions.Regex.Replace(first, "'[^']*'", "''");
+            foreach (var marker in new[] { "NaN", "Infinity", "∞" })
+                if (numbers.IndexOf(marker, StringComparison.Ordinal) is var at and >= 0)
+                    throw new InvalidDataException($"the {name} export contains a number that is not finite: ...{numbers.Substring(Math.Max(0, at - 90), Math.Min(numbers.Length - Math.Max(0, at - 90), 150))}...");
         }
         var ifc = texts["IFC"]();
         var wallEntities = ifc.Split((char)10).Count(line => line.Contains("=IFCWALL", StringComparison.Ordinal));
@@ -213,6 +218,7 @@ static class RandomizedWallChecks
     private static readonly (string Name, Operation Run)[] Operations =
     [
         ("AddWall", (r, s, l, _) => AddRandomWall(r, s, l)),
+        ("AddArcWall", (r, s, l, _) => s.AddArcWall(l, Point(r), Point(r), Point(r), Number(r, 0.5, 6), Type(r, s))),
         ("UpdateWallType", (r, s, _, _) => s.UpdateWallType(Type(r, s), "T", WallFunction.Interior, Thickness(r), "M")),
         ("SetWallType", (r, s, _, _) => s.SetWallType(AnyWall(r, s), Type(r, s))),
         ("UpdateWall", (r, s, _, _) => s.UpdateWall(AnyWall(r, s), Thickness(r), Number(r, 0.1, 6))),
