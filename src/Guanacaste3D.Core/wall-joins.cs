@@ -28,25 +28,76 @@ public sealed class WallJoinIndex
     /// <summary>Stores the resolved endpoint adjacency without changing model geometry.</summary>
     private WallJoinIndex(Dictionary<(Guid WallId, WallEnd End), WallJoin> joins) => _joins = joins;
 
-    /// <summary>Indexes every wall end that meets exactly one other wall of the same level.</summary>
+    /// <summary>
+    /// Indexes wall endpoints by level and a tolerance-sized spatial grid. Nearby
+    /// endpoints are searched in adjacent cells, preserving the original rule:
+    /// exactly one other wall endpoint within tolerance is a simple corner.
+    /// The grid avoids the quadratic all-wall scan for large BIM projects.
+    /// </summary>
     public static WallJoinIndex Build(IReadOnlyList<Wall> walls)
     {
         var joins = new Dictionary<(Guid WallId, WallEnd End), WallJoin>();
+        var cells = new Dictionary<(Guid LevelId, double X, double Y),
+            List<(Wall Wall, WallEnd End, Point2 Corner)>>();
+
+        // Floor (not round) is important for negative project coordinates.
+        static (double X, double Y) Cell(Point2 point) =>
+            (Math.Floor(point.X / Tolerance), Math.Floor(point.Y / Tolerance));
+
         foreach (var wall in walls)
         {
             foreach (var end in new[] { WallEnd.Start, WallEnd.End })
             {
                 var corner = CornerAt(wall, end);
-                var meeting = new List<WallJoin>();
-                foreach (var other in walls)
+                var cell = Cell(corner);
+                var key = (wall.LevelId, cell.X, cell.Y);
+                if (!cells.TryGetValue(key, out var endpoints))
                 {
-                    if (other.Id == wall.Id || other.LevelId != wall.LevelId) continue;
-                    if (corner.DistanceTo(other.Start) <= Tolerance) meeting.Add(new WallJoin(other, WallEnd.Start));
-                    if (corner.DistanceTo(other.End) <= Tolerance) meeting.Add(new WallJoin(other, WallEnd.End));
+                    endpoints = [];
+                    cells.Add(key, endpoints);
                 }
-                if (meeting.Count == 1) joins[(wall.Id, end)] = meeting[0];
+                endpoints.Add((wall, end, corner));
             }
         }
+
+        foreach (var wall in walls)
+        {
+            foreach (var end in new[] { WallEnd.Start, WallEnd.End })
+            {
+                var corner = CornerAt(wall, end);
+                var cell = Cell(corner);
+                var count = 0;
+                var single = default(WallJoin);
+
+                // A point within Tolerance can lie in its own cell or one of
+                // eight neighbors, including across a negative-coordinate edge.
+                for (var dx = -1; dx <= 1 && count < 2; dx++)
+                {
+                    for (var dy = -1; dy <= 1 && count < 2; dy++)
+                    {
+                        if (!cells.TryGetValue((wall.LevelId, cell.X + dx, cell.Y + dy),
+                                out var candidates))
+                            continue;
+
+                        foreach (var other in candidates)
+                        {
+                            if (other.Wall.Id == wall.Id ||
+                                corner.DistanceTo(other.Corner) > Tolerance)
+                                continue;
+                            count++;
+                            if (count == 1)
+                                single = new WallJoin(other.Wall, other.End);
+                            else
+                                break;
+                        }
+                    }
+                }
+
+                if (count == 1)
+                    joins[(wall.Id, end)] = single;
+            }
+        }
+
         return new WallJoinIndex(joins);
     }
 

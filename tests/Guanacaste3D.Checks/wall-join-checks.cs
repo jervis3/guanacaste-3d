@@ -19,6 +19,53 @@ static class WallJoinChecks
               Near(secondFootprint.StartRight, firstFootprint.EndRight),
             "Joined walls share the same corner points, so no notch remains");
 
+        // Adjacent spatial cells must still join; rounding a point to one cell
+        // would silently break valid near-coincident corners.
+        var edgeFirst = first with
+        {
+            Id = Guid.NewGuid(),
+            End = new Point2(4.000099, 0)
+        };
+        var edgeSecond = second with
+        {
+            Id = Guid.NewGuid(),
+            Start = new Point2(4.000101, 0),
+            End = new Point2(4.000101, 3)
+        };
+        var edgeFootprint = WallJoinIndex.Build([edgeFirst, edgeSecond]).Footprint(edgeFirst);
+        check(Math.Abs(edgeFootprint.EndLeft.X - edgeFirst.End.X) > 0.05,
+            "Near-coincident corners across adjacent positive spatial cells remain joined");
+
+        var negativeFirst = first with
+        {
+            Id = Guid.NewGuid(),
+            Start = new Point2(-4, 0),
+            End = new Point2(-0.000001, 0)
+        };
+        var negativeSecond = second with
+        {
+            Id = Guid.NewGuid(),
+            Start = new Point2(0.000001, 0),
+            End = new Point2(0.000001, 3)
+        };
+        var negativeFootprint = WallJoinIndex.Build([negativeFirst, negativeSecond]).Footprint(negativeFirst);
+        check(Math.Abs(negativeFootprint.EndLeft.X - negativeFirst.End.X) > 0.05,
+            "Near-coincident corners across negative and positive spatial cells remain joined");
+
+        var differentLevel = second with { Id = Guid.NewGuid(), LevelId = Guid.NewGuid() };
+        var isolated = WallJoinIndex.Build([first, differentLevel]).Footprint(first);
+        check(Near(isolated.EndLeft, new Point2(4, 0.1)),
+            "Spatial endpoint index never joins walls belonging to different levels");
+
+        var dispersedWalls = Enumerable.Range(0, 3000).Select(index =>
+            new Wall(Guid.NewGuid(), levelId,
+                new Point2(index * 10, 100), new Point2(index * 10 + 2, 100), 0.2, 3)).ToArray();
+        var dispersedIndex = WallJoinIndex.Build(dispersedWalls);
+        check(Near(dispersedIndex.Footprint(dispersedWalls[0]).StartLeft, new Point2(0, 100.1)) &&
+              Near(dispersedIndex.Footprint(dispersedWalls[^1]).EndRight,
+                  new Point2(dispersedWalls[^1].End.X, 99.9)),
+            "Thousands of isolated BIM walls are indexed without spurious joins");
+
         var square = WallJoinIndex.Build([first]).Footprint(first);
         check(Near(square.EndLeft, new Point2(4, 0.1)) && Near(square.EndRight, new Point2(4, -0.1)),
             "Unjoined wall ends stay square to the centerline");
