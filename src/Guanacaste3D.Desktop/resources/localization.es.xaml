@@ -265,6 +265,8 @@
   <sys:String x:Key="Status.WallDimensionsApplied">Dimensiones del muro actualizadas.</sys:String>
   <sys:String x:Key="Status.SelectWallToJoin">Seleccione un muro para cambiar su unión.</sys:String>
   <sys:String x:Key="Status.WallJoinChanged">Unión del muro actualizada.</sys:String>
+  <sys:String x:Key="Status.Projection3DOrthographic">Vista 3D ortogonal: las líneas paralelas se mantienen paralelas, sin fuga de perspectiva.</sys:String>
+  <sys:String x:Key="Status.Projection3DPerspective">Vista 3D en perspectiva.</sys:String>
   <sys:String x:Key="Status.MaterialTagsShown">Etiquetas de material de los muros visibles en la planta.</sys:String>
   <sys:String x:Key="Status.MaterialTagsHidden">Etiquetas de material ocultas.</sys:String>
   <sys:String x:Key="Status.WallTopAttached">Parte superior del muro asociada a la cara inferior de la losa o cubierta que tiene encima.</sys:String>

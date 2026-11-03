@@ -6,6 +6,9 @@ public partial class MainWindow
 {
     private static readonly string[] SunPresetCycle = ["Off", "Morning", "Noon", "Afternoon"];
 
+    /// <summary>Whether the 3D view uses parallel projection instead of perspective.</summary>
+    private bool _modelOrthographic;
+
     /// <summary>
     /// Routes the View ribbon's 3D commands to the options of the model view that already exist in its toolbar and side
     /// panel: line weight, hidden lines, shadows, the sun, locking and the navigation bar. Each one first brings up the
@@ -25,6 +28,8 @@ public partial class MainWindow
             case "Pan":
             case "Zoom":
             case "ViewCube":
+            case "Perspective":
+            case "Orthographic":
                 break;
             default:
                 return false;
@@ -58,6 +63,12 @@ public partial class MainWindow
             case "LockView":
                 ExecuteModelViewCommand("Lock");
                 StatusText.Text = GetText(_modelNavigator?.IsLocked == true ? "Status.View3DLocked" : "Status.View3DUnlocked");
+                break;
+            case "Perspective":
+            case "Orthographic":
+                _modelOrthographic = commandId == "Orthographic";
+                UpdateModelCamera();
+                StatusText.Text = GetText(_modelOrthographic ? "Status.Projection3DOrthographic" : "Status.Projection3DPerspective");
                 break;
             default:
                 // Orbit, pan, zoom and the view cube are done with the pointer; the bar brings them within reach.

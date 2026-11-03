@@ -345,6 +345,29 @@ internal static class ScenePresentation
         return converted;
     }
 
+    /// <summary>
+    /// The same view as <see cref="ToWpfCamera(NavigationCamera, double, float)"/> without perspective: parallel
+    /// projection, as in a plan, elevation or isometric drawing. Its width is what the perspective camera would see at the
+    /// distance of <paramref name="target"/>, so moving the camera toward the model still zooms in.
+    /// </summary>
+    public static OrthographicCamera ToWpfOrthographicCamera(NavigationCamera camera, double aspectRatio, float sceneRadius, System.Numerics.Vector3 target)
+    {
+        var perspective = ToWpfCamera(camera, aspectRatio, sceneRadius);
+        var center = ToWpf(target);
+        var look = perspective.LookDirection;
+        look.Normalize();
+        var toTarget = new Vector3D(center.X - perspective.Position.X, center.Y - perspective.Position.Y, center.Z - perspective.Position.Z);
+        var distance = Math.Max(1.0, Vector3D.DotProduct(toTarget, look));
+        var width = Math.Max(0.5, 2 * distance * Math.Tan(perspective.FieldOfView * Math.PI / 360));
+        var reach = Math.Max(500, sceneRadius * 40);
+        // Parallel projection has no vanishing point, so geometry behind the camera plane must still be drawn.
+        return new OrthographicCamera(perspective.Position, perspective.LookDirection, perspective.UpDirection, width)
+        {
+            NearPlaneDistance = -reach,
+            FarPlaneDistance = reach
+        };
+    }
+
     internal static Material MaterialFor(SurfaceKind kind) => kind switch
     {
         SurfaceKind.DoorLeaf => Diffuse(Color.FromRgb(154, 99, 55)),

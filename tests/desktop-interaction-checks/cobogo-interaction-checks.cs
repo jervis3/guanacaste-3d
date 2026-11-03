@@ -77,6 +77,21 @@ internal static partial class InteractionChecks
             }
             Check(!(bool)Invoke("SelectElement", Guid.NewGuid())!, "Select by identifier reports an unknown identifier");
 
+            // The 3D view switches between perspective and parallel projection with a usable camera either way.
+            tabs.SelectedIndex = 1;
+            Pump();
+            var viewport = (System.Windows.Controls.Viewport3D)opened.FindName("ModelViewport");
+            Invoke("ExecuteApplicationCommand", "Orthographic");
+            Pump();
+            var parallel = viewport.Camera as System.Windows.Media.Media3D.OrthographicCamera;
+            Check(parallel is not null && double.IsFinite(parallel.Width) && parallel.Width > 1 && parallel.NearPlaneDistance < 0,
+                $"Orthographic gives the 3D view a parallel camera of a usable width ({parallel?.Width:0.0} m)");
+            Invoke("ExecuteApplicationCommand", "Perspective");
+            Pump();
+            Check(viewport.Camera is System.Windows.Media.Media3D.PerspectiveCamera, "Perspective brings the perspective camera back");
+            tabs.SelectedIndex = 0;
+            Pump();
+
             // Elevation and section are drawn when their tabs open, not on every edit, and they show the current model.
             var elevationCanvas = (Canvas)opened.FindName("ElevationCanvas");
             tabs.SelectedIndex = 4;

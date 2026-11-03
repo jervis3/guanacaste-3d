@@ -264,7 +264,9 @@ public partial class MainWindow
         var (min, max) = SceneBounds();
         var radius = Math.Max(3, (max - min).Length() / 2);
         var aspect = ModelViewport.ActualHeight > 0 ? ModelViewport.ActualWidth / ModelViewport.ActualHeight : 1.6;
-        ModelViewport.Camera = ScenePresentation.ToWpfCamera(_navigation, aspect, radius);
+        ModelViewport.Camera = _modelOrthographic
+            ? ScenePresentation.ToWpfOrthographicCamera(_navigation, aspect, radius, (min + max) / 2)
+            : ScenePresentation.ToWpfCamera(_navigation, aspect, radius);
         ViewNavigation?.Redraw();
         UpdateModelRealisticCamera();
         if (_dimensionChips.Count > 0) PositionDimensionChips();
