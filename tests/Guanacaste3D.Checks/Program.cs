@@ -138,6 +138,27 @@ try { WallLayerQuantitySchedule.For(takeoffWall, takeoffType, takeoffSession.Doc
 catch (InvalidDataException) { overlappingLayerOpeningsRejected = true; }
 Check(overlappingLayerOpeningsRejected, "Layer takeoffs reject overlapping openings rather than double-subtracting volume");
 
+var orderedWallSolids = WallGeometry.Solids(takeoffWall, takeoffSession.Document.Openings);
+var reversedWallSolids = WallGeometry.Solids(takeoffWall, takeoffSession.Document.Openings.AsEnumerable().Reverse());
+Check(orderedWallSolids.Count == 6 && orderedWallSolids.SequenceEqual(reversedWallSolids) &&
+      Math.Abs(orderedWallSolids.Sum(part => (part.To - part.From) * (part.Top - part.Bottom)) -
+               netFaceArea) < 1e-9,
+    "Opening segmentation is deterministic for unordered door/window inputs and preserves net area");
+
+// Many hosted families previously caused quadratic scans of every opening at each wall interval.
+// Use a large but valid wall to verify the sweep's segment count and exact net BIM volume.
+var denseWall = new Wall(Guid.NewGuid(), takeoffWall.LevelId,
+    new Point2(0, 0), new Point2(2500, 0), 0.2, 3);
+var denseOpenings = Enumerable.Range(0, 2500)
+    .Select(index => new WallOpening(Guid.NewGuid(), denseWall.Id, OpeningKind.Window,
+        index + 0.5, 0.3, 1, 1))
+    .Reverse().ToArray();
+WallGeometry.Validate([denseWall], denseOpenings);
+var denseSolids = WallGeometry.Solids(denseWall, denseOpenings);
+Check(denseSolids.Count == 7501 &&
+      Math.Abs(WallGeometry.NetVolume(denseWall, denseOpenings) - 1350) < 1e-7,
+    "Thousands of unordered hosted openings segment without losing solids or volume");
+
 
 var document = BuildingDocument.Create();
 document.Validate();
