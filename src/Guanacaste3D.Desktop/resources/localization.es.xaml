@@ -265,6 +265,8 @@
   <sys:String x:Key="Status.WallDimensionsApplied">Dimensiones del muro actualizadas.</sys:String>
   <sys:String x:Key="Status.SelectWallToJoin">Seleccione un muro para cambiar su unión.</sys:String>
   <sys:String x:Key="Status.WallJoinChanged">Unión del muro actualizada.</sys:String>
+  <sys:String x:Key="Status.SectionBoxOn">Recuadro de sección: la vista 3D muestra solo el nivel {0}. Pulse de nuevo para ver todo.</sys:String>
+  <sys:String x:Key="Status.SectionBoxOff">Recuadro de sección desactivado: se ve todo el edificio.</sys:String>
   <sys:String x:Key="Status.PickDimensionFirst">Cota lineal: haga clic en el primer muro.</sys:String>
   <sys:String x:Key="Status.PickDimensionSecond">Ahora haga clic en el segundo muro; se medirá la distancia libre entre ambos.</sys:String>
   <sys:String x:Key="Status.DimensionAdded">Cota creada: se actualiza sola si algún muro se mueve.</sys:String>

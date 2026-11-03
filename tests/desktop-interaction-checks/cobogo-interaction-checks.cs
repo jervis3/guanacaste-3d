@@ -92,6 +92,22 @@ internal static partial class InteractionChecks
             tabs.SelectedIndex = 0;
             Pump();
 
+            // The level section box shows one level in 3D, and pressing it again brings everything back.
+            tabs.SelectedIndex = 1;
+            Pump();
+            var everything = ((BuildingDocument)Invoke("ModelDisplayDocument", false)!).Walls.Count;
+            Invoke("SelectElement", session.Document.Walls[0].Id);
+            var activeLevel = Field<Guid>("_activeLevelId");
+            Invoke("ExecuteApplicationCommand", "SectionBox");
+            var shown = ((BuildingDocument)Invoke("ModelDisplayDocument", false)!).Walls;
+            Check(shown.Count > 0 && shown.Count < everything && shown.All(wall => wall.LevelId == activeLevel),
+                $"The section box leaves {shown.Count} of the house's {everything} walls, all of the active level");
+            Invoke("ExecuteApplicationCommand", "SectionBox");
+            Check(((BuildingDocument)Invoke("ModelDisplayDocument", false)!).Walls.Count == everything,
+                "Pressing the section box again shows the whole house");
+            tabs.SelectedIndex = 0;
+            Pump();
+
             // Elevation and section are drawn when their tabs open, not on every edit, and they show the current model.
             var elevationCanvas = (Canvas)opened.FindName("ElevationCanvas");
             tabs.SelectedIndex = 4;
