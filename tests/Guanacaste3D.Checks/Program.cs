@@ -65,6 +65,24 @@ Check(layerCsv.Split('\n', StringSplitOptions.RemoveEmptyEntries).Length == 6 &&
       layerCsv.Contains("LeftRepello", StringComparison.Ordinal) &&
       layerCsv.Contains("RightFine", StringComparison.Ordinal),
     "The separate layer CSV exports one deterministic row per nonzero layer");
+var aggregateLayerSession = new DocumentSession(takeoffSession.Document.Clone());
+var additionalTakeoffWallId = aggregateLayerSession.AddWall(
+    takeoffWall.LevelId, new Point2(0, 3), new Point2(5, 3));
+var additionalTakeoffWall = aggregateLayerSession.Document.Walls.Single(wall => wall.Id == additionalTakeoffWallId);
+Check(additionalTakeoffWall.WallTypeId == takeoffWall.WallTypeId,
+    "The wall layer summary fixture uses two walls of the same assembly type");
+var layerSummaryCsv = WallLayerQuantitySchedule.ToSummaryCsv(aggregateLayerSession.Document);
+var layerSummaryLines = layerSummaryCsv.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+var coreSummary = layerSummaryLines.Single(line => line.Contains(",Core,", StringComparison.Ordinal));
+var coreSummaryValues = coreSummary.Split(",Core,", StringSplitOptions.None)[1].Split(',');
+Check(layerSummaryLines.Length == 6 && coreSummaryValues[1] == "2" &&
+      Math.Abs(double.Parse(coreSummaryValues[2], System.Globalization.CultureInfo.InvariantCulture) -
+               (netFaceArea + 5 * 3)) < 1e-6 &&
+      Math.Abs(double.Parse(coreSummaryValues[3], System.Globalization.CultureInfo.InvariantCulture) -
+               (netFaceArea + 5 * 3) * layerRows.Single(row => row.Layer == "Core").Thickness) < 1e-6,
+    "Wall layer summary combines two walls of one type without losing opening deductions");
+Check(WallLayerQuantitySchedule.ToSummaryCsv(aggregateLayerSession.Document) == layerSummaryCsv,
+    "Wall layer summary CSV remains deterministic across repeated exports");
 var invalidLayerOpening = new WallOpening(Guid.NewGuid(), takeoffWallId, OpeningKind.Window, 2, 0.8, 1, 1);
 var overlappingLayerOpeningsRejected = false;
 try { WallLayerQuantitySchedule.For(takeoffWall, takeoffType, takeoffSession.Document.Openings.Append(invalidLayerOpening)); }
