@@ -102,7 +102,7 @@ MAP = {
     "SolarAnalysis": ("sun", "gear"), "ResultsFill": ("results_fill", None),
     # Mass and site
     "ShowMass": ("mass", "eye"), "InPlaceMass": ("mass_inplace", "pencil"), "PlaceMass": ("mass", "plus"), "Sketch3D": ("model_line", "pencil"),
-    "Toposolid": ("toposolid", None), "ContextualData": ("topography", "down"), "SiteComponent": ("site_component", None), "ParkingComponent": ("parking", None),
+    "Toposolid": ("toposolid", None), "ContextualData": ("topography", "down"), "SiteComponent": ("site_component", None), "MassPlacement": ("site_component", "plus"), "ParkingComponent": ("parking", None),
     "PropertyLine": ("property_line", None), "LabelContours": ("contours", None), "GradedRegion": ("graded_region", None),
     # Collaborate
     "EditRequests": ("edit_requests", None), "Collaborate": ("collaborate", None), "Worksets": ("worksets", None), "SynchronizeCentral": ("sync", None),

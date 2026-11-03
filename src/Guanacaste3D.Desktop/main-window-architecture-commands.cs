@@ -12,8 +12,16 @@ namespace Guanacaste3D.Desktop;
 /// <summary>The Architecture tab commands that build elements from sketches, hosts, faces and picks.</summary>
 public partial class MainWindow
 {
-    /// <summary>A slab sketch in progress: its points so far, the recipe, and whether two corners complete it.</summary>
-    private sealed record SlabSketch(SlabPreset Preset, bool Rectangle, List<Point2> Points);
+    /// <summary>
+    /// A slab sketch in progress: its points so far, the recipe, and whether two corners complete it. Other tools reuse
+    /// it with <see cref="Complete"/> to receive the points instead of a slab, and <see cref="Open"/> for a polyline.
+    /// </summary>
+    private sealed record SlabSketch(SlabPreset Preset, bool Rectangle, List<Point2> Points)
+    {
+        public Action<IReadOnlyList<Point2>>? Complete { get; init; }
+        public bool Open { get; init; }
+        public int MinimumPoints => Open ? 2 : 3;
+    }
 
     private SlabSketch? _slabSketch;
     private Point2? _sketchPointer;
@@ -287,7 +295,7 @@ public partial class MainWindow
     {
         if (_slabSketch is not { } sketch) return false;
         var point = SnapWallPoint(CanvasToWorld(PlanPosition(e)));
-        if (e.ClickCount >= 2 && sketch.Points.Count >= 3 && !sketch.Rectangle)
+        if (e.ClickCount >= 2 && sketch.Points.Count >= sketch.MinimumPoints && !sketch.Rectangle)
         {
             FinishSlabSketch();
             return true;
@@ -319,7 +327,12 @@ public partial class MainWindow
             var (a, b) = (sketch.Points[0], sketch.Points[1]);
             boundary = [a, new(b.X, a.Y), b, new(a.X, b.Y)];
         }
-        if (boundary.Count < 3) { StatusText.Text = GetText("Status.SketchCancelled"); RenderPlan(); return; }
+        if (boundary.Count < sketch.MinimumPoints) { StatusText.Text = GetText("Status.SketchCancelled"); RenderPlan(); return; }
+        if (sketch.Complete is { } complete)
+        {
+            complete(boundary);
+            return;
+        }
         try
         {
             _selectedFloorId = _session.AddSlabFromPreset(_activeLevelId, boundary.ToArray(), sketch.Preset,
@@ -355,6 +368,16 @@ public partial class MainWindow
             else points.Add(pointer);
         }
         if (points.Count < 2) return;
+        if (sketch.Open)
+        {
+            PlanCanvas.Children.Add(new Polyline
+            {
+                Points = new PointCollection(points.Select(WorldToCanvas)),
+                Stroke = Brushes.DarkOrange, StrokeThickness = 1.5, StrokeDashArray = new DoubleCollection { 4, 3 },
+                IsHitTestVisible = false
+            });
+            return;
+        }
         PlanCanvas.Children.Add(new Polygon
         {
             Points = new PointCollection(points.Select(WorldToCanvas)),

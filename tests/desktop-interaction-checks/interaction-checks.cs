@@ -119,6 +119,7 @@ internal static partial class InteractionChecks
             RevitProjectChecks();
             TileViewChecks();
             CheckAssociatedDocumentStartup();
+            MassPlacementChecks();
             StartupSampleChecks();
             Console.WriteLine("Desktop interaction checks passed.");
             return 0;

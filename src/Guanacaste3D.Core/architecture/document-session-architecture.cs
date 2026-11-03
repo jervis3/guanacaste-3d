@@ -200,15 +200,19 @@ public sealed partial class DocumentSession
     {
         var id = Guid.NewGuid();
         Commit("Transaction.AddStructuralElement", document =>
-            document.StructuralElements.Add(CreateStructuralElement(id, document, levelId, preset.Kind, preset.Name,
-                start, end) with
-            {
-                Style = preset.Style, Width = preset.Width, Height = preset.Height, Offset = preset.Offset,
-                Depth = preset.Depth, ComponentShape = preset.ComponentShape,
-                ComponentCategory = preset.ComponentCategory, Rotation = NormalizeTurn(rotation), FamilyId = familyId
-            }));
+            document.StructuralElements.Add(PresetElement(id, document, levelId, preset, start, end, rotation, familyId)));
         return id;
     }
+
+    /// <summary>The element a catalog section makes between two points, not yet added to the document.</summary>
+    private static StructuralElement PresetElement(Guid id, BuildingDocument document, Guid levelId, ElementPreset preset,
+        Point2 start, Point2 end, double rotation, Guid? familyId) =>
+        CreateStructuralElement(id, document, levelId, preset.Kind, preset.Name, start, end) with
+        {
+            Style = preset.Style, Width = preset.Width, Height = preset.Height, Offset = preset.Offset,
+            Depth = preset.Depth, ComponentShape = preset.ComponentShape,
+            ComponentCategory = preset.ComponentCategory, Rotation = NormalizeTurn(rotation), FamilyId = familyId
+        };
 
     /// <summary>Turns a point-hosted element (furniture, fixtures, equipment) about its insertion point.</summary>
     public void RotateElement(Guid elementId, double radians)

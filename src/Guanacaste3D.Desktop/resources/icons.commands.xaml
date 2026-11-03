@@ -1424,6 +1424,14 @@
     <GeometryDrawing Brush="#FFFFFF" Pen="{StaticResource CmdBadgeRing}" Geometry="M13.799999999999999,18.4 A4.6,4.6 0 1 0 23.0,18.4 A4.6,4.6 0 1 0 13.799999999999999,18.4 Z"/>
     <GeometryDrawing Pen="{StaticResource CmdBadgeAccent}" Geometry="M16.599999999999998,18.4 A1.8,1.8 0 1 0 20.2,18.4 A1.8,1.8 0 1 0 16.599999999999998,18.4 Z M18.4,15.599999999999998 L18.4,16.4 M18.4,20.4 L18.4,21.2 M15.599999999999998,18.4 L16.4,18.4 M20.4,18.4 L21.2,18.4"/>
   </DrawingGroup></DrawingImage.Drawing></DrawingImage>
+  <DrawingImage x:Key="CmdIcon.MassPlacement"><DrawingImage.Drawing><DrawingGroup>
+    <GeometryDrawing Brush="Transparent" Geometry="M0,0 H24 V24 H0 Z"/>
+    <GeometryDrawing Brush="#BDE8CB" Pen="{StaticResource ArchGPen}" Geometry="M7,8 A5,5 0 1 0 17,8 A5,5 0 1 0 7,8 Z"/>
+    <GeometryDrawing Pen="{StaticResource ArchOPen}" Geometry="M12,13 L12,21"/>
+    <GeometryDrawing Pen="{StaticResource ArchNPen}" Geometry="M3,21 L21,21"/>
+    <GeometryDrawing Brush="#FFFFFF" Pen="{StaticResource CmdBadgeRing}" Geometry="M13.799999999999999,18.4 A4.6,4.6 0 1 0 23.0,18.4 A4.6,4.6 0 1 0 13.799999999999999,18.4 Z"/>
+    <GeometryDrawing Pen="{StaticResource CmdBadgeGreen}" Geometry="M16.4,18.4 L20.4,18.4 M18.4,16.4 L18.4,20.4"/>
+  </DrawingGroup></DrawingImage.Drawing></DrawingImage>
   <DrawingImage x:Key="CmdIcon.MatchProperties"><DrawingImage.Drawing><DrawingGroup>
     <GeometryDrawing Brush="Transparent" Geometry="M0,0 H24 V24 H0 Z"/>
     <GeometryDrawing Brush="#F8D7A8" Pen="{StaticResource ArchNPen}" Geometry="M3,3 H14 V9 H3 Z"/>

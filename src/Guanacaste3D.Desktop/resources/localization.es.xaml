@@ -300,6 +300,10 @@
   <sys:String x:Key="Status.ProjectFromTemplate">Proyecto creado desde la plantilla. Guárdalo para conservar cambios.</sys:String>
   <sys:String x:Key="Status.TemplateSaved">Plantilla guardada: {0}</sys:String>
   <sys:String x:Key="Status.MeshFamilyPlaced">Familia cargada y colocada en el origen del nivel activo: {0}. Muévela o cópiala como cualquier componente.</sys:String>
+  <sys:String x:Key="Status.MassPlacementNoFamilies">No hay familias de malla (árboles, plantas, autos) para colocar. Carga una con Cargar familia.</sys:String>
+  <sys:String x:Key="Status.MassPlacementLine">Colocación masiva: haz clic en los puntos de la línea y termina con doble clic o clic derecho.</sys:String>
+  <sys:String x:Key="Status.MassPlacementArea">Colocación masiva: dibuja el contorno del área y ciérralo con doble clic o clic derecho.</sys:String>
+  <sys:String x:Key="Status.MassPlacementDone">Se colocaron {0} elementos de {1}. Ctrl+Z los quita todos de una vez.</sys:String>
   <sys:String x:Key="Status.FamilyImported">Familia importada al catálogo del proyecto: {0}</sys:String>
   <sys:String x:Key="Status.FamilySaved">Familia guardada: {0}</sys:String>
   <sys:String x:Key="Status.SelectOpeningForFamily">Selecciona una puerta o ventana para guardar su familia.</sys:String>

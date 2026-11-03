@@ -92,6 +92,8 @@ public partial class MainWindow
                 StatusText.Text = GetText(_labelContours ? "Status.ContourLabelsOn" : "Status.ContourLabelsOff");
                 RenderPlan();
                 return true;
+            case "RibbonCommand.MassPlacement":
+                BeginMassPlacement(); return true;
             case "RibbonCommand.SiteComponent":
             case "RibbonCommand.Planting":
                 BeginPlantingTool(); return true;

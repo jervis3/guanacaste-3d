@@ -271,6 +271,7 @@
   <sys:String x:Key="RibbonCommand.ShowMass">Mostrar masa</sys:String>
   <sys:String x:Key="RibbonCommand.ShowWorkPlane">Mostrar</sys:String>
   <sys:String x:Key="RibbonCommand.SiteComponent">Componente de emplazamiento</sys:String>
+  <sys:String x:Key="RibbonCommand.MassPlacement">Colocación masiva</sys:String>
   <sys:String x:Key="RibbonCommand.Sketch3D">Boceto 3D</sys:String>
   <sys:String x:Key="RibbonCommand.Snaps">Forzados de cursor</sys:String>
   <sys:String x:Key="RibbonCommand.Space">Espacio</sys:String>

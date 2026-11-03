@@ -274,6 +274,7 @@ public static partial class RibbonCatalog
             L("Toposolid", "RibbonCommand.Toposolid", "Icon.Site"),
             L("ContextualData", "RibbonCommand.ContextualData", "Icon.Site"),
             S("SiteComponent", "RibbonCommand.SiteComponent", "Icon.Site"),
+            S("MassPlacement", "RibbonCommand.MassPlacement", "Icon.Site"),
             S("ParkingComponent", "RibbonCommand.ParkingComponent", "Icon.Site"),
             S("PropertyLine", "RibbonCommand.PropertyLine", "Icon.Section")),
         G("RibbonGroup.SiteAnalysis",

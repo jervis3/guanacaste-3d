@@ -506,6 +506,7 @@ ModernHouseChecks.Run(Check);
 ModernHouseToolChecks.Run(Check);
 BreezeBlockHouseChecks.Run(Check);
 MeshFamilyChecks.Run(Check);
+MassPlacementChecks.Run(Check);
 RenderLookChecks.Run(Check);
 ImportedUvChecks.Run(Check);
 FinishTransactionChecks.Run(Check);

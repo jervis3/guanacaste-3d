@@ -254,6 +254,7 @@
   <sys:String x:Key="Demo.ShowMass">Muestra u oculta las masas conceptuales.</sys:String>
   <sys:String x:Key="Demo.ShowWorkPlane">Muestra el plano de trabajo actual.</sys:String>
   <sys:String x:Key="Demo.SiteComponent">Coloca árboles, coches y otros elementos del terreno.</sys:String>
+  <sys:String x:Key="Demo.MassPlacement">Reparte muchos árboles, plantas o autos a lo largo de una línea o por un área, como en Lumion.</sys:String>
   <sys:String x:Key="Demo.Sketch3D">Dibuja en tres dimensiones sobre un plano.</sys:String>
   <sys:String x:Key="Demo.SlabEdge">Añade un borde decorativo a una losa.</sys:String>
   <sys:String x:Key="Demo.SolarAnalysis">Estudia el sol y las sombras sobre el edificio.</sys:String>
