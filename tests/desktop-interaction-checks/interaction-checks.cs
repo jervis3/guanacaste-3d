@@ -104,6 +104,7 @@ internal static partial class InteractionChecks
                 "UI-created annotation survives native save and reopen");
             WallLoopClosingChecks(session);
             WallEditCommandChecks(session);
+            RandomizedRibbonChecks(session);
             PlantingChecks(session);
             StairToolChecks(session);
             TexturedModelChecks(session);

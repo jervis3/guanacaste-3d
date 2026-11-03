@@ -66,3 +66,77 @@ internal static partial class InteractionChecks
         Pump();
     }
 }
+
+internal static partial class InteractionChecks
+{
+    /// <summary>
+    /// Runs random sequences of non-modal ribbon commands on random selections, including an empty one, over several
+    /// layouts, and checks that no command throws and the project stays valid after every step. Layouts and the order
+    /// of commands differ per seed, so a failure names its seed and step. Undo and redo are left out on purpose: they
+    /// would reach back into what earlier checks did.
+    /// </summary>
+    private static void RandomizedRibbonChecks(DocumentSession session)
+    {
+        string[] commands =
+        [
+            "AllowJoin", "MiterJoin", "ButtJoin", "SquareOff", "DisallowJoin", "Pin", "FlipWall", "DetachAll",
+            "Copy", "Cut", "Paste", "CopyElement", "Rotate"
+        ];
+        var level = Field<Guid>("_activeLevelId");
+        var initial = session.Document.Walls.Select(wall => wall.Id).ToHashSet();
+        var failures = new List<string>();
+        var executed = 0;
+
+        for (var seed = 1; seed <= 12; seed++)
+        {
+            var random = new Random(seed * 31);
+            var baseX = 400.0 + seed * 40;
+            var angle = random.Next(0, 4) * Math.PI / 6 + random.NextDouble() * 0.2;
+            var length = 3 + random.NextDouble() * 6;
+            var corner = new Point2(baseX + length, 400);
+            session.AddWall(level, new Point2(baseX, 400), corner);
+            session.AddWall(level, corner, new Point2(corner.X + Math.Cos(angle) * length, 400 + Math.Sin(angle) * length));
+            var host = session.AddWall(level, new Point2(baseX, 410), new Point2(baseX + length * 1.5, 410));
+            session.AddWall(level, new Point2(baseX + length * 0.7, 410), new Point2(baseX + length * 0.7, 410 + length));
+            session.AddOpening(host, random.Next(2) == 0 ? OpeningKind.Door : OpeningKind.Window, offset: length * 0.4);
+
+            for (var step = 0; step < 30; step++)
+            {
+                var mine = session.Document.Walls.Where(wall => !initial.Contains(wall.Id)).Select(wall => wall.Id).ToArray();
+                var selected = mine.Length == 0 || random.Next(8) == 0 ? (Guid?)null : mine[random.Next(mine.Length)];
+                SetField("_selectedWallId", selected);
+                var command = commands[random.Next(commands.Length)];
+                try
+                {
+                    Invoke("ExecuteApplicationCommand", command);
+                    session.Document.Validate();
+                    executed++;
+                    if (step % 6 == 0)
+                    {
+                        Invoke("RenderPlan");
+                        Pump();
+                    }
+                }
+                catch (Exception exception)
+                {
+                    var cause = (exception as System.Reflection.TargetInvocationException)?.InnerException ?? exception;
+                    failures.Add($"seed {seed} step {step} {command}: {cause.GetType().Name}: {cause.Message}");
+                    break;
+                }
+            }
+
+            SetField("_selectedWallId", null);
+            var leftovers = session.Document.Walls.Where(wall => !initial.Contains(wall.Id)).Select(wall => wall.Id).ToArray();
+            session.SetWallsPinned(leftovers.Length == 0 ? [] : leftovers, false);
+            foreach (var id in leftovers) session.RemoveWall(id);
+        }
+
+        Check(failures.Count == 0,
+            $"{executed} random ribbon commands on random selections and layouts never throw and keep the project valid" +
+            (failures.Count == 0 ? "" : ": " + string.Join(" | ", failures.Take(5))));
+        Check(session.Document.Walls.Select(wall => wall.Id).ToHashSet().SetEquals(initial),
+            "The random ribbon run leaves the project's walls as it found them");
+        Invoke("RenderPlan");
+        Pump();
+    }
+}
