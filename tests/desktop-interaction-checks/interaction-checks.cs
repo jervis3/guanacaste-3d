@@ -161,6 +161,11 @@ internal static partial class InteractionChecks
             var status = (TextBlock)window.FindName("StatusText");
             Check(!string.IsNullOrWhiteSpace(status.Text),
                 "Wall layer export reports an empty project without opening a save dialog");
+            status.Text = string.Empty;
+            summaryButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            DrainToIdle();
+            Check(!string.IsNullOrWhiteSpace(status.Text),
+                "Wall layer summary reports an empty project without opening a save dialog");
         }
         finally
         {
