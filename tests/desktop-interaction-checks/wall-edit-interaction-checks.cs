@@ -152,6 +152,7 @@ internal static partial class InteractionChecks
             for (var seed = 1; seed <= 12; seed++)
             {
                 var random = new Random(seed * 31);
+                var seedBudget = System.Diagnostics.Stopwatch.StartNew();
                 var baseX = 400.0 + seed * 40;
                 var angle = random.Next(0, 4) * Math.PI / 6 + random.NextDouble() * 0.2;
                 var length = 3 + random.NextDouble() * 6;
@@ -172,6 +173,8 @@ internal static partial class InteractionChecks
                     {
                         Console.WriteLine($"Ribbon fuzz: seed={seed} step={step} command={command}");
                         Invoke("ExecuteApplicationCommand", command);
+                        if (seedBudget.Elapsed > TimeSpan.FromSeconds(45))
+                            throw new TimeoutException($"Ribbon fuzz seed {seed} exceeded 45 seconds at step {step} ({command}).");
                         session.Document.Validate();
                         executed++;
                         if (step % 6 == 0)
