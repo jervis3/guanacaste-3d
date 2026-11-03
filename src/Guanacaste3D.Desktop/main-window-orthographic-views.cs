@@ -63,6 +63,16 @@ public partial class MainWindow
         var (elevation, name) = CurrentElevation();
         // The Elevation tab carries the name of the elevation it shows, so a renamed view is renamed everywhere.
         if (ViewTabs.Items.Count > 4 && ViewTabs.Items[4] is TabItem elevationTab) elevationTab.Header = name;
+        // Drawing these views meshes the whole building twice and projects every vertex, which took about three
+        // seconds on the breeze-block house after each edit. Nobody sees them from another tab, so they wait there and
+        // are drawn when their tab opens, like the 3D view.
+        if (ViewTabs.SelectedIndex is not (ElevationTabIndex or SectionTabIndex))
+        {
+            _orthographicViewsStale = true;
+            UpdateDocumentationCaption();
+            return;
+        }
+        _orthographicViewsStale = false;
         // Each generated view draws what its own visibility shows: hidden or isolated elements are left out per view.
         var elevationDocument = ViewVisibility.Apply(_session.Document, ProjectViewById(_elevationViewId));
         RenderProjectedView(ElevationCanvas, elevation, BuildingMesher.Build(elevationDocument), elevationDocument);
@@ -73,6 +83,12 @@ public partial class MainWindow
         RenderSectionView(BuildingMesher.Build(sectionDocument));
         UpdateDocumentationCaption();
     }
+
+    private const int ElevationTabIndex = 4;
+    private const int SectionTabIndex = 5;
+
+    /// <summary>True when the elevation and section drawings are older than the model because their tabs were not open.</summary>
+    private bool _orthographicViewsStale;
 
     /// <summary>The project view with this id, or null when it is not in the document.</summary>
     private ProjectView? ProjectViewById(Guid viewId) => _session.Document.Views.FirstOrDefault(view => view.Id == viewId);

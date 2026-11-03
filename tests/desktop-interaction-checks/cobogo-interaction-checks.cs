@@ -77,6 +77,22 @@ internal static partial class InteractionChecks
             }
             Check(!(bool)Invoke("SelectElement", Guid.NewGuid())!, "Select by identifier reports an unknown identifier");
 
+            // Elevation and section are drawn when their tabs open, not on every edit, and they show the current model.
+            var elevationCanvas = (Canvas)opened.FindName("ElevationCanvas");
+            tabs.SelectedIndex = 4;
+            Pump();
+            Check(elevationCanvas.Children.Count > 20, $"The elevation tab draws the house when it opens ({elevationCanvas.Children.Count} shapes)");
+            var sectionCanvas = (Canvas)opened.FindName("SectionCanvas");
+            tabs.SelectedIndex = 5;
+            Pump();
+            Check(sectionCanvas.Children.Count > 20, $"The section tab draws the house when it opens ({sectionCanvas.Children.Count} shapes)");
+            var sheetCanvas = (Canvas)opened.FindName("SheetCanvas");
+            tabs.SelectedIndex = 3;
+            Pump();
+            Check(sheetCanvas.Children.Count > 10, $"The sheets tab draws the house's sheet when it opens ({sheetCanvas.Children.Count} layers)");
+            tabs.SelectedIndex = 0;
+            Pump();
+
             // Hiding a category thins the drawing and showing it again restores it.
             var groundWall = session.Document.Walls[0];
             Invoke("SelectElement", groundWall.Id);
@@ -157,7 +173,7 @@ internal static partial class InteractionChecks
             SetField("_dirty", false);
             opened.Close();
             _window = previous;
-            _canvas = (Canvas)previous.FindName("PlanCanvas");
+            if (previous is not null) _canvas = (Canvas)previous.FindName("PlanCanvas");
         }
     }
 
@@ -289,16 +305,17 @@ internal static partial class InteractionChecks
         var warnings = new List<string>();
         SetField("_rotationWarningSink", (Action<string, string>)((message, _) => warnings.Add(message)));
         var budget = System.Diagnostics.Stopwatch.StartNew();
+        var seconds = int.TryParse(Environment.GetEnvironmentVariable("G3D_RANDOM_SECONDS"), out var requested) && requested > 0 ? requested : 100;
         var failures = new List<string>();
         var executed = 0;
         // DocumentSession intentionally retains only the 40 most recent undo snapshots.
         // Keep this fixture's random edits below that limit (including earlier ribbon edits),
         // so the final full-undo assertion remains valid instead of depending on runner speed.
         const int maxRandomCommands = 20;
-        for (var seed = 1; seed <= 12 && executed < maxRandomCommands && budget.Elapsed < TimeSpan.FromSeconds(100); seed++)
+        for (var seed = 1; seed <= 12 && executed < maxRandomCommands && budget.Elapsed < TimeSpan.FromSeconds(seconds); seed++)
         {
             var random = new Random(seed * 131);
-            for (var step = 0; step < 30 && executed < maxRandomCommands && budget.Elapsed < TimeSpan.FromSeconds(100); step++)
+            for (var step = 0; step < 30 && executed < maxRandomCommands && budget.Elapsed < TimeSpan.FromSeconds(seconds); step++)
             {
                 var wall = session.Document.Walls[random.Next(session.Document.Walls.Count)];
                 var command = commands[random.Next(commands.Length)];
@@ -319,7 +336,7 @@ internal static partial class InteractionChecks
                 }
             }
         }
-        Check(failures.Count == 0 && executed >= 15,
+        Check(failures.Count == 0 && executed >= Math.Min(15, seconds / 4),
             $"{executed} random ribbon commands on the house's real walls, on both levels, never throw and keep the project valid" +
             (failures.Count == 0 ? "" : ": " + string.Join(" | ", failures.Take(5))));
     }

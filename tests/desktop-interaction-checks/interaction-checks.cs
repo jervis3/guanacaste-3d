@@ -30,6 +30,13 @@ internal static partial class InteractionChecks
         var application = new App();
         application.InitializeComponent();
         application.ShutdownMode = ShutdownMode.OnExplicitShutdown;
+        // G3D_ONLY=cobogo runs just the checks on the breeze-block house, which is what a quick loop needs.
+        if (Environment.GetEnvironmentVariable("G3D_ONLY") == "cobogo")
+        {
+            CobogoHouseChecks();
+            Console.WriteLine("Desktop interaction checks passed (cobogó house only).");
+            return 0;
+        }
         _window = new MainWindow { Width = 1440, Height = 1000, WindowState = WindowState.Normal };
         try
         {

@@ -12,6 +12,11 @@ public partial class MainWindow
 {
     private bool _sheetMenusReady;
 
+    private const int SheetTabIndex = 3;
+
+    /// <summary>True when the sheet drawing is older than the model because the Sheets tab was not open.</summary>
+    private bool _sheetStale;
+
     /// <summary>Draws exactly the same paper-space composition consumed by the PDF exporter.</summary>
     private void RenderSheet()
     {
@@ -29,6 +34,14 @@ public partial class MainWindow
             print.Click += ExportPdf_Click;
             SheetCanvas.ContextMenu = new ContextMenu { Items = { edit, add, print } };
         }
+        // Composing a sheet draws every view placed on it, about a second and a half for the breeze-block house's
+        // sheets. It waits until the Sheets tab is open, then draws what the model is now.
+        if (ViewTabs.SelectedIndex != SheetTabIndex)
+        {
+            _sheetStale = true;
+            return;
+        }
+        _sheetStale = false;
         SheetCanvas.Children.Clear();
         var sheet = _session.Document.Sheets.FirstOrDefault(candidate => candidate.Id == _selectedSheetId) ??
             _session.Document.Sheets.FirstOrDefault();

@@ -119,6 +119,8 @@ public partial class MainWindow
         // Opening a schedule, sheet, elevation, section or render ends the tiling, whose panes only hold plan and 3D.
         if (_tileViews && ViewTabs.SelectedIndex is not (0 or Model3DTabIndex)) ExitTileViews();
         HighlightTilePane();
+        if (_orthographicViewsStale && ViewTabs.SelectedIndex is ElevationTabIndex or SectionTabIndex) RenderOrthographicViews();
+        if (_sheetStale && ViewTabs.SelectedIndex == SheetTabIndex) RenderSheet();
         UpdateDocumentationCaption();
         SynchronizeDocumentationView();
         UpdateRenderWorkspace(ViewTabs.SelectedIndex == RenderTabIndex);
