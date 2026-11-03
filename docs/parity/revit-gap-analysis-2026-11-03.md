@@ -232,6 +232,24 @@ Fuera de alcance razonable por ahora: colaboración con worksets/sincronización
 local-first), refuerzo/prefabricados, modelo analítico y mecánica (ductos, bandejas), hasta que el núcleo de
 autoría esté cerrado.
 
+## 7b. Avance tras el estudio (2026-11-03)
+
+Cada ítem se publicó como incremento vertical (modelo, validación, deshacer, archivo, textos en español y pruebas).
+Comandos del ribbon con manejador: de 85 a 105 de 277 (`tools/parity-audit/ribbon_gap.py`).
+
+| # | Ítem | Estado | Qué falta |
+|---|---|---|---|
+| 1 | Línea de ubicación del muro | **Hecho** (`6fe73b8`) | Control en el panel de propiedades para ver o cambiar la cara de un muro ya dibujado |
+| 2 | Uniones de muro | **Parcial** (`4aea573`): inglete, a tope, escuadra, impedir por extremo, uniones en T que siguen a su anfitrión | Orden/prioridad de unión; esquinas de 3 o más muros; elegir un solo extremo desde la interfaz (la cinta actúa en ambos) |
+| 3 | Edición básica | **Parcial** (`ae9b36d`): espejo (eje = muro), desfase, matriz lineal, dividir, recortar a esquina, alinear, fijar, igualar propiedades | Matriz radial en la interfaz (existe en el Core), copiar/pegar, escala, cortar/unir geometría, medir; solo actúan sobre muros |
+| 7 | Visibilidad por categoría | **Parcial** (`6c0f042`): 16 categorías por vista y plantilla, con elementos futuros incluidos | Overrides gráficos por categoría y filtros por reglas |
+| 4 | Estructura compuesta de N capas | Pendiente | Coordinar con la rama `feat/wall-layer-csv-ui-20261103` |
+| 5 | Base del muro y asociar parte superior/base | Pendiente | Medido: 32 usos de `wall.Height` en 18 archivos más validación de huecos; requiere un diseño transversal |
+| 6, 8–11 | Perfil de muro, cotas, detalle, fases, parámetros compartidos | Pendiente | Ver §7 |
+
+La regla que decide cuánto puede deslizarse una esquina al cambiar un espesor (`AcceptsCornerSlide` en
+`wall-reference-line.cs`) tiene una versión provisional, marcada con `TODO(human)`.
+
 ## 8. Limitaciones y honestidad del estudio
 
 - **No se ejecutó Revit** ni se hizo ningún ensayo de comportamiento; todo lo de Revit es contrato público
