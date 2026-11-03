@@ -17,10 +17,12 @@ public partial class MainWindow
         {
             case "AllowJoin":
             case "MiterJoin":
-            case "WallJoins": chosen = WallJoinSetting.Miter; break;
+            case "WallJoins":
+            case "JoinGeometry": chosen = WallJoinSetting.Miter; break;
             case "ButtJoin": chosen = WallJoinSetting.Butt; break;
             case "SquareOff": chosen = WallJoinSetting.SquareOff; break;
-            case "DisallowJoin": chosen = WallJoinSetting.Disallowed; break;
+            case "DisallowJoin":
+            case "UnjoinGeometry": chosen = WallJoinSetting.Disallowed; break;
             default: return false;
         }
         if (_selectedWallId is not Guid wallId)

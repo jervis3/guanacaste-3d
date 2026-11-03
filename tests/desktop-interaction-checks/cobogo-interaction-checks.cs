@@ -1,3 +1,4 @@
+using System.IO;
 using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
@@ -138,6 +139,8 @@ internal static partial class InteractionChecks
             Check(session.Document.Walls.Count == wallCount && session.Document.Openings.Count == openingCount,
                 "Cut removes the pasted wall with its openings");
 
+            CrashProtectionChecks(opened, session);
+
             RandomRibbonOnHouse(session);
 
             // Undoing everything the window did returns the house to what was opened, whatever the commands were.
@@ -157,6 +160,99 @@ internal static partial class InteractionChecks
             _canvas = (Canvas)previous.FindName("PlanCanvas");
         }
     }
+
+    /// <summary>
+    /// What protects the work when the program stops unexpectedly, on the real house: a change is copied on its own, in
+    /// the background; the copy is the project to the last byte; a new session offers it and recovers it; accepting
+    /// keeps it until the project is saved; closing on purpose leaves nothing behind; an error is logged.
+    /// </summary>
+    private static void CrashProtectionChecks(MainWindow opened, DocumentSession session)
+    {
+        var recovery = Environment.GetEnvironmentVariable("G3D_RECOVERY_DIR")!;
+        var id = session.Document.Id;
+
+        // The deterministic commands above left the project changed, so an emergency save writes its copy at once.
+        Invoke("EmergencySave");
+        var copy = AutoRecovery.Find(recovery).SingleOrDefault(candidate => candidate.DocumentId == id);
+        Check(copy is not null && ProjectFile.SerializeDocument(AutoRecovery.Load(copy)) == ProjectFile.SerializeDocument(session.Document),
+            "An emergency save writes a copy of the house identical to the project being edited");
+
+        // A further change is copied by itself, in the background, without anyone asking.
+        var savedBefore = copy!.SavedAtUtc;
+        var wall = session.Document.Walls.First(candidate => !candidate.Pinned);
+        session.SetWallsPinned([wall.Id], true);
+        var current = ProjectFile.SerializeDocument(session.Document);
+        var waited = System.Diagnostics.Stopwatch.StartNew();
+        var copiedByItself = false;
+        while (waited.Elapsed < TimeSpan.FromSeconds(60) && !copiedByItself)
+        {
+            Pump();
+            System.Threading.Thread.Sleep(300);
+            var latest = AutoRecovery.Find(recovery).SingleOrDefault(candidate => candidate.DocumentId == id);
+            copiedByItself = latest is not null && latest.SavedAtUtc > savedBefore &&
+                             ProjectFile.SerializeDocument(AutoRecovery.Load(latest)) == current;
+        }
+        Check(copiedByItself, $"A change to the house is copied automatically within {waited.Elapsed.TotalSeconds:0} s, with nobody asking");
+
+        // A new session finds the copy, offers it and recovers the project exactly, still marked as unsaved.
+        var asked = new List<string>();
+        var second = new MainWindow { Width = 800, Height = 600 };
+        try
+        {
+            second.Show();
+            SetInstanceField(second, "_recoveryPromptSink", (Func<string, bool>)(question => { asked.Add(question); return true; }));
+            Instance(second, "OfferRecovery");
+            var recovered = InstanceField<DocumentSession>(second, "_session").Document;
+            Check(asked.Count == 1 && asked[0].Contains(session.Document.Name) &&
+                  ProjectFile.SerializeDocument(recovered) == current && InstanceField<bool>(second, "_dirty"),
+                "A new session offers the leftover copy and recovers the house exactly, still unsaved");
+            Check(AutoRecovery.Find(recovery).Any(candidate => candidate.DocumentId == id),
+                "The copy stays until the recovered project is saved");
+            SetInstanceField(second, "_dirty", false);
+        }
+        finally
+        {
+            second.Close();
+        }
+        Check(AutoRecovery.Find(recovery).All(candidate => candidate.DocumentId != id),
+            "Closing a project on purpose leaves no recovery copy behind");
+
+        // Declining the offer deletes the copy, so it is not asked about again.
+        Invoke("EmergencySave");
+        var third = new MainWindow { Width = 800, Height = 600 };
+        try
+        {
+            third.Show();
+            SetInstanceField(third, "_recoveryPromptSink", (Func<string, bool>)(_ => false));
+            Instance(third, "OfferRecovery");
+        }
+        finally
+        {
+            third.Close();
+        }
+        Check(AutoRecovery.Find(recovery).All(candidate => candidate.DocumentId != id), "Declining the offer deletes the copy");
+
+        // An error is written to the log, with its place and the exception.
+        var logs = Environment.GetEnvironmentVariable("G3D_LOG_DIR")!;
+        var reporter = typeof(MainWindow).Assembly.GetType("Guanacaste3D.Desktop.CrashReporter")!;
+        reporter.GetMethod("Log", BindingFlags.Public | BindingFlags.Static)!
+            .Invoke(null, ["interface", new InvalidOperationException("prueba de registro")]);
+        Check(Directory.Exists(logs) && Directory.EnumerateFiles(logs, "errors-*.log")
+                .Any(file => File.ReadAllText(file).Contains("prueba de registro")),
+            "An error is written to the day's log with its place and details");
+
+        // Leave the house as the next checks expect: pinned state restored.
+        session.SetWallsPinned([wall.Id], false);
+    }
+
+    private static object? Instance(MainWindow window, string name) =>
+        typeof(MainWindow).GetMethod(name, BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public)!.Invoke(window, null);
+
+    private static T InstanceField<T>(MainWindow window, string name) =>
+        (T)typeof(MainWindow).GetField(name, PrivateInstance)!.GetValue(window)!;
+
+    private static void SetInstanceField(MainWindow window, string name, object? value) =>
+        typeof(MainWindow).GetField(name, PrivateInstance)!.SetValue(window, value);
 
     /// <summary>
     /// Opt-in diagnostic (G3D_PROFILE=1): times each stage of the redraw that follows every edit, on the real house,

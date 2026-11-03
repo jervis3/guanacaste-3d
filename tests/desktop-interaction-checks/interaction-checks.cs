@@ -23,6 +23,10 @@ internal static partial class InteractionChecks
     [STAThread]
     private static int Main()
     {
+        // Copies and error logs go to a throwaway folder: the installed program offers whatever it finds in the real one.
+        var scratch = Path.Combine(Path.GetTempPath(), "g3d-ui-" + Guid.NewGuid().ToString("N"));
+        Environment.SetEnvironmentVariable("G3D_RECOVERY_DIR", Path.Combine(scratch, "recovery"));
+        Environment.SetEnvironmentVariable("G3D_LOG_DIR", Path.Combine(scratch, "logs"));
         var application = new App();
         application.InitializeComponent();
         application.ShutdownMode = ShutdownMode.OnExplicitShutdown;

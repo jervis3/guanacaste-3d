@@ -104,6 +104,9 @@
   <sys:String x:Key="Transaction.SetWallJoin">Cambiar unión de muros</sys:String>
   <sys:String x:Key="Transaction.SetViewCategories">Cambiar categorías visibles de la vista</sys:String>
   <sys:String x:Key="Transaction.PasteWalls">Pegar muros</sys:String>
+  <sys:String x:Key="Transaction.ScaleWalls">Escalar muros</sys:String>
+  <sys:String x:Key="Transaction.RenumberRooms">Renumerar habitaciones</sys:String>
+  <sys:String x:Key="Transaction.ReplaceText">Buscar y reemplazar texto</sys:String>
   <sys:String x:Key="Transaction.FlipWalls">Voltear muros</sys:String>
   <sys:String x:Key="Transaction.CutWalls">Cortar muros</sys:String>
   <sys:String x:Key="Transaction.MirrorWalls">Reflejar muros</sys:String>

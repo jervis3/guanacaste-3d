@@ -12,6 +12,7 @@ public partial class App : Application
     protected override async void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+        CrashReporter.Install(this);
         var projectPath = StartupDocumentResolver.FindSupportedPath(e.Args);
         var splash = new SplashWindow();
         splash.Show();
@@ -35,6 +36,8 @@ public partial class App : Application
 
         splash.Report(StartupStepCount, StartupStepCount, GetText("Splash.Step.Ready"));
         splash.Close();
+        // A copy left by a session that ended without saving is offered before anything else is opened.
+        if (projectPath is null) window.OfferRecovery();
     }
 
     /// <summary>Publishes a startup step and yields so the splash paints before the next blocking step.</summary>

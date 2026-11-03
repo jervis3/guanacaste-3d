@@ -42,6 +42,7 @@ public partial class MainWindow : Window
         _activeLevelId = _session.Document.Levels[0].Id;
         _session.Changed += OnDocumentChanged;
         _session.RenderPhotosChanged += OnRenderPhotosChanged;
+        InitializeRecovery();
         InitializeNavigationAndRender();
         RefreshAll();
         if (!string.IsNullOrWhiteSpace(projectPath)) OpenAssociatedDocumentPath(projectPath);
@@ -71,6 +72,7 @@ public partial class MainWindow : Window
     private void OnDocumentChanged(object? sender, EventArgs e)
     {
         _dirty = true;
+        _autosave?.Touch();
         // Picking must never use geometry from the previous document snapshot while
         // the asynchronous WPF scene is still being rebuilt.
         _picker = null;
@@ -82,6 +84,7 @@ public partial class MainWindow : Window
     {
         if (_dirty) return;
         _dirty = true;
+        _autosave?.Touch();
         UpdateWindowTitle();
     }
 
@@ -232,6 +235,8 @@ public partial class MainWindow : Window
             _filePath = path;
             RenderPanelControl.SetProjectFilePath(_filePath);
             _dirty = false;
+            // The project is safe in its own file now, so its automatic copy has done its job.
+            DiscardRecoveryCopy();
             RememberRecent(path!, _session.Document);
             UpdateWindowTitle();
             StatusText.Text = FormatText("Status.ProjectSaved", System.IO.Path.GetFileName(path));
@@ -249,6 +254,9 @@ public partial class MainWindow : Window
     {
         _session.Changed -= OnDocumentChanged;
         _session.RenderPhotosChanged -= OnRenderPhotosChanged;
+        // Whatever the person decided about the project being replaced, its automatic copy is no longer needed.
+        _autosave?.Stop();
+        DiscardRecoveryCopy();
         // The untouched single north view identifies projects from before cardinal elevations existed. A user who has
         // deliberately removed views keeps that choice when the project is reopened.
         var elevations = document.Views.Where(view => view.Kind == ProjectViewKind.Elevation).ToArray();
@@ -322,7 +330,13 @@ public partial class MainWindow : Window
     protected override void OnClosing(CancelEventArgs e)
     {
         if (!ConfirmDiscard()) e.Cancel = true;
-        else CancelRender();
+        else
+        {
+            CancelRender();
+            // Closing on purpose, after saving or giving the changes up, leaves no copy behind.
+            _autosave?.Stop();
+            DiscardRecoveryCopy();
+        }
         base.OnClosing(e);
     }
 

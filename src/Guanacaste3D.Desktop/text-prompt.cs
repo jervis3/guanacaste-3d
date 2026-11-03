@@ -6,10 +6,14 @@ namespace Guanacaste3D.Desktop;
 /// <summary>Asks for one line of text in a small modal dialog owned by the main window.</summary>
 internal static class TextPrompt
 {
+    /// <summary>Answers instead of the dialog, for non-interactive WPF checks. Real users always see the dialog.</summary>
+    internal static Func<string, string?>? Responder;
+
     /// <summary>Returns the trimmed text, or null when the user cancels or leaves the field blank.</summary>
     public static string? Ask(Window owner, string title, string label, string acceptText, string cancelText,
         string? initialText = null)
     {
+        if (Responder is { } responder) return responder(title);
         var input = new TextBox { MinWidth = 260, Text = initialText ?? string.Empty };
         input.Loaded += (_, _) => { input.Focus(); input.SelectAll(); };
         string? result = null;

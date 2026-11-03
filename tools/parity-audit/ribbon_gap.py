@@ -27,6 +27,8 @@ DISPATCH_FILES = [
     "main-window-wall-edit-commands.cs",
     "main-window-view-categories.cs",
     "main-window-manage-commands.cs",
+    "main-window-view3d-commands.cs",
+    "main-window-bulk-commands.cs",
 ]
 # The structure dispatcher renames these catalog ids before its switch.
 ALIASES = {"StructColumn": "Column", "WallByFace": "WallFoundation", "ConnectionAuto": "ConnectionAutomation"}

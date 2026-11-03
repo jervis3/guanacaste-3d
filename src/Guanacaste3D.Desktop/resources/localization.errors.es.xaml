@@ -110,6 +110,11 @@
   <sys:String x:Key="Error.The wall join setting is invalid.">El ajuste de unión de muros no es válido.</sys:String>
   <sys:String x:Key="Error.The view category is invalid.">La categoría de la vista no es válida.</sys:String>
   <sys:String x:Key="Error.The paste distance is invalid.">La distancia de pegado no es válida.</sys:String>
+  <sys:String x:Key="Error.The scale factor is invalid.">El factor de escala no es válido.</sys:String>
+  <sys:String x:Key="Error.The scale origin is invalid.">El origen de la escala no es válido.</sys:String>
+  <sys:String x:Key="Error.There is no text to find.">No hay texto que buscar.</sys:String>
+  <sys:String x:Key="Error.The replacement leaves a name that is empty or too long.">El reemplazo deja un nombre vacío o demasiado largo.</sys:String>
+  <sys:String x:Key="Error.Model text cannot be blank.">El texto del modelo no puede quedar vacío.</sys:String>
   <sys:String x:Key="Error.The mirror axis is too short.">El eje de simetría es demasiado corto.</sys:String>
   <sys:String x:Key="Error.The offset distance is invalid.">La distancia de desfase no es válida.</sys:String>
   <sys:String x:Key="Error.The array count is invalid.">La cantidad de la matriz no es válida.</sys:String>
