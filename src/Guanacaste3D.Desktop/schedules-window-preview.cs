@@ -180,6 +180,35 @@ public partial class SchedulesWindow
         }
     }
 
+
+    /// <summary>Exports grouped geometric returns without claiming installed finish quantities.</summary>
+    private void ExportWallOpeningSummary_Click(object sender, RoutedEventArgs e)
+    {
+        if (_session.Document.Openings.Count == 0)
+        {
+            StatusText.Text = Text("Schedules.NoOpenings");
+            return;
+        }
+        var dialog = new SaveFileDialog
+        {
+            Filter = Text("Parameters.CsvFilter"),
+            FileName = "resumen-jambas-huecos.csv",
+            DefaultExt = ".csv",
+            AddExtension = true
+        };
+        if (dialog.ShowDialog(this) != true) return;
+        try
+        {
+            System.IO.File.WriteAllText(dialog.FileName,
+                WallOpeningRevealSchedule.ToSummaryCsv(_session.Document), new System.Text.UTF8Encoding(true));
+            StatusText.Text = Format("Parameters.Exported", dialog.FileName);
+        }
+        catch (Exception exception) when (exception is System.IO.IOException or UnauthorizedAccessException or System.IO.InvalidDataException)
+        {
+            StatusText.Text = Format("Parameters.Rejected", LocalizedErrors.Translate(exception.Message));
+        }
+    }
+
     /// <summary>Exports the evaluated schedule as CSV.</summary>
     private void ExportCsv_Click(object sender, RoutedEventArgs e)
     {
