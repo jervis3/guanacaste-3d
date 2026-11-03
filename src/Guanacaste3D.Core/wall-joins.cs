@@ -112,6 +112,10 @@ public sealed class WallJoinIndex
         return new WallJoinIndex(joins);
     }
 
+    /// <summary>Returns the single wall that meets the given wall end in a simple corner, if any.</summary>
+    public WallJoin? JoinAt(Guid wallId, WallEnd end) =>
+        _joins.TryGetValue((wallId, end), out var join) ? join : null;
+
     /// <summary>Returns the plan footprint of a wall with each joined end mitered to its shared corner.</summary>
     public WallFootprint Footprint(Wall wall)
     {

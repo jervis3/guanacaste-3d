@@ -36,6 +36,13 @@ public sealed record Wall(Guid Id, Guid LevelId, Point2 Start, Point2 End, doubl
     /// <summary>Finish applied to both faces of the wall, used for finish area takeoff.</summary>
     public FinishKind Finish { get; init; }
 
+    /// <summary>
+    /// The plane that stays put when the wall's thickness changes. <c>Start</c> and <c>End</c> always describe the
+    /// centerline; this records which plane the user placed the wall by. Exterior is the face on the right looking
+    /// from start to end, interior the one on the left.
+    /// </summary>
+    public WallLocationReference LocationReference { get; init; }
+
     [JsonIgnore] public double Length => Start.DistanceTo(End);
 }
 
@@ -221,7 +228,7 @@ public sealed class BuildingDocument
                 !double.IsFinite(wall.Thickness) || !double.IsFinite(wall.Height) ||
                 wall.Length < 0.05 || wall.Length > 100000 ||
                 wall.Thickness is < 0.05 or > 5 || wall.Height is < 0.1 or > 1000 ||
-                !Enum.IsDefined(wall.Finish))
+                !Enum.IsDefined(wall.Finish) || !Enum.IsDefined(wall.LocationReference))
                 throw new InvalidDataException("A wall is invalid or has no associated level.");
         }
         ValidateRooms(levelIds);

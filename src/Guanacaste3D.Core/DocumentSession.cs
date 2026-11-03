@@ -14,8 +14,11 @@ public sealed partial class DocumentSession
 
     /// <summary>Adds a straight wall instance using a valid project wall type.</summary>
     public Guid AddWall(Guid levelId, Point2 start, Point2 end, double thickness = 0.20,
-        double height = 3, Guid? wallTypeId = null)
+        double height = 3, Guid? wallTypeId = null,
+        WallLocationReference locationReference = WallLocationReference.Centerline)
     {
+        if (!Enum.IsDefined(locationReference))
+            throw new InvalidDataException("A wall is invalid or has no associated level.");
         var selectedTypeId = wallTypeId ?? BuiltInWallTypes.Basic200Id;
         if (!Document.WallTypes.Any(type => type.Id == selectedTypeId))
             throw new InvalidDataException("The selected wall type does not exist.");
@@ -24,10 +27,13 @@ public sealed partial class DocumentSession
         var id = Guid.NewGuid();
         Commit("Transaction.AddWall", doc =>
         {
+            var axisId = FindAlignedGridAxis(doc, start, end);
             doc.Walls.Add(new Wall(id, levelId, start, end, thickness, height)
             {
                 WallTypeId = selectedTypeId,
-                GridAxisId = FindAlignedGridAxis(doc, start, end)
+                GridAxisId = axisId,
+                // A wall tied to an axis keeps its centerline on it, whatever face it was drawn by.
+                LocationReference = axisId is null ? locationReference : WallLocationReference.Centerline
             });
             RefreshRoomBoundariesIfNeeded(doc, levelId);
         });
@@ -66,7 +72,8 @@ public sealed partial class DocumentSession
             var offset = wall.TopLevelId is Guid topId
                 ? levels[wall.LevelId].Elevation + height - levels[topId].Elevation
                 : 0;
-            doc.Walls[index] = wall with { Thickness = thickness, Height = height, TopOffset = offset };
+            doc.Walls[index] = wall with { Height = height, TopOffset = offset };
+            WallReferenceLine.Resize(doc, new Dictionary<Guid, double> { [id] = thickness });
             RefreshRoomBoundariesIfNeeded(doc, wall.LevelId);
         });
     }
@@ -81,11 +88,8 @@ public sealed partial class DocumentSession
         Commit("Transaction.SetWallType", document =>
         {
             var index = document.Walls.FindIndex(wall => wall.Id == wallId);
-            document.Walls[index] = document.Walls[index] with
-            {
-                WallTypeId = wallTypeId,
-                Thickness = type.Thickness
-            };
+            document.Walls[index] = document.Walls[index] with { WallTypeId = wallTypeId };
+            WallReferenceLine.Resize(document, new Dictionary<Guid, double> { [wallId] = type.Thickness });
             RefreshRoomBoundariesIfNeeded(document, document.Walls[index].LevelId);
         });
     }
@@ -148,11 +152,9 @@ public sealed partial class DocumentSession
             };
             var affectedLevels = document.Walls.Where(wall => wall.WallTypeId == id)
                 .Select(wall => wall.LevelId).Distinct().ToArray();
-            for (var wallIndex = 0; wallIndex < document.Walls.Count; wallIndex++)
-            {
-                if (document.Walls[wallIndex].WallTypeId == id)
-                    document.Walls[wallIndex] = document.Walls[wallIndex] with { Thickness = thickness };
-            }
+            // The type thickness reaches every instance, each keeping the face it was placed by.
+            WallReferenceLine.Resize(document, document.Walls.Where(wall => wall.WallTypeId == id)
+                .ToDictionary(wall => wall.Id, _ => thickness));
             foreach (var levelId in affectedLevels) RefreshRoomBoundariesIfNeeded(document, levelId);
         });
     }

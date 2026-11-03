@@ -152,7 +152,8 @@ public partial class MainWindow
         var others = _session.Document.Walls.Where(wall => wall.LevelId == _activeLevelId)
             .Select(wall => new WallCenterline(wall.Start, wall.End)).ToList();
         var overlap = WallOverlap.Find(_session.Document.Walls, _activeLevelId, start, end, thickness);
-        var id = _session.AddWall(_activeLevelId, start, end, height: height, wallTypeId: typeId);
+        var id = _session.AddWall(_activeLevelId, start, end, height: height, wallTypeId: typeId,
+            locationReference: SelectedWallLocationReference());
         group.Assimilate();
         _selectedWallId = id;
         if (_chainTail is null) _chainOrigin = (id, referenceStart);
@@ -185,7 +186,7 @@ public partial class MainWindow
         foreach (var centerline in centerlines)
             _selectedWallId = _session.AddWall(
                 _activeLevelId, centerline.Start, centerline.End,
-                height: height, wallTypeId: typeId);
+                height: height, wallTypeId: typeId, locationReference: SelectedWallLocationReference());
         group.Assimilate();
         _selectedViewId = null;
         _pendingWallStart = null;
