@@ -45,6 +45,33 @@ var reloadedLayers = layerDocument.Clone().WallTypes[1];
 Check(reloadedLayers.LeftRepelloThickness == 0.015 && reloadedLayers.RightFineThickness == 0.005,
     "Wall assembly parameters survive document cloning");
 
+var takeoffSession = new DocumentSession(layerDocument);
+var takeoffWallId = takeoffSession.AddWall(layerDocument.Levels[0].Id, new Point2(0, 0), new Point2(5, 0));
+takeoffSession.AddOpening(takeoffWallId, OpeningKind.Door, offset: 2);
+takeoffSession.AddOpening(takeoffWallId, OpeningKind.Window, offset: 4, width: 0.8, sill: 1, height: 1);
+var takeoffWall = takeoffSession.Document.Walls.Single(wall => wall.Id == takeoffWallId);
+var takeoffType = takeoffSession.Document.WallTypes.Single(type => type.Id == takeoffWall.WallTypeId);
+var layerRows = WallLayerQuantitySchedule.For(takeoffWall, takeoffType, takeoffSession.Document.Openings);
+var netFaceArea = 5 * 3 - 0.9 * 2.1 - 0.8 * 1;
+Check(layerRows.Count == 5 && layerRows.Select(row => row.Layer).SequenceEqual(
+          new[] { "LeftFine", "LeftRepello", "Core", "RightRepello", "RightFine" }) &&
+      layerRows.All(row => Math.Abs(row.NetFaceArea - netFaceArea) < 1e-9),
+    "Wall layer takeoff preserves layer order and subtracts door/window openings");
+Check(Math.Abs(layerRows.Sum(row => row.Thickness) - takeoffWall.Thickness) < 1e-9 &&
+      Math.Abs(layerRows.Sum(row => row.NetVolume) - WallGeometry.NetVolume(takeoffWall, takeoffSession.Document.Openings)) < 1e-9,
+    "Per-layer volumes reconcile exactly with the net wall BIM volume");
+var layerCsv = WallLayerQuantitySchedule.ToCsv(takeoffSession.Document);
+Check(layerCsv.Split('\n', StringSplitOptions.RemoveEmptyEntries).Length == 6 &&
+      layerCsv.Contains("LeftRepello", StringComparison.Ordinal) &&
+      layerCsv.Contains("RightFine", StringComparison.Ordinal),
+    "The separate layer CSV exports one deterministic row per nonzero layer");
+var invalidLayerOpening = new WallOpening(Guid.NewGuid(), takeoffWallId, OpeningKind.Window, 2, 0.8, 1, 1);
+var overlappingLayerOpeningsRejected = false;
+try { WallLayerQuantitySchedule.For(takeoffWall, takeoffType, takeoffSession.Document.Openings.Append(invalidLayerOpening)); }
+catch (InvalidDataException) { overlappingLayerOpeningsRejected = true; }
+Check(overlappingLayerOpeningsRejected, "Layer takeoffs reject overlapping openings rather than double-subtracting volume");
+
+
 var document = BuildingDocument.Create();
 document.Validate();
 Check(document.Levels.Count == 2 && document.Levels.All(BaseLevels.IsProtected), "Default protected floor and roof levels");
