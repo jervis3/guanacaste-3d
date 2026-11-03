@@ -148,6 +148,10 @@ internal static partial class InteractionChecks
         }
         finally
         {
+            // This throwaway window intentionally mutates the sample. Undo restores the document,
+            // but does not clear the unsaved-changes flag; closing with it set opens a modal
+            // confirmation and hangs unattended Windows CI until its ten-minute timeout.
+            SetField("_dirty", false);
             opened.Close();
             _window = previous;
             _canvas = (Canvas)previous.FindName("PlanCanvas");
@@ -191,10 +195,14 @@ internal static partial class InteractionChecks
         var budget = System.Diagnostics.Stopwatch.StartNew();
         var failures = new List<string>();
         var executed = 0;
-        for (var seed = 1; seed <= 12 && budget.Elapsed < TimeSpan.FromSeconds(100); seed++)
+        // DocumentSession intentionally retains only the 40 most recent undo snapshots.
+        // Keep this fixture's random edits below that limit (including earlier ribbon edits),
+        // so the final full-undo assertion remains valid instead of depending on runner speed.
+        const int maxRandomCommands = 20;
+        for (var seed = 1; seed <= 12 && executed < maxRandomCommands && budget.Elapsed < TimeSpan.FromSeconds(100); seed++)
         {
             var random = new Random(seed * 131);
-            for (var step = 0; step < 30 && budget.Elapsed < TimeSpan.FromSeconds(100); step++)
+            for (var step = 0; step < 30 && executed < maxRandomCommands && budget.Elapsed < TimeSpan.FromSeconds(100); step++)
             {
                 var wall = session.Document.Walls[random.Next(session.Document.Walls.Count)];
                 var command = commands[random.Next(commands.Length)];
