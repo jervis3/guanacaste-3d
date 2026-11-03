@@ -148,6 +148,10 @@ internal static partial class InteractionChecks
         }
         finally
         {
+            // This throwaway window intentionally mutates the sample. Undo restores the document,
+            // but does not clear the unsaved-changes flag; closing with it set opens a modal
+            // confirmation and hangs unattended Windows CI until its ten-minute timeout.
+            SetField("_dirty", false);
             opened.Close();
             _window = previous;
             _canvas = (Canvas)previous.FindName("PlanCanvas");
