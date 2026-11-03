@@ -52,6 +52,37 @@ static class WallJoinChecks
         check(Math.Abs(negativeFootprint.EndLeft.X - negativeFirst.End.X) > 0.05,
             "Near-coincident corners across negative and positive spatial cells remain joined");
 
+        // Proximity is not transitive: the center endpoint sees two neighbors,
+        // but each outer endpoint sees only the center. All three must stay square;
+        // a one-sided miter would leave a notch or overlapping wall faces.
+        var ambiguousFirst = first with
+        {
+            Id = Guid.NewGuid(),
+            Start = new Point2(-4, 0),
+            End = new Point2(0, 0)
+        };
+        var ambiguousSecond = second with
+        {
+            Id = Guid.NewGuid(),
+            Start = new Point2(0.00009, 0),
+            End = new Point2(0.00009, 3)
+        };
+        var ambiguousThird = second with
+        {
+            Id = Guid.NewGuid(),
+            Start = new Point2(-0.00009, 0),
+            End = new Point2(-0.00009, -3)
+        };
+        var ambiguousIndex = WallJoinIndex.Build([ambiguousFirst, ambiguousSecond, ambiguousThird]);
+        var ambiguousFirstFace = ambiguousIndex.Footprint(ambiguousFirst);
+        var ambiguousSecondFace = ambiguousIndex.Footprint(ambiguousSecond);
+        var ambiguousThirdFace = ambiguousIndex.Footprint(ambiguousThird);
+        check(Near(ambiguousFirstFace.EndLeft, new Point2(0, 0.1)) &&
+              Near(ambiguousSecondFace.StartLeft, new Point2(-0.09991, 0)) &&
+              Near(ambiguousSecondFace.StartRight, new Point2(0.10009, 0)) &&
+              Near(ambiguousThirdFace.StartLeft, new Point2(0.09991, 0)),
+            "Ambiguous near-coincident wall endpoints never create one-sided miters");
+
         var differentLevel = second with { Id = Guid.NewGuid(), LevelId = Guid.NewGuid() };
         var isolated = WallJoinIndex.Build([first, differentLevel]).Footprint(first);
         check(Near(isolated.EndLeft, new Point2(4, 0.1)),
