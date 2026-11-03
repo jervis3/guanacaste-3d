@@ -80,6 +80,9 @@
             <Button x:Name="ExportWallOpeningRevealsButton" Content="{DynamicResource Schedules.ExportWallOpeningReveals}"
                     Click="ExportWallOpeningReveals_Click" Margin="0,6,0,0"
                     ToolTip="{DynamicResource Schedules.ExportWallOpeningRevealsHint}"/>
+            <Button x:Name="ExportWallOpeningSummaryButton" Content="{DynamicResource Schedules.ExportWallOpeningSummary}"
+                    Click="ExportWallOpeningSummary_Click" Margin="0,6,0,0"
+                    ToolTip="{DynamicResource Schedules.ExportWallOpeningSummaryHint}"/>
           </StackPanel>
         </ScrollViewer>
       </Border>
