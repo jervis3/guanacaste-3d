@@ -95,6 +95,7 @@ internal static partial class InteractionChecks
             session.SetWallsPinned([wallId], true);
             var beforeRejected = Find();
             var undoName = session.UndoName;
+            SetField("_selectedWallId", (Guid?)wallId);
             Invoke("ExecuteApplicationCommand", "Rotate");
             Check(warnings.Count == 1 && !string.IsNullOrWhiteSpace(warnings[0]),
                 "Rotating a pinned wall reports a warning without opening a modal dialog");
