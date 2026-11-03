@@ -152,8 +152,9 @@ internal static partial class InteractionChecks
             window.Show();
             DrainToIdle();
             var wallButton = (Button)window.FindName("ExportWallLayerQuantitiesButton");
+            var summaryButton = (Button)window.FindName("ExportWallLayerSummaryButton");
             var roofButton = (Button)window.FindName("ExportRoofQuantitiesButton");
-            Check(wallButton.IsEnabled && roofButton.IsEnabled,
+            Check(wallButton.IsEnabled && summaryButton.IsEnabled && roofButton.IsEnabled,
                 "Independent quantity exports stay enabled without saved schedule definitions");
             wallButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
             DrainToIdle();
