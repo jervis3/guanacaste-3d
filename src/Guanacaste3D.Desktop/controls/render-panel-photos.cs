@@ -172,7 +172,7 @@ public partial class RenderPanel
 
     private void NewPhoto_Click(object sender, RoutedEventArgs e) => AddPhoto();
 
-    /// <summary>Saves the current camera, style and filters as a new photo and makes it the open one.</summary>
+    /// <summary>Saves the current camera as a new photo with a neutral image finish.</summary>
     private void AddPhoto()
     {
         if (_source is null) return;
@@ -181,7 +181,11 @@ public partial class RenderPanel
             var names = _source.RenderScenes.Select(photo => photo.Name).ToHashSet(StringComparer.CurrentCultureIgnoreCase);
             var number = _source.RenderScenes.Count + 1;
             while (names.Contains($"Foto {number}")) number++;
-            var setup = CaptureCurrentSetup();
+            WatchPhotoEdits();
+            var setup = CaptureCurrentSetup().WithoutEffects();
+            _applyingPhoto = true;
+            try { ApplySetupForProject(setup, _source.ProjectFilePath); }
+            finally { _applyingPhoto = false; }
             var id = _source.AddRenderPhoto($"Foto {number}", setup, MakeThumbnail());
             _activePhotoId = id;
             _photoBaseline = setup;
@@ -205,6 +209,7 @@ public partial class RenderPanel
     private void ActivatePhoto(Guid id, bool animate)
     {
         if (_source is null) return;
+        if (_activePhotoId != id) WatchPhotoEdits();
         var photo = _source.RenderScenes.FirstOrDefault(item => item.Id == id);
         if (photo is null) return;
         _applyingPhoto = true;

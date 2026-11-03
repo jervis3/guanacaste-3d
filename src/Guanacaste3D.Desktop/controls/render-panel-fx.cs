@@ -27,6 +27,7 @@ public partial class RenderPanel
     private readonly Dictionary<string, Dictionary<string, double>> _fxMuted = [];
     private FxCategory _fxCategory = FxCategory.Featured;
     private GridLength? _settingsWidthBeforeTheater;
+    private RenderSetup? _copiedPhotoEffects;
     private double _settingsMinimumBeforeTheater;
 
     private static readonly (FxCategory Category, string Name, string Glyph)[] FxCategories =
@@ -343,11 +344,37 @@ public partial class RenderPanel
             item.Click += (_, _) => action();
             return item;
         }
+        menu.Items.Add(Item(UiText.Get("RenderPanel.CopyEffects"), CopyPhotoEffects));
+        var paste = Item(UiText.Get("RenderPanel.PasteEffects"), PastePhotoEffects);
+        paste.IsEnabled = _copiedPhotoEffects is not null && _source is not null;
+        menu.Items.Add(paste);
+        menu.Items.Add(new Separator());
         menu.Items.Add(Item("Guardar estilo de efectos…", SaveFxStyle));
         menu.Items.Add(Item("Cargar estilo de efectos…", LoadFxStyle));
         menu.Items.Add(new Separator());
         menu.Items.Add(Item("Quitar todos los efectos", ClearFxStack));
         menu.IsOpen = true;
+    }
+
+    /// <summary>Stores the current image finish for another photo in this render session.</summary>
+    private void CopyPhotoEffects()
+    {
+        if (_source is null) return;
+        WatchPhotoEdits();
+        _copiedPhotoEffects = CaptureCurrentSetup();
+        StatusText.Text = UiText.Get("RenderPanel.EffectsCopied");
+    }
+
+    /// <summary>Applies copied image settings without changing the active photo's camera or sky.</summary>
+    private void PastePhotoEffects()
+    {
+        if (_source is null || _copiedPhotoEffects is null) return;
+        var setup = CaptureCurrentSetup().WithEffectsFrom(_copiedPhotoEffects);
+        _applyingPhoto = true;
+        try { ApplySetupForProject(setup, _source.ProjectFilePath); }
+        finally { _applyingPhoto = false; }
+        WatchPhotoEdits();
+        StatusText.Text = UiText.Get("RenderPanel.EffectsPasted");
     }
 
     /// <summary>Saves the finishing effects that are on, with their settings, as a style file that can be shared.</summary>

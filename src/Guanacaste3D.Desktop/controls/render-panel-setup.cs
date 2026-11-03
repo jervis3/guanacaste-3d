@@ -73,6 +73,9 @@ public partial class RenderPanel
         try { Select(SkyPicker, setup.SkyPresetId ?? string.Empty); }
         finally { _applyingLook = false; }
         RestoreHdriForProject(setup.EnvironmentPath, projectFile);
+        _fxActive.Clear();
+        _fxMuted.Clear();
+        _fxOpen.Clear();
         SyncFxFromControls();
         OnCameraChanged();
     }

@@ -221,6 +221,10 @@
   <sys:String x:Key="RenderPanel.Output">Resultado</sys:String>
   <sys:String x:Key="RenderPanel.SaveImage">Guardar imagen…</sys:String>
   <sys:String x:Key="RenderPanel.CopyImage">Copiar</sys:String>
+  <sys:String x:Key="RenderPanel.CopyEffects">Copiar filtros</sys:String>
+  <sys:String x:Key="RenderPanel.PasteEffects">Pegar filtros</sys:String>
+  <sys:String x:Key="RenderPanel.EffectsCopied">Filtros copiados.</sys:String>
+  <sys:String x:Key="RenderPanel.EffectsPasted">Filtros aplicados a la foto actual.</sys:String>
   <sys:String x:Key="RenderPanel.ImageFilter">Imagen PNG (*.png)|*.png|Imagen JPEG (*.jpg)|*.jpg</sys:String>
   <sys:String x:Key="RenderPanel.Copied">Imagen copiada al portapapeles.</sys:String>
 

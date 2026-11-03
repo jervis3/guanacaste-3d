@@ -17,6 +17,15 @@ static class RenderPhotoChecks
         session.Changed += (_, _) => changedModel++;
 
         var first = new RenderSetup { CameraX = 3, CameraY = -4, CameraZ = 1.6, YawDegrees = 120, PitchDegrees = -5, StyleId = "none" };
+        var altered = first with { ExposureStops = 1.2, Fog = 0.4, Bloom = true, Monochrome = true, SolarHour = 16 };
+        var clean = altered.WithoutEffects();
+        check(clean.ExposureStops == 0 && clean.Fog == 0 && !clean.Bloom && !clean.Monochrome &&
+              clean.CameraX == altered.CameraX && clean.SolarHour == altered.SolarHour,
+            "A new photo starts without image effects while preserving its camera and lighting");
+        var transferred = clean.WithEffectsFrom(altered);
+        check(transferred.ExposureStops == 1.2 && transferred.Fog == 0.4 && transferred.Bloom && transferred.Monochrome &&
+              clean.ExposureStops == 0 && transferred.CameraX == clean.CameraX && transferred.SolarHour == clean.SolarHour,
+            "Copying effects preserves the destination view and does not alter the source photo");
         var id = session.AddRenderPhoto("Fachada", first, "AAAA");
         check(session.Document.RenderScenes.Count == 1 && session.Document.RenderScenes[0].Thumbnail == "AAAA",
             "A photo keeps its camera setup and preview");

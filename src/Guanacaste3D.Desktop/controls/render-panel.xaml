@@ -210,18 +210,8 @@
       <!-- Render actions remain available in every settings section. -->
       <Border DockPanel.Dock="Top" Style="{StaticResource SettingsCard}" Margin="12,12,12,8">
         <StackPanel>
-          <Grid>
-            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-            <Button x:Name="RenderButton" Click="RenderButton_Click" MinHeight="44" FontSize="14"
-                    Style="{StaticResource RenderPrimaryButton}">
-              <StackPanel Orientation="Horizontal">
-                <TextBlock Text="&#xE768;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                <TextBlock Text="{DynamicResource RenderPanel.Render}" VerticalAlignment="Center"/>
-              </StackPanel>
-            </Button>
-            <Button x:Name="PauseButton" Grid.Column="1" Content="{DynamicResource RenderPanel.Pause}"
-                    Click="PauseButton_Click" Style="{StaticResource ViewportToolButton}" MinHeight="44" Padding="16,8" Margin="8,0,0,0" IsEnabled="False"/>
-          </Grid>
+          <Button x:Name="PauseButton" Content="{DynamicResource RenderPanel.Pause}"
+                  Click="PauseButton_Click" Style="{StaticResource ViewportToolButton}" MinHeight="34" Padding="16,6" IsEnabled="False"/>
           <Grid Margin="0,10,0,0">
             <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
             <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
@@ -1000,6 +990,9 @@
       <Border VerticalAlignment="Bottom" Background="#12232C" BorderBrush="#38505A"
               BorderThickness="0,1,0,0" Padding="18,9">
         <DockPanel>
+          <Button x:Name="RenderButton" DockPanel.Dock="Right" Click="RenderButton_Click" MinHeight="40" MinWidth="155"
+                  Margin="14,0,0,0" FontSize="14" Style="{StaticResource RenderPrimaryButton}"
+                  Content="{DynamicResource RenderPanel.Render}"/>
           <StackPanel x:Name="RenderProgressPanel" DockPanel.Dock="Right" Width="285" Margin="16,0,0,0"
                       Visibility="Collapsed">
             <ProgressBar x:Name="RenderProgress" Height="12" Minimum="0" Maximum="1"
