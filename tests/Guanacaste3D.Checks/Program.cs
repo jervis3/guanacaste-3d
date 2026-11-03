@@ -108,6 +108,30 @@ Check(WallOpeningRevealSchedule.ToCsv(noOpeningReveals)
         .Split('\n', StringSplitOptions.RemoveEmptyEntries).Length == 1,
     "Projects without hosted openings export a header-only reveal schedule");
 
+
+var revealSummaryCsv = WallOpeningRevealSchedule.ToSummaryCsv(takeoffSession.Document);
+var revealSummaryLines = revealSummaryCsv.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+Check(revealSummaryLines.Length == 11 &&
+      revealSummaryLines.Count(line => line.Contains(",Door,", StringComparison.Ordinal)) == 5 &&
+      revealSummaryLines.Count(line => line.Contains(",Window,", StringComparison.Ordinal)) == 5 &&
+      revealSummaryCsv == WallOpeningRevealSchedule.ToSummaryCsv(takeoffSession.Document),
+    "Opening reveal summary groups each layer by door/window kind and is deterministic");
+var revealSummaryAreas = revealSummaryLines.Skip(1)
+    .Select(line => double.Parse(line.Split(',')[10], System.Globalization.CultureInfo.InvariantCulture)).Sum();
+Check(Math.Abs(revealSummaryAreas - revealRows.Sum(row => row.TotalArea)) < 0.00001,
+    "Grouped reveal totals reconcile with detailed jamb, head and sill quantities");
+aggregateLayerSession.AddOpening(additionalTakeoffWallId, OpeningKind.Door, offset: 2);
+var multiOpeningSummary = WallOpeningRevealSchedule.ToSummaryCsv(aggregateLayerSession.Document);
+var multiOpeningCore = multiOpeningSummary.Split('\n', StringSplitOptions.RemoveEmptyEntries)
+    .Single(line => line.Contains(",Door,Core,", StringComparison.Ordinal));
+Check(multiOpeningCore.Split(',')[6] == "2" &&
+      multiOpeningSummary.Split('\n', StringSplitOptions.RemoveEmptyEntries)
+          .Single(line => line.Contains(",Window,Core,", StringComparison.Ordinal)).Split(',')[6] == "1",
+    "Reveal summary counts distinct openings of each kind across walls of the same type");
+Check(WallOpeningRevealSchedule.ToSummaryCsv(noOpeningReveals)
+        .Split('\n', StringSplitOptions.RemoveEmptyEntries).Length == 1,
+    "Projects without openings export a header-only reveal summary");
+
 var invalidLayerOpening = new WallOpening(Guid.NewGuid(), takeoffWallId, OpeningKind.Window, 2, 0.8, 1, 1);
 var overlappingLayerOpeningsRejected = false;
 try { WallLayerQuantitySchedule.For(takeoffWall, takeoffType, takeoffSession.Document.Openings.Append(invalidLayerOpening)); }

@@ -154,8 +154,9 @@ internal static partial class InteractionChecks
             var wallButton = (Button)window.FindName("ExportWallLayerQuantitiesButton");
             var summaryButton = (Button)window.FindName("ExportWallLayerSummaryButton");
             var revealsButton = (Button)window.FindName("ExportWallOpeningRevealsButton");
+            var revealSummaryButton = (Button)window.FindName("ExportWallOpeningSummaryButton");
             var roofButton = (Button)window.FindName("ExportRoofQuantitiesButton");
-            Check(wallButton.IsEnabled && summaryButton.IsEnabled && revealsButton.IsEnabled && roofButton.IsEnabled,
+            Check(wallButton.IsEnabled && summaryButton.IsEnabled && revealsButton.IsEnabled && revealSummaryButton.IsEnabled && roofButton.IsEnabled,
                 "Independent quantity exports stay enabled without saved schedule definitions");
             wallButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
             DrainToIdle();
@@ -172,6 +173,11 @@ internal static partial class InteractionChecks
             DrainToIdle();
             Check(!string.IsNullOrWhiteSpace(status.Text),
                 "Opening reveal export reports missing openings without opening a save dialog");
+            status.Text = string.Empty;
+            revealSummaryButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            DrainToIdle();
+            Check(!string.IsNullOrWhiteSpace(status.Text),
+                "Opening reveal summary reports missing openings without opening a save dialog");
         }
         finally
         {

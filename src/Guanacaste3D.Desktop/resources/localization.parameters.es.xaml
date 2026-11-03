@@ -223,6 +223,8 @@
   <sys:String x:Key="Schedules.ExportWallLayerSummaryHint">Agrupa cantidades netas por nivel, tipo de muro, capa y espesor; incluye número de muros, área y volumen. Excluye jambas, encuentros y pintura.</sys:String>
   <sys:String x:Key="Schedules.ExportWallOpeningReveals">Exportar jambas y remates de huecos CSV…</sys:String>
   <sys:String x:Key="Schedules.ExportWallOpeningRevealsHint">Calcula superficies geométricas de jambas, dinteles y alféizares por capa en puertas y ventanas. No supone repello aplicado, envolventes, marcos ni pintura.</sys:String>
+  <sys:String x:Key="Schedules.ExportWallOpeningSummary">Exportar resumen de jambas y remates CSV…</sys:String>
+  <sys:String x:Key="Schedules.ExportWallOpeningSummaryHint">Agrupa por nivel, tipo de muro, puerta o ventana, capa y espesor. Muestra número de huecos y áreas geométricas; no estima acabados instalados ni pintura.</sys:String>
   <sys:String x:Key="Schedules.NoOpenings">El proyecto no contiene puertas ni ventanas hospedadas para exportar.</sys:String>
   <sys:String x:Key="ScheduleFilter.Equal">es igual a</sys:String>
   <sys:String x:Key="ScheduleFilter.NotEqual">no es igual a</sys:String>
