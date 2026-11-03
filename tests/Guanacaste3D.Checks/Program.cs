@@ -83,6 +83,31 @@ Check(layerSummaryLines.Length == 6 && coreSummaryValues[1] == "2" &&
     "Wall layer summary combines two walls of one type without losing opening deductions");
 Check(WallLayerQuantitySchedule.ToSummaryCsv(aggregateLayerSession.Document) == layerSummaryCsv,
     "Wall layer summary CSV remains deterministic across repeated exports");
+var revealRows = WallOpeningRevealSchedule.For(takeoffWall, takeoffType, takeoffSession.Document.Openings);
+var openingDimensions = takeoffSession.Document.Openings.ToArray();
+var expectedJambArea = openingDimensions.Sum(opening => 2 * opening.Height) * takeoffWall.Thickness;
+var expectedHeadArea = openingDimensions.Sum(opening => opening.Width) * takeoffWall.Thickness;
+var expectedSillArea = openingDimensions.Where(opening => opening.Sill > 0)
+    .Sum(opening => opening.Width) * takeoffWall.Thickness;
+Check(revealRows.Count == openingDimensions.Length * layerRows.Count &&
+      Math.Abs(revealRows.Sum(row => row.JambArea) - expectedJambArea) < 1e-9 &&
+      Math.Abs(revealRows.Sum(row => row.HeadArea) - expectedHeadArea) < 1e-9 &&
+      Math.Abs(revealRows.Sum(row => row.SillArea) - expectedSillArea) < 1e-9,
+    "Rough-opening takeoff measures jambs, heads and only elevated sills by wall layer");
+Check(revealRows.Where(row => row.OpeningKind == OpeningKind.Door).All(row => row.SillArea == 0) &&
+      revealRows.All(row => Math.Abs(row.TotalArea - row.JambArea - row.HeadArea - row.SillArea) < 1e-9),
+    "Door thresholds have no sill return and each reveal row reconciles");
+var revealCsv = WallOpeningRevealSchedule.ToCsv(takeoffSession.Document);
+Check(revealCsv.Split('\\n', StringSplitOptions.RemoveEmptyEntries).Length == revealRows.Count + 1 &&
+      revealCsv.Contains("TotalRevealArea_m2", StringComparison.Ordinal) &&
+      revealCsv == WallOpeningRevealSchedule.ToCsv(takeoffSession.Document),
+    "Reveal CSV contains every opening-layer row and is reproducible");
+var noOpeningReveals = takeoffSession.Document.Clone();
+noOpeningReveals.Openings.Clear();
+Check(WallOpeningRevealSchedule.ToCsv(noOpeningReveals)
+        .Split('\\n', StringSplitOptions.RemoveEmptyEntries).Length == 1,
+    "Projects without hosted openings export a header-only reveal schedule");
+
 var invalidLayerOpening = new WallOpening(Guid.NewGuid(), takeoffWallId, OpeningKind.Window, 2, 0.8, 1, 1);
 var overlappingLayerOpeningsRejected = false;
 try { WallLayerQuantitySchedule.For(takeoffWall, takeoffType, takeoffSession.Document.Openings.Append(invalidLayerOpening)); }
