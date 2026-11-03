@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
+using Guanacaste3D.Core.Geometry;
 
 namespace Guanacaste3D.Core.Interop;
 
@@ -109,7 +110,10 @@ public static class IfcExporter
             var below = writer.Add($"IFCCARTESIANPOINT((0.,0.,{Real(floor.ElevationOffset - floor.Thickness)}))");
             var axes = writer.Add($"IFCAXIS2PLACEMENT3D({Ref(below)},$,$)");
             var placement = writer.Add($"IFCLOCALPLACEMENT({Ref(storey.Placement)},{Ref(axes)})");
-            var shape = Extrusion(writer, body, zAxis, Polyline(writer, floor.Boundary), floor.Thickness);
+            // IFC swept profiles require a consistently counter-clockwise outer ring.
+            // User-drawn slabs may be clockwise; never invert their solid when exporting.
+            var shape = Extrusion(writer, body, zAxis,
+                Polyline(writer, OrientRing(floor.Boundary, counterClockwise: true)), floor.Thickness);
             // IFC4 distinguishes floor and roof slabs. Other Guanacaste floor kinds do not
             // have a matching IfcSlab predefined type; do not mislabel them as floors.
             // Pitched roofs and surveyed terrain still need dedicated geometry exporters.
@@ -132,12 +136,16 @@ public static class IfcExporter
             foreach (var room in group.OrderBy(room => room.Number, StringComparer.Ordinal))
             {
                 var placement = writer.Add($"IFCLOCALPLACEMENT({Ref(storey.Placement)},{Ref(worldPlacement)})");
-                Point2[] corners =
-                [
-                    room.FirstCorner, new(room.SecondCorner.X, room.FirstCorner.Y),
-                    room.SecondCorner, new(room.FirstCorner.X, room.SecondCorner.Y)
-                ];
-                var shape = Extrusion(writer, body, zAxis, Polyline(writer, corners), height);
+                // Export the actual room footprint, not its bounding rectangle. Automatic
+                // rooms may be concave and may surround courtyards that must remain void.
+                IReadOnlyList<Point2> outline = room.Boundary is { Count: >= 3 } boundary
+                    ? boundary
+                    : [room.FirstCorner, new(room.SecondCorner.X, room.FirstCorner.Y),
+                       room.SecondCorner, new(room.FirstCorner.X, room.SecondCorner.Y)];
+                var outer = Polyline(writer, OrientRing(outline, counterClockwise: true));
+                var holes = room.Holes?.Select(hole =>
+                    Polyline(writer, OrientRing(hole, counterClockwise: false))).ToArray() ?? [];
+                var shape = Extrusion(writer, body, zAxis, outer, height, holes);
                 spaces.Add(writer.Add($"IFCSPACE({Id(room.Id)},$,{Text(room.Number)},$,$,{Ref(placement)},{Ref(shape)},{Text(room.Name)},.ELEMENT.,.INTERNAL.,$)"));
             }
             writer.Add($"IFCRELAGGREGATES({Id(group.Key, "spaces")},$,$,$,{Ref(storey.Entity)},({Refs([.. spaces])}))");
@@ -236,9 +244,13 @@ public static class IfcExporter
     }
 
     /// <summary>Extrudes a closed polyline profile upward by a depth.</summary>
-    private static int Extrusion(StepWriter writer, int body, int zAxis, int polyline, double depth)
+    private static int Extrusion(StepWriter writer, int body, int zAxis, int polyline, double depth,
+        IReadOnlyList<int>? innerCurves = null)
     {
-        var profile = writer.Add($"IFCARBITRARYCLOSEDPROFILEDEF(.AREA.,$,{Ref(polyline)})");
+        // IFC4 requires a profile with voids for rooms surrounding courtyards.
+        var profile = innerCurves is { Count: > 0 }
+            ? writer.Add($"IFCARBITRARYPROFILEDEFWITHVOIDS(.AREA.,$,{Ref(polyline)},({Refs([.. innerCurves])}))")
+            : writer.Add($"IFCARBITRARYCLOSEDPROFILEDEF(.AREA.,$,{Ref(polyline)})");
         var basePoint = writer.Add("IFCCARTESIANPOINT((0.,0.,0.))");
         var position = writer.Add($"IFCAXIS2PLACEMENT3D({Ref(basePoint)},$,$)");
         var solid = writer.Add($"IFCEXTRUDEDAREASOLID({Ref(profile)},{Ref(position)},{Ref(zAxis)},{Real(depth)})");
@@ -252,6 +264,12 @@ public static class IfcExporter
     }
 
     /// <summary>Writes a closed 2D polyline (IFC requires the first point repeated at the end).</summary>
+    /// <summary>IFC swept profiles use opposite winding for outer boundaries and holes.</summary>
+    private static IReadOnlyList<Point2> OrientRing(IReadOnlyList<Point2> ring, bool counterClockwise) =>
+        (PolygonTriangulator.SignedDoubleArea(ring) > 0) == counterClockwise
+            ? ring
+            : ring.Reverse().ToArray();
+
     private static int Polyline(StepWriter writer, IReadOnlyList<Point2> points)
     {
         var references = points.Select(point =>

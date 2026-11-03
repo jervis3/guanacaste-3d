@@ -64,8 +64,11 @@ With Revit 2025 or later installed, Guanacaste 3D also opens `.rvt` files direct
 
 ## Status
 
-Source version 0.23.3 is a working technical preview, not a complete professional BIM
-system. It must not be used for certified structural calculations or issued
+The current source version and release date are defined in
+[`Guanacaste3D.Desktop.csproj`](src/Guanacaste3D.Desktop/Guanacaste3D.Desktop.csproj)
+(`Version` and `ReleaseDate`), not by an independently maintained README number.
+This is a working technical preview, not a complete professional BIM system.
+It must not be used for certified structural calculations or issued
 construction documents without independent professional review.
 
 Implemented capabilities include:

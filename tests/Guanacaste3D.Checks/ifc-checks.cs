@@ -16,6 +16,7 @@ static class IfcChecks
         ["IFCRELVOIDSELEMENT"] = 6, ["IFCRELFILLSELEMENT"] = 6, ["IFCMATERIAL"] = 3,
         ["IFCWALL"] = 9, ["IFCSLAB"] = 9, ["IFCOPENINGELEMENT"] = 9, ["IFCDOOR"] = 13, ["IFCWINDOW"] = 13,
         ["IFCSPACE"] = 11, ["IFCRECTANGLEPROFILEDEF"] = 5, ["IFCARBITRARYCLOSEDPROFILEDEF"] = 3,
+        ["IFCARBITRARYPROFILEDEFWITHVOIDS"] = 4,
         ["IFCPOLYLINE"] = 1, ["IFCEXTRUDEDAREASOLID"] = 4, ["IFCSHAPEREPRESENTATION"] = 4,
         ["IFCPRODUCTDEFINITIONSHAPE"] = 3
     };
@@ -54,6 +55,69 @@ static class IfcChecks
               step.EndsWith("END-ISO-10303-21;\n", StringComparison.Ordinal),
             "IFC export has a STEP header, IFC4 schema and terminator");
         check(IfcExporter.ToStep(house, stamp) == step, "IFC export is deterministic");
+
+        // A space must use its real plan polygon, not the bounding rectangle. In
+        // particular, a courtyard hole must not become occupied IFC space volume.
+        var concaveDocument = BuildingDocument.Create("Concave IFC space");
+        concaveDocument.Rooms.Add(new Room(Guid.NewGuid(), concaveDocument.Levels[0].Id,
+            "L-01", "L-shaped room", new Point2(0, 0), new Point2(6, 6))
+        {
+            Boundary =
+            [
+                new(0, 0), new(6, 0), new(6, 2),
+                new(2, 2), new(2, 6), new(0, 6)
+            ]
+        });
+        var concaveStep = IfcExporter.ToStep(concaveDocument, stamp);
+        var concavePolyline = concaveStep.Split('\n').Single(line =>
+            line.Contains("=IFCPOLYLINE(", StringComparison.Ordinal));
+        check(Regex.Matches(concavePolyline[(concavePolyline.IndexOf("IFCPOLYLINE(", StringComparison.Ordinal) + 12)..],
+                  @"#\d+").Count == 7 &&
+              concaveStep.Contains("IFCCARTESIANPOINT((2.,2.))", StringComparison.Ordinal) &&
+              !concaveStep.Contains("IFCARBITRARYPROFILEDEFWITHVOIDS(", StringComparison.Ordinal),
+            "IFC space extrusion follows all six vertices of a concave room instead of its bounding box");
+
+        var courtyardDocument = BuildingDocument.Create("Courtyard IFC space");
+        courtyardDocument.Rooms.Add(new Room(Guid.NewGuid(), courtyardDocument.Levels[0].Id,
+            "C-01", "Room around courtyard", new Point2(0, 0), new Point2(10, 10))
+        {
+            Boundary = [new(0, 0), new(10, 0), new(10, 10), new(0, 10)],
+            Holes = [[new(3, 3), new(7, 3), new(7, 7), new(3, 7)]]
+        });
+        var courtyardStep = IfcExporter.ToStep(courtyardDocument, stamp);
+        check(Math.Abs(courtyardDocument.Rooms[0].Area - 84) < 1e-9 &&
+              courtyardStep.Split('\n').Count(line => line.Contains("=IFCPOLYLINE(", StringComparison.Ordinal)) == 2 &&
+              courtyardStep.Contains("IFCARBITRARYPROFILEDEFWITHVOIDS(.AREA.,$", StringComparison.Ordinal) &&
+              courtyardStep.Contains("IFCCARTESIANPOINT((3.,3.))", StringComparison.Ordinal) &&
+              IfcExporter.ToStep(courtyardDocument, stamp) == courtyardStep,
+            "IFC4 space profile preserves a courtyard void and deterministic ring geometry");
+
+        // A clockwise slab footprint is valid in the native model, but IFC swept
+        // profiles must have a counter-clockwise outer boundary. Verify the actual
+        // exported polyline coordinates, not just the presence of a profile entity.
+        var clockwiseSlabDocument = BuildingDocument.Create("Clockwise IFC slab");
+        var clockwiseBoundary = new List<Point2>
+        {
+            new(0, 0), new(0, 4), new(6, 4), new(6, 0)
+        };
+        clockwiseSlabDocument.Floors.Add(new FloorSlab(Guid.NewGuid(),
+            clockwiseSlabDocument.Levels[0].Id, "Clockwise slab", clockwiseBoundary, 0.25));
+        var clockwiseSlabStep = IfcExporter.ToStep(clockwiseSlabDocument, stamp);
+        var planarPoints = Regex.Matches(clockwiseSlabStep,
+                @"(?m)^#(\d+)=IFCCARTESIANPOINT\(\(([^,()]+),([^,()]+)\)\);$")
+            .ToDictionary(match => int.Parse(match.Groups[1].Value),
+                match => new Point2(
+                    double.Parse(match.Groups[2].Value, System.Globalization.CultureInfo.InvariantCulture),
+                    double.Parse(match.Groups[3].Value, System.Globalization.CultureInfo.InvariantCulture)));
+        var slabPolyline = Regex.Match(clockwiseSlabStep,
+            @"=IFCPOLYLINE\(\((#\d+(?:,#\d+)+)\)\);");
+        var exportedRing = Regex.Matches(slabPolyline.Groups[1].Value, @"#(\d+)")
+            .Select(match => planarPoints[int.Parse(match.Groups[1].Value)]).ToArray();
+        check(exportedRing.Length == 5 &&
+              exportedRing[0].DistanceTo(exportedRing[^1]) < 1e-9 &&
+              Guanacaste3D.Core.Geometry.PolygonTriangulator.SignedDoubleArea(exportedRing[..^1]) > 0 &&
+              clockwiseSlabDocument.Floors[0].Boundary.SequenceEqual(clockwiseBoundary),
+            "IFC clockwise slab exports a counter-clockwise closed profile without modifying the BIM document");
 
         // A roof slab must not be mislabeled as a floor in downstream BIM tools.
         // Ceiling, water and terrain currently have no matching IfcSlab predefined type.

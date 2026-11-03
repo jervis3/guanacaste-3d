@@ -99,22 +99,45 @@ public sealed record FxStyle(string Name, List<string> Effects, Dictionary<strin
     /// <summary>Reads a style file, or null when it is not one this version understands (wrong version, unknown effects, bad numbers).</summary>
     public static FxStyle? TryParse(string json)
     {
+        // Styles are shareable files: validate their entire structure before the UI
+        // resets any effect. The desktop also checks the on-disk byte count.
+        if (json is null || json.Length > 256 * 1024) return null;
         try
         {
-            using var document = JsonDocument.Parse(json);
+            using var document = JsonDocument.Parse(json, new JsonDocumentOptions { MaxDepth = 16 });
             var root = document.RootElement;
             if (root.ValueKind != JsonValueKind.Object || root.GetProperty("Version").GetInt32() != CurrentVersion) return null;
             var name = root.GetProperty("Name").GetString()?.Trim();
-            if (string.IsNullOrEmpty(name)) return null;
-            var effects = root.GetProperty("Effects").EnumerateArray().Select(item => item.GetString() ?? "").ToList();
-            var values = new Dictionary<string, double>();
-            foreach (var entry in root.GetProperty("Values").EnumerateObject())
+            if (string.IsNullOrEmpty(name) || name.Length > 120) return null;
+
+            var effectsElement = root.GetProperty("Effects");
+            var valuesElement = root.GetProperty("Values");
+            if (effectsElement.ValueKind != JsonValueKind.Array || valuesElement.ValueKind != JsonValueKind.Object ||
+                effectsElement.GetArrayLength() > MaximumEntries) return null;
+
+            var effects = new List<string>();
+            var allowedKeys = new HashSet<string>(StringComparer.Ordinal);
+            var uniqueEffects = new HashSet<string>(StringComparer.Ordinal);
+            foreach (var item in effectsElement.EnumerateArray())
             {
-                var value = entry.Value.GetDouble();
-                if (!double.IsFinite(value)) return null;
-                values[entry.Name] = value;
+                if (item.ValueKind != JsonValueKind.String) return null;
+                var id = item.GetString()!;
+                var effect = RenderFx.Find(id);
+                // The UI only saves/applies active finishing effects; scene and
+                // unimplemented effects must not masquerade as a loaded style.
+                if (effect is null || effect.Planned || !effect.Removable || !uniqueEffects.Add(id)) return null;
+                effects.Add(id);
+                foreach (var control in effect.Controls) allowedKeys.Add(control.Key);
             }
-            if (effects.Count > MaximumEntries || values.Count > MaximumEntries || effects.Any(id => RenderFx.Find(id) is null)) return null;
+
+            var values = new Dictionary<string, double>(StringComparer.Ordinal);
+            foreach (var entry in valuesElement.EnumerateObject())
+            {
+                if (values.Count >= MaximumEntries || !allowedKeys.Contains(entry.Name) ||
+                    entry.Value.ValueKind != JsonValueKind.Number ||
+                    !entry.Value.TryGetDouble(out var value) || !double.IsFinite(value) ||
+                    !values.TryAdd(entry.Name, value)) return null;
+            }
             return new FxStyle(name, effects, values);
         }
         catch (Exception exception) when (exception is JsonException or KeyNotFoundException or InvalidOperationException or FormatException)
@@ -122,4 +145,5 @@ public sealed record FxStyle(string Name, List<string> Effects, Dictionary<strin
             return null;
         }
     }
+
 }
