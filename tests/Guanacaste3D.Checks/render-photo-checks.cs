@@ -26,6 +26,14 @@ static class RenderPhotoChecks
         check(transferred.ExposureStops == 1.2 && transferred.Fog == 0.4 && transferred.Bloom && transferred.Monochrome &&
               clean.ExposureStops == 0 && transferred.CameraX == clean.CameraX && transferred.SolarHour == clean.SolarHour,
             "Copying effects preserves the destination view and does not alter the source photo");
+        var barkMesh = new SceneMesh();
+        barkMesh.AddTriangle(Vector3.Zero, Vector3.UnitX, Vector3.UnitZ, SurfaceKind.Bark);
+        barkMesh.Textures.Add(new SceneTexture(RenderTexture.FromRgba(1, 1, new byte[] { 120, 90, 60, 255 }), 0));
+        barkMesh.TexturedTriangles[0] = new TexturedTriangle(Vector2.Zero, Vector2.UnitX, Vector2.UnitY, 0);
+        var barkScene = new RenderSceneBuilder().AddBuilding(barkMesh).Build();
+        var barkMaterial = barkScene.Materials[barkScene.TriangleMaterial[0]];
+        check(barkMaterial.UvMapped && barkMaterial.Pattern == SurfacePattern.Bark && barkMaterial.NormalMap is null,
+            "Textured bark without a normal map retains procedural relief");
         var id = session.AddRenderPhoto("Fachada", first, "AAAA");
         check(session.Document.RenderScenes.Count == 1 && session.Document.RenderScenes[0].Thumbnail == "AAAA",
             "A photo keeps its camera setup and preview");

@@ -1049,6 +1049,12 @@ public sealed partial class PathTracer
                     // A bend that would turn the surface away from the eye is dropped, as for image relief.
                     if (Vector3.Dot(bent, direction) < -0.05f) normal = bent;
                 }
+                else if (surface.Pattern == SurfacePattern.Bark)
+                {
+                    // Textured bark without a supplied normal map still needs physical-looking furrows.
+                    var bent = SurfacePatterns.Relief(SurfacePattern.Bark, 1, position, normal, hit.Distance);
+                    if (Vector3.Dot(bent, direction) < -0.05f) normal = bent;
+                }
                 // A real grayscale height map is not inferred from albedo. UV meshes also receive
                 // bump shading, so imported stone, timber and tiles can show fine depth at close range.
                 if (surface.HeightMap is { } height && surface.TextureDepth > 0)

@@ -144,7 +144,9 @@ public sealed class RenderSceneBuilder
                     var image = mesh.Textures[corners.Texture];
                     textured[(kind, corners.Texture, owner)] = material = MaterialIndex(Resolve() with
                     {
-                        BaseColor = Vector3.One, Pattern = SurfacePattern.None, Texture = image.Texture, TextureSize = 1,
+                        BaseColor = Vector3.One,
+                        Pattern = kind == SurfaceKind.Bark && image.Normal is null ? SurfacePattern.Bark : SurfacePattern.None,
+                        Texture = image.Texture, TextureSize = 1,
                         TextureRelief = 0, UvMapped = true, AlphaCutoff = image.AlphaCutoff, NormalMap = image.Normal
                     });
                 }
