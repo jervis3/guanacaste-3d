@@ -98,6 +98,17 @@ public sealed class WallJoinIndex
             }
         }
 
+        // A tolerance-based neighborhood is not transitive: A can see both B and C,
+        // while B sees only A. Never miter just one side of an ambiguous corner.
+        // Keep a join only when the other endpoint independently chose this one.
+        foreach (var entry in joins.ToArray())
+        {
+            var otherKey = (entry.Value.Other.Id, entry.Value.OtherEnd);
+            if (!joins.TryGetValue(otherKey, out var reciprocal) ||
+                reciprocal.Other.Id != entry.Key.WallId || reciprocal.OtherEnd != entry.Key.End)
+                joins.Remove(entry.Key);
+        }
+
         return new WallJoinIndex(joins);
     }
 
