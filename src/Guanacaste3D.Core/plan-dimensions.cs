@@ -1,7 +1,7 @@
 namespace Guanacaste3D.Core;
 
 /// <summary>Semantic measurements recomputed from model references after every edit.</summary>
-public enum PlanDimensionKind { WallLength, OpeningWidth, OpeningStart, OpeningEnd, Left, Right, Below, Above }
+public enum PlanDimensionKind { WallLength, OpeningWidth, OpeningStart, OpeningEnd, Left, Right, Below, Above, Radius, Diameter, ArcLength }
 
 /// <summary>A persistent measurement references model identities instead of a cached numeric label.</summary>
 public sealed record PlanDimension(Guid Id, Guid LevelId, Guid OwnerId, Guid? ReferenceId, PlanDimensionKind Kind);
@@ -10,7 +10,7 @@ public sealed record PlanDimension(Guid Id, Guid LevelId, Guid OwnerId, Guid? Re
 public readonly record struct PlanMeasurement(Point2 From, Point2 To, double Value);
 
 /// <summary>Builds and resolves plan dimensions for walls, openings and other supported BIM elements.</summary>
-public static class PlanDimensions
+public static partial class PlanDimensions
 {
     /// <summary>Gets the active-level bounding rectangle; opening bounds follow their host axis.</summary>
     public static (Guid LevelId, PlanBounds Bounds)? Bounds(BuildingDocument document, Guid id)
@@ -83,6 +83,8 @@ public static class PlanDimensions
             return wall is null ? null : new(At(wall, 0, wall.Thickness / 2 + 0.45),
                 At(wall, wall.Length, wall.Thickness / 2 + 0.45), wall.Length);
         }
+        if (dimension.Kind is PlanDimensionKind.Radius or PlanDimensionKind.Diameter or PlanDimensionKind.ArcLength)
+            return ResolveCurve(document, dimension);
         if (dimension.Kind is PlanDimensionKind.OpeningStart or PlanDimensionKind.OpeningEnd or PlanDimensionKind.OpeningWidth)
         {
             var opening = document.Openings.FirstOrDefault(opening => opening.Id == dimension.OwnerId);
@@ -121,6 +123,55 @@ public static class PlanDimensions
             return Enclose([axis.Start, axis.End]);
         }
         return Bounds(document, id) is { } reference && reference.LevelId == levelId ? reference.Bounds : null;
+    }
+
+    /// <summary>
+    /// The pieces of the curved wall that includes <paramref name="wallId"/>, in order from its start to its end, or an
+    /// empty list when that wall is straight or does not exist.
+    /// </summary>
+    public static IReadOnlyList<Wall> CurveChain(BuildingDocument document, Guid wallId)
+    {
+        if (document.Walls.FirstOrDefault(wall => wall.Id == wallId)?.CurveGroupId is not { } group) return [];
+        var pieces = document.Walls.Where(wall => wall.CurveGroupId == group).ToList();
+        var head = pieces.FirstOrDefault(piece => pieces.All(other => other.End != piece.Start));
+        if (head is null) return pieces;
+        var ordered = new List<Wall> { head };
+        while (ordered.Count < pieces.Count &&
+               pieces.FirstOrDefault(piece => piece.Start == ordered[^1].End && !ordered.Contains(piece)) is { } next)
+            ordered.Add(next);
+        return ordered.Count == pieces.Count ? ordered : pieces;
+    }
+
+    /// <summary>
+    /// The circle a curved wall follows, fitted through its first corner, a corner in the middle and its last corner,
+    /// together with the chain's ends. Null when the pieces no longer lie on a circle.
+    /// </summary>
+    public static (ArcFit Arc, Point2 Start, Point2 End)? CurveCircle(BuildingDocument document, Guid wallId)
+    {
+        var chain = CurveChain(document, wallId);
+        if (chain.Count < 2) return null;
+        var start = chain[0].Start;
+        var end = chain[^1].End;
+        return ArcWallGeometry.Fit(start, end, chain[chain.Count / 2].Start) is { } arc ? (arc, start, end) : null;
+    }
+
+    /// <summary>
+    /// Radius and diameter are drawn from the center through the middle of the wall piece the dimension belongs to;
+    /// the arc length runs between the ends of the whole curved wall and carries the length measured along the arc.
+    /// </summary>
+    private static PlanMeasurement? ResolveCurve(BuildingDocument document, PlanDimension dimension)
+    {
+        if (CurveCircle(document, dimension.OwnerId) is not { } curve) return null;
+        if (dimension.Kind == PlanDimensionKind.ArcLength) return new(curve.Start, curve.End, curve.Arc.Length);
+        var piece = document.Walls.First(wall => wall.Id == dimension.OwnerId);
+        var dx = (piece.Start.X + piece.End.X) / 2 - curve.Arc.Center.X;
+        var dy = (piece.Start.Y + piece.End.Y) / 2 - curve.Arc.Center.Y;
+        var distance = Math.Sqrt(dx * dx + dy * dy);
+        if (distance < 1e-9) return null;
+        var point = new Point2(curve.Arc.Center.X + dx / distance * curve.Arc.Radius, curve.Arc.Center.Y + dy / distance * curve.Arc.Radius);
+        return dimension.Kind == PlanDimensionKind.Radius
+            ? new(curve.Arc.Center, point, curve.Arc.Radius)
+            : new(new Point2(2 * curve.Arc.Center.X - point.X, 2 * curve.Arc.Center.Y - point.Y), point, 2 * curve.Arc.Radius);
     }
 
     /// <summary>Rejects invalid annotation identities, references and unsupported measurement kinds.</summary>

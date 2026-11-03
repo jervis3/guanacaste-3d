@@ -9,6 +9,10 @@
   <sys:String x:Key="Error.The wall centerline must align with the grid axis.">La línea central del muro debe coincidir con el eje.</sys:String>
   <sys:String x:Key="Error.The grid axis name must contain between 1 and 32 characters.">El nombre del eje debe contener entre 1 y 32 caracteres.</sys:String>
   <sys:String x:Key="Error.The render scene name is invalid.">El nombre de la escena debe contener entre 1 y 120 caracteres.</sys:String>
+  <sys:String x:Key="Error.Only the radius, diameter and arc length are measured on a curved wall.">En un muro curvo solo se acotan el radio, el diámetro y la longitud de arco.</sys:String>
+  <sys:String x:Key="Error.The wall is straight, so it has no radius.">El muro es recto, por lo que no tiene radio.</sys:String>
+  <sys:String x:Key="Error.The wall no longer follows an arc.">El muro ya no sigue un arco.</sys:String>
+  <sys:String x:Key="Error.This measurement of a curved wall cannot be typed in; draw the wall again.">Este valor de un muro curvo no se puede escribir; dibuje el muro de nuevo.</sys:String>
   <sys:String x:Key="Error.The render scene does not exist.">La escena seleccionada ya no existe.</sys:String>
   <sys:String x:Key="Error.The render scene preview is too large.">La miniatura de la foto es demasiado grande.</sys:String>
   <sys:String x:Key="Error.The render scene collection is invalid.">La colección de escenas del proyecto no es válida.</sys:String>

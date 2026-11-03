@@ -273,6 +273,7 @@
   <sys:String x:Key="Status.SectionBoxOff">Recuadro de sección desactivado: se ve todo el edificio.</sys:String>
   <sys:String x:Key="Status.PickDimensionFirst">Cota lineal: haga clic en el primer muro.</sys:String>
   <sys:String x:Key="Status.PickDimensionSecond">Ahora haga clic en el segundo muro; se medirá la distancia libre entre ambos.</sys:String>
+  <sys:String x:Key="Status.PickCurvedWall">Haga clic en un muro curvo para acotarlo.</sys:String>
   <sys:String x:Key="Status.DimensionAdded">Cota creada: se actualiza sola si algún muro se mueve.</sys:String>
   <sys:String x:Key="Status.Projection3DOrthographic">Vista 3D ortogonal: las líneas paralelas se mantienen paralelas, sin fuga de perspectiva.</sys:String>
   <sys:String x:Key="Status.Projection3DPerspective">Vista 3D en perspectiva.</sys:String>

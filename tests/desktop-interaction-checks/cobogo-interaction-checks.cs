@@ -115,6 +115,25 @@ internal static partial class InteractionChecks
             Pump();
             Check(arcPieces.All(piece => session.Document.Walls.Any(wall => wall.Id == piece.Id)), "The plan redraws with the curved wall in it");
 
+            // The curved wall is dimensioned from the Annotate tab: one click per dimension, and a straight wall is refused.
+            var dimensionsBefore = session.Document.Dimensions.Count;
+            foreach (var command in new[] { "RadialDimension", "DiameterDimension", "ArcLengthDimension" })
+            {
+                Invoke("ExecuteApplicationCommand", command);
+                Check(Field<Func<Guid, bool>?>("_pickWallAction") is not null, $"{command} waits for a click on a wall");
+                Field<Func<Guid, bool>>("_pickWallAction")(arcPieces[arcPieces.Length / 2].Id);
+            }
+            var added = session.Document.Dimensions.Skip(dimensionsBefore).ToArray();
+            Check(added.Length == 3 && added.Select(dimension => dimension.Kind).Distinct().Count() == 3 &&
+                  added.All(dimension => PlanDimensions.Resolve(session.Document, dimension) is { Value: > 0 }),
+                "The radius, the diameter and the arc length of the curved wall are added and read their values");
+            Invoke("ExecuteApplicationCommand", "RadialDimension");
+            Field<Func<Guid, bool>>("_pickWallAction")(session.Document.Walls[0].Id);
+            Check(session.Document.Dimensions.Count == dimensionsBefore + 3, "A straight wall gets no radius and the status line says why");
+            SetField("_pickWallAction", null);
+            Invoke("RenderPlan");
+            Pump();
+
             // The level section box shows one level in 3D, and pressing it again brings everything back.
             tabs.SelectedIndex = 1;
             Pump();

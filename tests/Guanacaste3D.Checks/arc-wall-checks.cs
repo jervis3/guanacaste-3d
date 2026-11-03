@@ -84,6 +84,37 @@ static class ArcWallChecks
         check(session.Document.Openings.Any(opening => opening.Id == door),
             $"A door fits in a piece of the curved wall ({longest.Length:0.00} m long)");
 
+        // Radius, diameter and arc length follow the wall that was measured.
+        var radius = session.AddCurveDimension(longest.Id, PlanDimensionKind.Radius);
+        var diameter = session.AddCurveDimension(pieces[0].Id, PlanDimensionKind.Diameter);
+        var arcLength = session.AddCurveDimension(pieces[2].Id, PlanDimensionKind.ArcLength);
+        var again = session.AddCurveDimension(pieces[^1].Id, PlanDimensionKind.ArcLength);
+        double Measured(Guid id) => PlanDimensions.Resolve(session.Document, session.Document.Dimensions.Single(item => item.Id == id))!.Value.Value;
+        check(Near(Measured(radius), 10, 1e-6) && Near(Measured(diameter), 20, 1e-6) &&
+              Math.Abs(Measured(arcLength) - 10 * Math.PI / 2) < 1e-6 && again == arcLength,
+            $"The radius reads 10 m, the diameter 20 m and the arc length {Measured(arcLength):0.00} m (a quarter of the circle); one arc length per wall");
+        session.MoveWall(ids[1], 4, 1);
+        check(Near(Measured(radius), 10, 1e-6) && Near(Measured(arcLength), 10 * Math.PI / 2, 1e-6),
+            "The dimensions still read the same after the whole wall is moved");
+        var drawn = PlanDimensions.Resolve(session.Document, session.Document.Dimensions.Single(item => item.Id == diameter))!.Value;
+        check(Near(drawn.From.DistanceTo(drawn.To), 20, 1e-6), "The diameter is drawn as a line through the center, twice the radius long");
+        session.MoveWall(ids[1], -4, -1);
+        check(Throws(() => session.EditDimension(session.Document.Dimensions.Single(item => item.Id == radius), 5)) &&
+              Throws(() => session.AddCurveDimension(session.Document.Walls.First(wall => wall.CurveGroupId is null).Id, PlanDimensionKind.Radius)) &&
+              Throws(() => session.AddCurveDimension(longest.Id, PlanDimensionKind.Left)),
+            "A radius cannot be typed in, and a straight wall or a wrong kind has nothing to measure");
+        var file = Path.Combine(Path.GetTempPath(), $"curve-dimensions-{Guid.NewGuid():N}.g3d");
+        ProjectFile.Save(file, session.Document);
+        var reopened = ProjectFile.Load(file);
+        File.Delete(file);
+        check(reopened.Dimensions.Count(item => item.Kind is PlanDimensionKind.Radius or PlanDimensionKind.Diameter or PlanDimensionKind.ArcLength) == 3,
+            "The curve dimensions survive saving and opening the project");
+        session.RemoveWall(pieces[0].Id);
+        check(!session.Document.Dimensions.Any(item => item.Kind is PlanDimensionKind.Radius or PlanDimensionKind.Diameter or PlanDimensionKind.ArcLength),
+            "Deleting the curved wall deletes its dimensions");
+        session.Undo();
+        check(session.Document.Dimensions.Count(item => item.Kind == PlanDimensionKind.Radius) == 1, "Undo brings the wall back with its dimensions");
+
         // Copies of a curved wall are curved walls of their own.
         var copies = session.ArrayWallsLinear(ids.ToArray(), 2, 0, 15);
         var copyPieces = session.Document.Walls.Where(wall => copies.Contains(wall.Id)).ToArray();

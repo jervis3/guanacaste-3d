@@ -19,6 +19,9 @@ public partial class MainWindow
         {
             case "Scale": ScaleSelectedWall(); return true;
             case "LinearDimension": BeginLinearDimension(); return true;
+            case "RadialDimension": BeginCurveDimension(PlanDimensionKind.Radius); return true;
+            case "DiameterDimension": BeginCurveDimension(PlanDimensionKind.Diameter); return true;
+            case "ArcLengthDimension": BeginCurveDimension(PlanDimensionKind.ArcLength); return true;
             case "MaterialTag": ToggleMaterialTags(); return true;
             case "Numbering": RenumberAllRooms(); return true;
             case "FindReplace": FindAndReplaceText(); return true;
@@ -70,6 +73,11 @@ public partial class MainWindow
             return RunWallEdit(() => _session.AddDimensionBetween(owner, wall), "Status.DimensionAdded");
         }, "Status.PickDimensionFirst");
     }
+
+    /// <summary>One click on a curved wall dimensions its radius, its diameter or its length along the arc.</summary>
+    private void BeginCurveDimension(PlanDimensionKind kind) =>
+        BeginWallPick(wall => RunWallEdit(() => _session.AddCurveDimension(wall, kind), "Status.DimensionAdded"),
+            "Status.PickCurvedWall");
 
     private void RenumberAllRooms()
     {

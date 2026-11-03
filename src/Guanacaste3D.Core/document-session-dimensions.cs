@@ -26,6 +26,8 @@ public sealed partial class DocumentSession
             throw new InvalidDataException("Dimension value must be positive and finite.");
         var measurement = PlanDimensions.Resolve(Document, dimension)
             ?? throw new InvalidDataException("Invalid plan dimension references.");
+        if (dimension.Kind is PlanDimensionKind.Radius or PlanDimensionKind.Diameter or PlanDimensionKind.ArcLength)
+            throw new InvalidDataException("This measurement of a curved wall cannot be typed in; draw the wall again.");
         if (dimension.Kind == PlanDimensionKind.WallLength)
         {
             ApplyWallDimensions(dimension.OwnerId, new WallDimensionEdit(Length: value));
