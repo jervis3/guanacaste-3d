@@ -65,6 +65,62 @@ internal static partial class InteractionChecks
         Invoke("RenderPlan");
         Pump();
     }
+
+    /// <summary>
+    /// Drives the real Rotate ribbon command without opening a modal window in CI.
+    /// The warning sink is scoped to this check; normal users still see the WPF dialog.
+    /// </summary>
+    private static void RotateRibbonChecks(DocumentSession session)
+    {
+        var level = Field<Guid>("_activeLevelId");
+        var wallId = session.AddWall(level, new Point2(300, 300), new Point2(306, 300));
+        var warnings = new List<string>();
+        SetField("_rotationWarningSink", (Action<string, string>)((message, title) => warnings.Add(message)));
+        Wall Find() => session.Document.Walls.Single(wall => wall.Id == wallId);
+        try
+        {
+            SetField("_selectedWallId", (Guid?)wallId);
+            Invoke("ExecuteApplicationCommand", "Rotate");
+            Check(Find().Start.DistanceTo(new Point2(300, 300)) < 1e-8 &&
+                  Find().End.DistanceTo(new Point2(300, 306)) < 1e-8,
+                "The real Rotate ribbon command turns the selected wall 90 degrees");
+
+            session.Undo();
+            Check(Find().End.DistanceTo(new Point2(306, 300)) < 1e-8,
+                "Undo restores the wall before ribbon rotation");
+            session.Redo();
+            Check(Find().End.DistanceTo(new Point2(300, 306)) < 1e-8,
+                "Redo reapplies the same ribbon rotation");
+
+            session.SetWallsPinned([wallId], true);
+            var beforeRejected = Find();
+            var undoName = session.UndoName;
+            Invoke("ExecuteApplicationCommand", "Rotate");
+            Check(warnings.Count == 1 && !string.IsNullOrWhiteSpace(warnings[0]),
+                "Rotating a pinned wall reports a warning without opening a modal dialog");
+            Check(Find().Start == beforeRejected.Start && Find().End == beforeRejected.End &&
+                  Find().Pinned && session.UndoName == undoName,
+                "Rejected rotation preserves the pinned wall and undo history");
+
+            SetField("_selectedWallId", null);
+            Invoke("ExecuteApplicationCommand", "Rotate");
+            Check(warnings.Count == 1 && Find().End == beforeRejected.End,
+                "Rotate with no wall selected does not change the wall or show a warning");
+            session.Document.Validate();
+        }
+        finally
+        {
+            SetField("_rotationWarningSink", null);
+            SetField("_selectedWallId", null);
+            if (session.Document.Walls.Any(wall => wall.Id == wallId))
+            {
+                if (Find().Pinned) session.SetWallsPinned([wallId], false);
+                session.RemoveWall(wallId);
+            }
+            Invoke("RenderPlan");
+            Pump();
+        }
+    }
 }
 
 internal static partial class InteractionChecks
@@ -77,18 +133,21 @@ internal static partial class InteractionChecks
     /// </summary>
     private static void RandomizedRibbonChecks(DocumentSession session)
     {
-        // Rotate_Click displays a modal MessageBox when a random pinned/invalid wall rejects rotation.
-        // Keep this fuzz loop non-modal; rotation is exercised by the domain edit regression suite.
+        // Capture rejected rotations without blocking the headless runner; real users keep the modal dialog.
         string[] commands =
         [
             "AllowJoin", "MiterJoin", "ButtJoin", "SquareOff", "DisallowJoin", "Pin", "FlipWall", "DetachAll",
-            "Copy", "Cut", "Paste", "CopyElement"
+            "Copy", "Cut", "Paste", "CopyElement", "Rotate"
         ];
         var level = Field<Guid>("_activeLevelId");
         var initial = session.Document.Walls.Select(wall => wall.Id).ToHashSet();
         var failures = new List<string>();
         var executed = 0;
 
+        var capturedRotationWarnings = 0;
+        SetField("_rotationWarningSink", (Action<string, string>)((message, title) => capturedRotationWarnings++));
+        try
+        {
         for (var seed = 1; seed <= 12; seed++)
         {
             var random = new Random(seed * 31);
@@ -133,6 +192,12 @@ internal static partial class InteractionChecks
             foreach (var id in leftovers) session.RemoveWall(id);
         }
 
+        }
+        finally
+        {
+            SetField("_rotationWarningSink", null);
+        }
+        Console.WriteLine($"Randomized rotation warnings captured: {capturedRotationWarnings}");
         Check(failures.Count == 0,
             $"{executed} random ribbon commands on random selections and layouts never throw and keep the project valid" +
             (failures.Count == 0 ? "" : ": " + string.Join(" | ", failures.Take(5))));
