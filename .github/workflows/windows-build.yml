@@ -12,7 +12,8 @@ permissions:
 # Avoid spending runner minutes on superseded commits of the same ref.
 concurrency:
   group: guanacaste-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  # Preserve the full CI verdict for each main commit; only supersede outdated PR runs.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   core:

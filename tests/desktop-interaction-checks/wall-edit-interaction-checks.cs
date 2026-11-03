@@ -77,10 +77,12 @@ internal static partial class InteractionChecks
     /// </summary>
     private static void RandomizedRibbonChecks(DocumentSession session)
     {
+        // Rotate_Click displays a modal MessageBox when a random pinned/invalid wall rejects rotation.
+        // Keep this fuzz loop non-modal; rotation is exercised by the domain edit regression suite.
         string[] commands =
         [
             "AllowJoin", "MiterJoin", "ButtJoin", "SquareOff", "DisallowJoin", "Pin", "FlipWall", "DetachAll",
-            "Copy", "Cut", "Paste", "CopyElement", "Rotate"
+            "Copy", "Cut", "Paste", "CopyElement"
         ];
         var level = Field<Guid>("_activeLevelId");
         var initial = session.Document.Walls.Select(wall => wall.Id).ToHashSet();
