@@ -265,6 +265,10 @@
   <sys:String x:Key="Status.WallDimensionsApplied">Dimensiones del muro actualizadas.</sys:String>
   <sys:String x:Key="Status.SelectWallToJoin">Seleccione un muro para cambiar su unión.</sys:String>
   <sys:String x:Key="Status.WallJoinChanged">Unión del muro actualizada.</sys:String>
+  <sys:String x:Key="WallOptions.Arc">Arco</sys:String>
+  <sys:String x:Key="Status.WallArcThrough">Arco: haga clic en un punto por el que deba pasar el muro (de él depende la curvatura).</sys:String>
+  <sys:String x:Key="Status.WallArcCreated">Muro curvo creado ({0} tramos). Se mueve y se borra como un solo muro.</sys:String>
+  <sys:String x:Key="WallOptions.ArcMeasurement">Radio {0:0.00} m · longitud {1:0.00} m</sys:String>
   <sys:String x:Key="Status.SectionBoxOn">Recuadro de sección: la vista 3D muestra solo el nivel {0}. Pulse de nuevo para ver todo.</sys:String>
   <sys:String x:Key="Status.SectionBoxOff">Recuadro de sección desactivado: se ve todo el edificio.</sys:String>
   <sys:String x:Key="Status.PickDimensionFirst">Cota lineal: haga clic en el primer muro.</sys:String>

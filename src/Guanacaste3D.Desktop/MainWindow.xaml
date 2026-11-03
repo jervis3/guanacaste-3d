@@ -282,6 +282,8 @@
                              IsChecked="True" VerticalAlignment="Center" Margin="3,0,8,0"
                              Checked="WallOptions_Changed"/>
                 <RadioButton x:Name="WallRectangleMode" Content="{DynamicResource WallOptions.Rectangle}" GroupName="WallDrawMode"
+                             VerticalAlignment="Center" Margin="3,0,8,0" Checked="WallOptions_Changed"/>
+                <RadioButton x:Name="WallArcMode" Content="{DynamicResource WallOptions.Arc}" GroupName="WallDrawMode"
                              VerticalAlignment="Center" Margin="3,0,14,0" Checked="WallOptions_Changed"/>
                 <TextBlock Text="{DynamicResource WallOptions.Height}" Style="{StaticResource OptionLabelStyle}"/>
                 <TextBox x:Name="WallHeightInput" Text="3.00" Width="54" VerticalAlignment="Center" Margin="4,0,12,0"

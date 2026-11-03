@@ -17,6 +17,23 @@ public partial class MainWindow
         if (_wallPreviewPoint is not Point2 preview) return;
         // Before the first click there is only the crosshair and the snap marker, no wall-shaped ghost.
         if (_pendingWallStart is not Point2 start) return;
+        if (WallArcMode.IsChecked == true)
+        {
+            // Until the second click the sketch is the chord; after it, the arc that bends toward the pointer.
+            if (_pendingArcEnd is not Point2 arcEnd)
+            {
+                AddWallPreviewBody(start, preview);
+                return;
+            }
+            if (ArcWallGeometry.Fit(start, arcEnd, preview) is { } fit)
+            {
+                var corners = ArcWallGeometry.Points(fit, start, arcEnd);
+                for (var index = 0; index < corners.Count - 1; index++) AddWallPreviewBody(corners[index], corners[index + 1]);
+                AddWallMeasurement(start, arcEnd, FormatText("WallOptions.ArcMeasurement", fit.Radius, fit.Length));
+            }
+            else AddWallPreviewBody(start, arcEnd);
+            return;
+        }
         if (WallRectangleMode.IsChecked == true)
         {
             var corners = new[]

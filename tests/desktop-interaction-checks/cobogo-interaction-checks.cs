@@ -92,6 +92,28 @@ internal static partial class InteractionChecks
             tabs.SelectedIndex = 0;
             Pump();
 
+            // A curved wall is drawn with three clicks on the plan, the way a person does, and is one wall afterwards.
+            Invoke("SelectElement", session.Document.Walls[0].Id);
+            tabs.SelectedIndex = 0;
+            Pump();
+            Invoke("SetWallTool", true);
+            ((System.Windows.Controls.RadioButton)opened.FindName("WallArcMode")).IsChecked = true;
+            Point OnCanvas(double x, double y) => (Point)Invoke("WorldToCanvas", new Point2(x, y))!;
+            var wallsBeforeArc = session.Document.Walls.Count;
+            Invoke("HandleWallPlacementClick", OnCanvas(540, 540));
+            Invoke("HandleWallPlacementClick", OnCanvas(548, 548));
+            Check(Field<Point2?>("_pendingArcEnd") is not null && session.Document.Walls.Count == wallsBeforeArc,
+                "After the second click an arc is waiting for its third point and nothing has been built yet");
+            Invoke("HandleWallPlacementClick", OnCanvas(541.5, 547));
+            var arcPieces = session.Document.Walls.Skip(wallsBeforeArc).ToArray();
+            Check(arcPieces.Length >= 5 && arcPieces.Select(piece => piece.CurveGroupId).Distinct().Count() == 1 && arcPieces[0].CurveGroupId is not null &&
+                  Field<Point2?>("_pendingArcEnd") is null && Field<Point2?>("_pendingWallStart") is null,
+                $"The third click builds one curved wall of {arcPieces.Length} pieces and ends the sketch");
+            Invoke("SetWallTool", false);
+            Invoke("RenderPlan");
+            Pump();
+            Check(arcPieces.All(piece => session.Document.Walls.Any(wall => wall.Id == piece.Id)), "The plan redraws with the curved wall in it");
+
             // The level section box shows one level in 3D, and pressing it again brings everything back.
             tabs.SelectedIndex = 1;
             Pump();

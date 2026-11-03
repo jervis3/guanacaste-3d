@@ -80,6 +80,7 @@ public partial class MainWindow
     private void HandleWallPlacementClick(Point canvasPoint)
     {
         var point = SnapWallPoint(CanvasToWorld(canvasPoint));
+        if (_pendingWallStart is null) _pendingArcEnd = null;
         if (_pendingWallStart is null)
         {
             _pendingWallStart = point;
@@ -99,12 +100,53 @@ public partial class MainWindow
         }
 
         var start = _pendingWallStart.Value;
+        if (WallArcMode.IsChecked == true)
+        {
+            // An arc takes three clicks: where it starts, where it ends, and a point it passes through.
+            if (_pendingArcEnd is null)
+            {
+                if (point.DistanceTo(start) < 0.05) return;
+                _pendingArcEnd = point;
+                StatusText.Text = GetText("Status.WallArcThrough");
+                RenderPlan();
+                return;
+            }
+            CreateArcWall(start, _pendingArcEnd.Value, point, height, typeId);
+            return;
+        }
         try
         {
             if (WallRectangleMode.IsChecked == true)
                 CreateWallRectangle(start, point, height, offset, typeId);
             else
                 CreateWallSegment(start, ConstrainWallEndpoint(start, point), height, offset, typeId);
+        }
+        catch (InvalidDataException exception)
+        {
+            MessageBox.Show(this, LocalizedErrors.Translate(exception.Message), GetText("Dialog.InvalidGeometry"),
+                MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+    }
+
+    /// <summary>The end of the arc being drawn, once the second click has fixed it; the third click picks its bulge.</summary>
+    private Point2? _pendingArcEnd;
+
+    /// <summary>Creates a curved wall through three clicked points, as one undoable step, and ends the sketch.</summary>
+    private void CreateArcWall(Point2 start, Point2 end, Point2 through, double height, Guid typeId)
+    {
+        try
+        {
+            var ids = _session.AddArcWall(_activeLevelId, start, end, through, height, typeId);
+            _selectedWallId = ids[ids.Count / 2];
+            _selectedViewId = null;
+            _pendingWallStart = null;
+            _pendingArcEnd = null;
+            _wallPreviewPoint = null;
+            _chainTail = null;
+            _chainOrigin = null;
+            ClearDirectWallLength();
+            StatusText.Text = FormatText("Status.WallArcCreated", ids.Count);
+            RefreshAll();
         }
         catch (InvalidDataException exception)
         {
@@ -346,6 +388,8 @@ public partial class MainWindow
     private void WallOptions_Changed(object sender, RoutedEventArgs e)
     {
         if (WallObjectSnapCheck?.IsChecked != true) _activeWallSnap = null;
+        // Switching between line, rectangle and arc abandons an arc that has its end but not yet its bulge.
+        if (sender is RadioButton) _pendingArcEnd = null;
         if (PlanCanvas is not null && _session is not null) RenderPlan();
     }
 
