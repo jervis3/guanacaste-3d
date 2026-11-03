@@ -35,6 +35,21 @@ static class RenderFxChecks
               FxStyle.TryParse("""{"Version":9,"Name":"x","Effects":[],"Values":{}}""") is null &&
               FxStyle.TryParse("""{"Version":1,"Name":"x","Effects":["inventado"],"Values":{}}""") is null,
             "A style file with the wrong shape, version or unknown effects is rejected");
+
+        check(FxStyle.TryParse("""{"Version":1,"Name":"x","Effects":["fog","fog"],"Values":{"FogSlider":0.3}}""") is null &&
+              FxStyle.TryParse("""{"Version":1,"Name":"x","Effects":["highlight"],"Values":{}}""") is null &&
+              FxStyle.TryParse("""{"Version":1,"Name":"x","Effects":["sun"],"Values":{"HourSlider":12}}""") is null,
+            "An imported FX style rejects duplicate, unimplemented and scene-only effects");
+        check(FxStyle.TryParse("""{"Version":1,"Name":"x","Effects":["fog"],"Values":{"GlareSlider":0.5}}""") is null &&
+              FxStyle.TryParse("""{"Version":1,"Name":"x","Effects":["fog"],"Values":{"FogSlider":0.3,"FogSlider":0.8}}""") is null &&
+              FxStyle.TryParse("""{"Version":1,"Name":"x","Effects":["fog"],"Values":{"FogSlider":"0.3"}}""") is null,
+            "An FX style cannot silently ignore other effects' controls, duplicate values or nonnumeric values");
+        check(FxStyle.TryParse("""{"Version":1,"Name":"x","Effects":["fog"],"Values":{"FogSlider":1e999}}""") is null &&
+              FxStyle.TryParse("""{"Version":1,"Name":"x","Effects":{},"Values":{}}""") is null &&
+              FxStyle.TryParse(new string('x', 256 * 1024 + 1)) is null &&
+              FxStyle.TryParse(new FxStyle(new string('x', 121), ["fog"], new()).ToJson()) is null,
+            "Malformed, oversized and non-finite FX style data is rejected before changing the render");
+
     }
 
     /// <summary>The panel's XAML, found by walking up from the test output; null when the sources are not beside it.</summary>
