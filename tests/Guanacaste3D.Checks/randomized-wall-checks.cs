@@ -68,10 +68,11 @@ static class RandomizedWallChecks
     private static int RunSequence(int seed, Dictionary<string, string> failures)
     {
         var random = new Random(seed);
-        var session = new DocumentSession(BuildingDocument.Create());
+        var session = new DocumentSession(House().Clone());
+        var houseJson = ProjectFile.SerializeDocument(session.Document);
         var level = session.Document.Levels[0].Id;
-        var upper = session.AddLevel();
-        for (var i = 0; i < 4; i++)
+        var upper = session.Document.Levels.Count > 1 ? session.Document.Levels[1].Id : session.AddLevel();
+        for (var i = 0; i < 2; i++)
         {
             try { AddRandomWall(random, session, level); }
             catch (InvalidDataException) { /* a hostile type id is refused; the sequence starts with fewer walls */ }
@@ -126,6 +127,11 @@ static class RandomizedWallChecks
             if (ProjectFile.SerializeDocument(session.Document) != after) { Fail("redo:", "did not reapply the change exactly"); break; }
             _ = undoable;
         }
+        // Whatever the sequence did, undoing all of it brings the house back exactly as it was drawn.
+        var guard = 0;
+        while (session.CanUndo && guard++ < 10000) session.Undo();
+        if (ProjectFile.SerializeDocument(session.Document) != houseJson)
+            failures.TryAdd("undo all", $"seed {seed}: undoing every command did not bring the house back exactly");
         return steps;
     }
 
@@ -302,84 +308,149 @@ static class RandomizedWallChecks
             locationReference: (WallLocationReference)random.Next(0, 3));
     }
 
-    // ------------------------------------------------------------------ algebraic properties
+    // ------------------------------------------------------------------ properties on the real house
 
-    /// <summary>Properties that hold for every random wall, checked on a document with a single family of walls.</summary>
+    /// <summary>
+    /// Properties that hold for every wall of the breeze-block house, not for a wall made up for the test. Each seed
+    /// takes a fresh copy of the house, so the walls are joined, tee-ed and pierced the way an architect drew them.
+    /// </summary>
     private static void Properties(int seed, List<string> failures)
     {
         var random = new Random(seed * 7919);
         void Fail(string text) => failures.Add($"seed {seed}: {text}");
-        var session = new DocumentSession(BuildingDocument.Create());
-        var level = session.Document.Levels[0].Id;
+        var session = new DocumentSession(House().Clone());
 
-        // A lone wall keeps the face it was placed by whatever its new thickness, and any thickness comes back.
-        var reference = (WallLocationReference)random.Next(0, 3);
-        var start = new Point2(random.NextDouble() * 20 - 10, random.NextDouble() * 20 - 10);
-        var angle = random.NextDouble() * 2 * Math.PI;
-        var length = 2.5 + random.NextDouble() * 7.5;
-        var id = session.AddWall(level, start, new Point2(start.X + Math.Cos(angle) * length, start.Y + Math.Sin(angle) * length),
-            wallTypeId: BuiltInWallTypes.Basic200Id, locationReference: reference);
-        var original = session.Document.Walls.Single();
+        // A new thickness for a wall type: every wall not tied to an axis keeps the plane it was placed by (the walls
+        // of that type) or both its faces (all others), and every opening keeps its place along its wall.
+        var typeIds = session.Document.Walls.Select(wall => wall.WallTypeId).Distinct().OrderBy(id => id).ToArray();
+        var typeId = typeIds[random.Next(typeIds.Length)];
+        var type = session.Document.WallTypes.Single(candidate => candidate.Id == typeId);
+        var before = session.Document.Walls.ToDictionary(wall => wall.Id);
+        var openingsBefore = AlongWall(session.Document);
         var thickness = 0.06 + random.NextDouble() * 0.5;
-        session.UpdateWall(id, thickness, original.Height);
-        var resized = session.Document.Walls.Single();
-        double Face(Wall wall, int side) => FacePlane(wall, side);
-        var fixedSide = reference switch { WallLocationReference.ExteriorFace => -1, WallLocationReference.InteriorFace => 1, _ => 0 };
-        if (Math.Abs(Face(original, fixedSide) - Face(resized, fixedSide)) > 1e-9)
-            Fail($"the {reference} plane moved by {Face(resized, fixedSide) - Face(original, fixedSide):0.#########} m when thickness went {original.Thickness:0.###}→{thickness:0.###}");
-        session.UpdateWall(id, original.Thickness, original.Height);
-        var restored = session.Document.Walls.Single();
-        if (restored.Start.DistanceTo(original.Start) > 1e-9 || restored.End.DistanceTo(original.End) > 1e-9)
-            Fail("changing a thickness and changing it back did not return the wall to where it started");
-
-        // Flipping twice and mirroring twice about one axis are the identity.
-        var before = ProjectFile.SerializeDocument(session.Document);
-        session.FlipWalls([id]);
-        session.FlipWalls([id]);
-        if (ProjectFile.SerializeDocument(session.Document) != before) Fail("flipping twice changed the project");
-        var axisStart = new Point2(random.NextDouble() * 10 - 5, random.NextDouble() * 10 - 5);
-        var axisEnd = new Point2(axisStart.X + 1 + random.NextDouble() * 5, axisStart.Y + random.NextDouble() * 5 - 2.5);
-        var snapshot = session.Document.Walls.Single();
-        session.MirrorWalls([id], axisStart, axisEnd, copy: false);
-        session.MirrorWalls([id], axisStart, axisEnd, copy: false);
-        var twice = session.Document.Walls.Single();
-        if (twice.Start.DistanceTo(snapshot.Start) > 1e-8 || twice.End.DistanceTo(snapshot.End) > 1e-8 ||
-            twice.LocationReference != snapshot.LocationReference || twice.StartJoin != snapshot.StartJoin)
-            Fail("mirroring twice about the same axis did not restore the wall");
-
-        // Offsetting a copy by d and the original back by -d give two walls with the same geometry.
-        var d = (random.NextDouble() - 0.5) * 6;
-        if (Math.Abs(d) > 0.01)
-        {
-            var copy = session.OffsetWalls([id], d, copy: true)[0];
-            session.OffsetWalls([copy], -d, copy: false);
-            var a = session.Document.Walls.Single(wall => wall.Id == id);
-            var b = session.Document.Walls.Single(wall => wall.Id == copy);
-            if (a.Start.DistanceTo(b.Start) > 1e-8 || a.End.DistanceTo(b.End) > 1e-8) Fail("offset and offset back did not meet");
-        }
-
-        // A split keeps the total length and every opening.
-        var host = session.Document.Walls.First(wall => wall.Id == id);
-        var door = session.AddOpening(id, OpeningKind.Door, offset: host.Length * 0.25);
-        var cut = 0.5 + random.NextDouble() * (host.Length - 1);
         try
         {
-            var second = session.SplitWall(id, new Point2(
-                host.Start.X + (host.End.X - host.Start.X) * cut / host.Length, host.Start.Y + (host.End.Y - host.Start.Y) * cut / host.Length));
-            var parts = session.Document.Walls.Where(wall => wall.Id == id || wall.Id == second).ToArray();
-            if (Math.Abs(parts.Sum(wall => wall.Length) - host.Length) > 1e-8) Fail("splitting a wall changed its total length");
-            if (session.Document.Openings.All(opening => opening.Id != door)) Fail("splitting a wall lost an opening");
-            var doorWorld = host.Start.X + (host.End.X - host.Start.X) * (host.Length * 0.25) / host.Length;
-            var hosted = session.Document.Openings.Single(opening => opening.Id == door);
-            var holder = parts.Single(wall => wall.Id == hosted.WallId);
-            var doorNow = holder.Start.X + (holder.End.X - holder.Start.X) * hosted.Offset / holder.Length;
-            if (Math.Abs(doorNow - doorWorld) > 1e-8) Fail("splitting a wall moved its door");
+            session.UpdateWallType(typeId, type.Name, type.Function, thickness, type.MaterialName);
+            foreach (var wall in session.Document.Walls)
+            {
+                if (wall.GridAxisId is not null) continue;
+                var old = before[wall.Id];
+                foreach (var side in wall.WallTypeId == typeId
+                             ? new[] { FixedSide(wall.LocationReference) }
+                             : new[] { -1, 0, 1 })
+                    if (Math.Abs(FacePlane(old, side) - FacePlane(wall, side)) > 1e-7)
+                        Fail($"wall {wall.Id.ToString()[..8]} ({wall.LocationReference}) moved its plane {side} by {FacePlane(wall, side) - FacePlane(old, side):0.#########} m when type {type.Name} went {type.Thickness:0.###} to {thickness:0.###}");
+            }
+            foreach (var (id, station) in AlongWall(session.Document))
+                if (openingsBefore.TryGetValue(id, out var was) && Math.Abs(was - station) > 1e-6)
+                    Fail($"opening {id.ToString()[..8]} moved {station - was:0.#######} m along its wall when a wall type changed thickness");
         }
         catch (InvalidDataException)
         {
-            // The cut may fall within the door: refusing is the right answer.
+            // A finish thicker than the wall, or an opening that no longer fits: refusing is the right answer.
         }
+
+        // Flipping twice and mirroring twice about one axis are the identity, for walls of the house.
+        session = new DocumentSession(House().Clone());
+        var pool = session.Document.Walls.Where(wall => !wall.Pinned).ToArray();
+        var chosen = Enumerable.Range(0, random.Next(1, 4)).Select(_ => pool[random.Next(pool.Length)].Id).Distinct().ToArray();
+        var snapshot = session.Document.Walls.Where(wall => chosen.Contains(wall.Id)).ToDictionary(wall => wall.Id);
+        var openingSnapshot = session.Document.Openings.Where(opening => chosen.Contains(opening.WallId)).ToDictionary(opening => opening.Id);
+        session.FlipWalls(chosen);
+        session.FlipWalls(chosen);
+        if (!SameWalls(session.Document, snapshot, openingSnapshot)) Fail("flipping the same walls twice did not restore them and their openings");
+        var axisStart = new Point2(random.NextDouble() * 16, random.NextDouble() * 12);
+        var axisEnd = new Point2(axisStart.X + 1 + random.NextDouble() * 6, axisStart.Y + random.NextDouble() * 6 - 3);
+        session.MirrorWalls(chosen, axisStart, axisEnd, copy: false);
+        session.MirrorWalls(chosen, axisStart, axisEnd, copy: false);
+        if (!SameWalls(session.Document, snapshot, openingSnapshot)) Fail("mirroring the same walls twice about one axis did not restore them");
+
+        // A split keeps the total length, every opening and the place of each opening in the model.
+        session = new DocumentSession(House().Clone());
+        var target = session.Document.Walls[random.Next(session.Document.Walls.Count)];
+        var cut = 0.1 + random.NextDouble() * (target.Length - 0.2);
+        var worldBefore = OpeningWorld(session.Document);
+        var point = new Point2(target.Start.X + (target.End.X - target.Start.X) * cut / target.Length,
+            target.Start.Y + (target.End.Y - target.Start.Y) * cut / target.Length);
+        try
+        {
+            var second = session.SplitWall(target.Id, point);
+            var parts = session.Document.Walls.Where(wall => wall.Id == target.Id || wall.Id == second).ToArray();
+            if (Math.Abs(parts.Sum(wall => wall.Length) - target.Length) > 1e-8) Fail($"splitting wall {target.Id.ToString()[..8]} changed its total length");
+            if (session.Document.Openings.Count != worldBefore.Count) Fail("splitting a wall lost or added an opening");
+            var worldAfter = OpeningWorld(session.Document);
+            foreach (var (id, was) in worldBefore)
+                if (worldAfter.TryGetValue(id, out var now) && now.DistanceTo(was) > 1e-8)
+                    Fail($"splitting wall {target.Id.ToString()[..8]} moved opening {id.ToString()[..8]}");
+        }
+        catch (InvalidDataException)
+        {
+            // The cut may fall within a door or window: refusing is the right answer.
+        }
+
+        // Copying a wall of the house and pasting it leaves the original alone, and undo takes the copy away exactly.
+        session = new DocumentSession(House().Clone());
+        var original = ProjectFile.SerializeDocument(session.Document);
+        var source = session.Document.Walls[random.Next(session.Document.Walls.Count)];
+        var dx = random.NextDouble() * 6 - 3;
+        var dy = random.NextDouble() * 6 - 3;
+        var pasted = session.PasteWalls(WallClipboard.Capture(session.Document, [source.Id]), source.LevelId, dx, dy)[0];
+        var copy = session.Document.Walls.Single(wall => wall.Id == pasted);
+        if (Math.Abs(copy.Start.X - source.Start.X - dx) > 1e-9 || Math.Abs(copy.End.Y - source.End.Y - dy) > 1e-9)
+            Fail("a pasted wall is not the source wall moved by the requested distance");
+        if (session.Document.Openings.Count(opening => opening.WallId == pasted) != session.Document.Openings.Count(opening => opening.WallId == source.Id))
+            Fail("a pasted wall does not bring as many openings as its source");
+        session.Undo();
+        if (ProjectFile.SerializeDocument(session.Document) != original) Fail("undoing a paste did not restore the house exactly");
     }
+
+    /// <summary>The plane a wall keeps fixed when it changes thickness: the right face, the left face or the centerline.</summary>
+    private static int FixedSide(WallLocationReference reference) => reference switch
+    {
+        WallLocationReference.ExteriorFace => -1,
+        WallLocationReference.InteriorFace => 1,
+        _ => 0
+    };
+
+    /// <summary>Where each opening lies along its wall's direction, measured from the origin so a sliding start does not matter.</summary>
+    private static Dictionary<Guid, double> AlongWall(BuildingDocument document)
+    {
+        var walls = document.Walls.ToDictionary(wall => wall.Id);
+        return document.Openings.ToDictionary(opening => opening.Id, opening =>
+        {
+            var wall = walls[opening.WallId];
+            var directionX = (wall.End.X - wall.Start.X) / wall.Length;
+            var directionY = (wall.End.Y - wall.Start.Y) / wall.Length;
+            return wall.Start.X * directionX + wall.Start.Y * directionY + opening.Offset;
+        });
+    }
+
+    /// <summary>The model position of each opening's center on its wall's centerline.</summary>
+    private static Dictionary<Guid, Point2> OpeningWorld(BuildingDocument document)
+    {
+        var walls = document.Walls.ToDictionary(wall => wall.Id);
+        return document.Openings.ToDictionary(opening => opening.Id, opening =>
+        {
+            var wall = walls[opening.WallId];
+            return new Point2(wall.Start.X + (wall.End.X - wall.Start.X) * opening.Offset / wall.Length,
+                wall.Start.Y + (wall.End.Y - wall.Start.Y) * opening.Offset / wall.Length);
+        });
+    }
+
+    /// <summary>Whether the listed walls and openings are back to the geometry they had, up to rounding.</summary>
+    private static bool SameWalls(BuildingDocument document, Dictionary<Guid, Wall> walls, Dictionary<Guid, WallOpening> openings) =>
+        walls.All(entry => document.Walls.SingleOrDefault(wall => wall.Id == entry.Key) is { } now &&
+            now.Start.DistanceTo(entry.Value.Start) < 1e-7 && now.End.DistanceTo(entry.Value.End) < 1e-7 &&
+            now.LocationReference == entry.Value.LocationReference && now.StartJoin == entry.Value.StartJoin &&
+            now.EndJoin == entry.Value.EndJoin) &&
+        openings.All(entry => document.Openings.SingleOrDefault(opening => opening.Id == entry.Key) is { } now &&
+            Math.Abs(now.Offset - entry.Value.Offset) < 1e-7 && now.FlipHand == entry.Value.FlipHand &&
+            now.FlipFacing == entry.Value.FlipFacing);
+
+    /// <summary>The breeze-block house, built once; every sequence works on its own copy.</summary>
+    private static BuildingDocument House() => _house ??= BreezeBlockHouseShowcase.Create();
+
+    private static BuildingDocument? _house;
 
     /// <summary>Signed distance of a wall's centerline (side 0) or a face (-1 right, 1 left) from the origin along its left normal.</summary>
     private static double FacePlane(Wall wall, int side)

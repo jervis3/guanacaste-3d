@@ -126,6 +126,7 @@ internal static partial class InteractionChecks
             MassPlacementChecks();
             ScheduleExportChecks();
             StartupSampleChecks();
+            CobogoHouseChecks();
             Console.WriteLine("Desktop interaction checks passed.");
             return 0;
         }
