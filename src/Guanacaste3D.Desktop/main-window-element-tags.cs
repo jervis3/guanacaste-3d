@@ -8,6 +8,15 @@ namespace Guanacaste3D.Desktop;
 public partial class MainWindow
 {
     private bool _showElementTags;
+    private bool _showMaterialTags;
+
+    /// <summary>Shows or hides a tag with the material of each wall of the plan.</summary>
+    private void ToggleMaterialTags()
+    {
+        _showMaterialTags = !_showMaterialTags;
+        RefreshAll();
+        StatusText.Text = GetText(_showMaterialTags ? "Status.MaterialTagsShown" : "Status.MaterialTagsHidden");
+    }
 
     /// <summary>Shows or hides the automatic door, window and column tags of the plan.</summary>
     private void ToggleElementTags()
@@ -52,6 +61,7 @@ public partial class MainWindow
         var selected = CurrentPlanTagView();
         var categories = new HashSet<TagCategory>();
         if (_showElementTags) categories.UnionWith(ElementTags.Default);
+        if (_showMaterialTags) categories.Add(TagCategory.Material);
         if (selected?.ShowRoomTags == true) categories.Add(TagCategory.Room);
         if (selected?.ShowAreaTags == true) categories.Add(TagCategory.Area);
         if (categories.Count == 0) return;

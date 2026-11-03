@@ -11,6 +11,20 @@ static class BulkEditChecks
         Renumber(check, house);
         Replace(check, house);
         AttachTop(check, house);
+        MaterialTags(check, house);
+    }
+
+    /// <summary>Material tags name the material of every wall of a level and nothing else.</summary>
+    private static void MaterialTags(Action<bool, string> check, BuildingDocument house)
+    {
+        var level = house.Levels[0].Id;
+        var tags = ElementTags.Build(house, level, new HashSet<TagCategory> { TagCategory.Material });
+        var walls = house.Walls.Where(wall => wall.LevelId == level).ToArray();
+        check(tags.Count == walls.Length && tags.All(tag => tag.Category == TagCategory.Material && tag.Mark.Length > 0 &&
+                  house.WallTypes.Any(type => type.MaterialName == tag.Mark)),
+            $"Material tags name the material of each of the {walls.Length} walls of the level");
+        check(ElementTags.Build(house, level, new HashSet<TagCategory> { TagCategory.Door }).All(tag => tag.Category == TagCategory.Door),
+            "Material tags do not appear unless asked for");
     }
 
     /// <summary>A ground-floor wall under the upper slab is tied to that slab's underside; one with nothing above is refused.</summary>

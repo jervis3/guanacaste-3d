@@ -18,6 +18,7 @@ public partial class MainWindow
         switch (commandId)
         {
             case "Scale": ScaleSelectedWall(); return true;
+            case "MaterialTag": ToggleMaterialTags(); return true;
             case "Numbering": RenumberAllRooms(); return true;
             case "FindReplace": FindAndReplaceText(); return true;
             case "ShowHistory": ShowTransactionHistory(); return true;

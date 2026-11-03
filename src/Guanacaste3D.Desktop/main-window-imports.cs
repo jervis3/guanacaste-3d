@@ -84,7 +84,10 @@ public partial class MainWindow
     /// <summary>Converts a Revit project into native elements and families, and opens it as a new, unsaved project.</summary>
     private bool OpenRevitProject(string path)
     {
-        var window = new RevitProjectWindow(path) { Owner = this };
+        // Opening a .rvt by double-click reaches this from the constructor, before the main window has ever been
+        // shown, and WPF refuses a window as owner until it has (this crashed the program on startup).
+        var window = new RevitProjectWindow(path);
+        if (IsVisible) window.Owner = this;
         if (window.ShowDialog() != true || window.Result is not { } document) return false;
         AttachDocument(document, null);
         // Revit projects list footing and beam levels below and around the ground floor; open on the ground floor plan.
