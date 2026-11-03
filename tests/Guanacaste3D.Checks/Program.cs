@@ -139,7 +139,7 @@ catch (InvalidDataException) { overlappingLayerOpeningsRejected = true; }
 Check(overlappingLayerOpeningsRejected, "Layer takeoffs reject overlapping openings rather than double-subtracting volume");
 
 var orderedWallSolids = WallGeometry.Solids(takeoffWall, takeoffSession.Document.Openings);
-var reversedWallSolids = WallGeometry.Solids(takeoffWall, takeoffSession.Document.Openings.Reverse());
+var reversedWallSolids = WallGeometry.Solids(takeoffWall, takeoffSession.Document.Openings.AsEnumerable().Reverse());
 Check(orderedWallSolids.Count == 6 && orderedWallSolids.SequenceEqual(reversedWallSolids) &&
       Math.Abs(orderedWallSolids.Sum(part => (part.To - part.From) * (part.Top - part.Bottom)) -
                netFaceArea) < 1e-9,
