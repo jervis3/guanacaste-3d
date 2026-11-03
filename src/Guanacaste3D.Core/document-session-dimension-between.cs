@@ -23,6 +23,22 @@ public sealed partial class DocumentSession
     }
 
     /// <summary>
+    /// Adds the angle between two walls of one level. It follows both walls when either moves or turns, and it is
+    /// removed with them; walls that never meet, being parallel, have no angle to measure.
+    /// </summary>
+    public Guid AddAngularDimension(Guid firstWallId, Guid secondWallId)
+    {
+        if (firstWallId == secondWallId) throw new InvalidDataException("Two different elements are needed.");
+        var first = Document.Walls.FirstOrDefault(wall => wall.Id == firstWallId);
+        var second = Document.Walls.FirstOrDefault(wall => wall.Id == secondWallId);
+        if (first is null || second is null) throw new InvalidDataException("The element does not exist.");
+        if (first.LevelId != second.LevelId) throw new InvalidDataException("The elements are on different levels.");
+        var dimension = new PlanDimension(Guid.Empty, first.LevelId, firstWallId, secondWallId, PlanDimensionKind.Angular);
+        if (PlanDimensions.Resolve(Document, dimension) is null) throw new InvalidDataException("The walls are parallel, so they form no angle.");
+        return AddDimension(dimension);
+    }
+
+    /// <summary>
     /// Adds the dimension of the clear distance between two elements of one level: walls, openings, columns, rooms,
     /// floors, structural elements, or a grid axis as the second one. The direction is the one in which they are
     /// farthest apart. The dimension follows both elements when either moves, like every other one.

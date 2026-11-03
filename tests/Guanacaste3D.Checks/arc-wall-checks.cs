@@ -115,6 +115,25 @@ static class ArcWallChecks
         session.Undo();
         check(session.Document.Dimensions.Count(item => item.Kind == PlanDimensionKind.Radius) == 1, "Undo brings the wall back with its dimensions");
 
+        // An angular dimension between two straight walls of the house reads the angle they enclose.
+        var level0 = session.Document.Levels[0].Id;
+        var corner = new Point2(700, 700);
+        var armA = session.AddWall(level0, corner, new Point2(704, 700));
+        var armB = session.AddWall(level0, corner, new Point2(700, 704));
+        var armC = session.AddWall(level0, new Point2(710, 710), new Point2(714, 710));
+        var angle = session.AddAngularDimension(armA, armB);
+        double Degrees(Guid id) => PlanDimensions.Resolve(session.Document, session.Document.Dimensions.Single(item => item.Id == id))!.Value.Value;
+        check(Near(Degrees(angle), 90, 1e-6) && PlanDimensions.Resolve(session.Document, session.Document.Dimensions.Single(item => item.Id == angle))!.Value.IsAngle,
+            "Two walls meeting at a right angle read 90° and are marked as an angle");
+        session.MoveWallEnd(armB, WallEnd.End, new Point2(704, 704));
+        check(Near(Degrees(angle), 45, 1e-6), "Turning one wall to the diagonal makes the same dimension read 45°");
+        session.MoveWallEnd(armB, WallEnd.End, new Point2(696, 704));
+        check(Near(Degrees(angle), 135, 1e-6), "Past the vertical it reads the 135° the walls enclose");
+        check(Throws(() => session.AddAngularDimension(armA, armA)) && Throws(() => session.AddAngularDimension(armA, armC)),
+            "An angle needs two different walls that are not parallel");
+        check(Throws(() => session.EditDimension(session.Document.Dimensions.Single(item => item.Id == angle), 30)),
+            "An angle cannot be typed in");
+
         // Copies of a curved wall are curved walls of their own.
         var copies = session.ArrayWallsLinear(ids.ToArray(), 2, 0, 15);
         var copyPieces = session.Document.Walls.Where(wall => copies.Contains(wall.Id)).ToArray();

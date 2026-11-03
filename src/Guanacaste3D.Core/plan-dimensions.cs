@@ -1,13 +1,13 @@
 namespace Guanacaste3D.Core;
 
 /// <summary>Semantic measurements recomputed from model references after every edit.</summary>
-public enum PlanDimensionKind { WallLength, OpeningWidth, OpeningStart, OpeningEnd, Left, Right, Below, Above, Radius, Diameter, ArcLength }
+public enum PlanDimensionKind { WallLength, OpeningWidth, OpeningStart, OpeningEnd, Left, Right, Below, Above, Radius, Diameter, ArcLength, Angular }
 
 /// <summary>A persistent measurement references model identities instead of a cached numeric label.</summary>
 public sealed record PlanDimension(Guid Id, Guid LevelId, Guid OwnerId, Guid? ReferenceId, PlanDimensionKind Kind);
 
 /// <summary>Resolved dimension line coordinates and its actual metric value.</summary>
-public readonly record struct PlanMeasurement(Point2 From, Point2 To, double Value);
+public readonly record struct PlanMeasurement(Point2 From, Point2 To, double Value, bool IsAngle = false);
 
 /// <summary>Builds and resolves plan dimensions for walls, openings and other supported BIM elements.</summary>
 public static partial class PlanDimensions
@@ -85,6 +85,7 @@ public static partial class PlanDimensions
         }
         if (dimension.Kind is PlanDimensionKind.Radius or PlanDimensionKind.Diameter or PlanDimensionKind.ArcLength)
             return ResolveCurve(document, dimension);
+        if (dimension.Kind == PlanDimensionKind.Angular) return ResolveAngle(document, dimension);
         if (dimension.Kind is PlanDimensionKind.OpeningStart or PlanDimensionKind.OpeningEnd or PlanDimensionKind.OpeningWidth)
         {
             var opening = document.Openings.FirstOrDefault(opening => opening.Id == dimension.OwnerId);
@@ -172,6 +173,46 @@ public static partial class PlanDimensions
         return dimension.Kind == PlanDimensionKind.Radius
             ? new(curve.Arc.Center, point, curve.Arc.Radius)
             : new(new Point2(2 * curve.Arc.Center.X - point.X, 2 * curve.Arc.Center.Y - point.Y), point, 2 * curve.Arc.Radius);
+    }
+
+    /// <summary>Length, in meters, of the two arms drawn from the corner of an angular dimension.</summary>
+    private const double AngleArm = 1.0;
+
+    /// <summary>
+    /// The angle, in degrees from 0 to 180, between two walls of one level. Its corner is where their lines cross, and
+    /// each arm points from the corner toward the middle of its wall, so the value is the angle the walls enclose.
+    /// Parallel walls have no corner and no angle.
+    /// </summary>
+    private static PlanMeasurement? ResolveAngle(BuildingDocument document, PlanDimension dimension)
+    {
+        if (dimension.ReferenceId is not Guid referenceId) return null;
+        var first = document.Walls.FirstOrDefault(wall => wall.Id == dimension.OwnerId);
+        var second = document.Walls.FirstOrDefault(wall => wall.Id == referenceId);
+        if (first is null || second is null || first.LevelId != dimension.LevelId || second.LevelId != dimension.LevelId ||
+            first.Length < 1e-9 || second.Length < 1e-9) return null;
+        var d1x = (first.End.X - first.Start.X) / first.Length;
+        var d1y = (first.End.Y - first.Start.Y) / first.Length;
+        var d2x = (second.End.X - second.Start.X) / second.Length;
+        var d2y = (second.End.Y - second.Start.Y) / second.Length;
+        var cross = d1x * d2y - d1y * d2x;
+        if (Math.Abs(cross) < 1e-9) return null;
+        var offsetX = second.Start.X - first.Start.X;
+        var offsetY = second.Start.Y - first.Start.Y;
+        var along = (offsetX * d2y - offsetY * d2x) / cross;
+        var corner = new Point2(first.Start.X + d1x * along, first.Start.Y + d1y * along);
+        if (!double.IsFinite(corner.X) || !double.IsFinite(corner.Y)) return null;
+
+        (double X, double Y) Arm(Wall wall, double dx, double dy)
+        {
+            var toMiddleX = (wall.Start.X + wall.End.X) / 2 - corner.X;
+            var toMiddleY = (wall.Start.Y + wall.End.Y) / 2 - corner.Y;
+            return toMiddleX * dx + toMiddleY * dy >= 0 ? (dx, dy) : (-dx, -dy);
+        }
+        var arm1 = Arm(first, d1x, d1y);
+        var arm2 = Arm(second, d2x, d2y);
+        var degrees = Math.Acos(Math.Clamp(arm1.X * arm2.X + arm1.Y * arm2.Y, -1, 1)) * 180 / Math.PI;
+        return new(new Point2(corner.X + arm1.X * AngleArm, corner.Y + arm1.Y * AngleArm),
+            new Point2(corner.X + arm2.X * AngleArm, corner.Y + arm2.Y * AngleArm), degrees, IsAngle: true);
     }
 
     /// <summary>Rejects invalid annotation identities, references and unsupported measurement kinds.</summary>

@@ -25,7 +25,7 @@ public static partial class PdfPlanExporter
                     new(point.X + 0.07, point.Y + 0.07)], 0.25, Black));
             items.Add(new SheetText(new((measurement.From.X + measurement.To.X) / 2,
                 (measurement.From.Y + measurement.To.Y) / 2 + 0.08),
-                measurement.Value.ToString("0.00", CultureInfo.CurrentCulture), 2.5, Black));
+                measurement.Value.ToString(measurement.IsAngle ? "0.0" : "0.00", CultureInfo.CurrentCulture) + (measurement.IsAngle ? "°" : ""), 2.5, Black));
         }
         foreach (var element in document.StructuralElements.Where(element => element.LevelId == levelId))
         {

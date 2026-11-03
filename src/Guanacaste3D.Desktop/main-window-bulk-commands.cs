@@ -19,6 +19,7 @@ public partial class MainWindow
         {
             case "Scale": ScaleSelectedWall(); return true;
             case "LinearDimension": BeginLinearDimension(); return true;
+            case "AngularDimension": BeginAngularDimension(); return true;
             case "RadialDimension": BeginCurveDimension(PlanDimensionKind.Radius); return true;
             case "DiameterDimension": BeginCurveDimension(PlanDimensionKind.Diameter); return true;
             case "ArcLengthDimension": BeginCurveDimension(PlanDimensionKind.ArcLength); return true;
@@ -72,6 +73,24 @@ public partial class MainWindow
             first = null;
             return RunWallEdit(() => _session.AddDimensionBetween(owner, wall), "Status.DimensionAdded");
         }, "Status.PickDimensionFirst");
+    }
+
+    /// <summary>Two wall clicks make the dimension of the angle between those walls.</summary>
+    private void BeginAngularDimension()
+    {
+        Guid? first = null;
+        BeginWallPick(wall =>
+        {
+            if (first is null)
+            {
+                first = wall;
+                StatusText.Text = GetText("Status.PickAngleSecond");
+                return false;
+            }
+            var owner = first.Value;
+            first = null;
+            return RunWallEdit(() => _session.AddAngularDimension(owner, wall), "Status.DimensionAdded");
+        }, "Status.PickAngleFirst");
     }
 
     /// <summary>One click on a curved wall dimensions its radius, its diameter or its length along the arc.</summary>

@@ -127,9 +127,24 @@ internal static partial class InteractionChecks
             Check(added.Length == 3 && added.Select(dimension => dimension.Kind).Distinct().Count() == 3 &&
                   added.All(dimension => PlanDimensions.Resolve(session.Document, dimension) is { Value: > 0 }),
                 "The radius, the diameter and the arc length of the curved wall are added and read their values");
+            // The angle between two walls takes two clicks, and the first wall alone changes nothing.
+            var angleLevel = session.Document.Levels[0].Id;
+            var angleA = session.AddWall(angleLevel, new Point2(560, 560), new Point2(564, 560));
+            var angleB = session.AddWall(angleLevel, new Point2(560, 560), new Point2(560, 564));
+            var dimensionsBeforeAngle = session.Document.Dimensions.Count;
+            Invoke("ExecuteApplicationCommand", "AngularDimension");
+            Check(Field<Func<Guid, bool>>("_pickWallAction")(angleA) == false && session.Document.Dimensions.Count == dimensionsBeforeAngle,
+                "The first click of an angular dimension only asks for the second wall");
+            Field<Func<Guid, bool>>("_pickWallAction")(angleB);
+            Check(session.Document.Dimensions.Count == dimensionsBeforeAngle + 1 &&
+                  PlanDimensions.Resolve(session.Document, session.Document.Dimensions[^1]) is { IsAngle: true, Value: > 89.9 and < 90.1 },
+                "The second click adds a 90° angular dimension between the two walls");
+            Invoke("RenderPlan");
+            Pump();
+
             Invoke("ExecuteApplicationCommand", "RadialDimension");
             Field<Func<Guid, bool>>("_pickWallAction")(session.Document.Walls[0].Id);
-            Check(session.Document.Dimensions.Count == dimensionsBefore + 3, "A straight wall gets no radius and the status line says why");
+            Check(session.Document.Dimensions.Count == dimensionsBefore + 4, "A straight wall gets no radius and the status line says why");
             SetField("_pickWallAction", null);
             Invoke("RenderPlan");
             Pump();
@@ -291,10 +306,12 @@ internal static partial class InteractionChecks
 
             RandomRibbonOnHouse(session);
 
-            // Undoing everything the window did returns the house to what was opened, whatever the commands were.
+            // Undoing everything the window did returns the house to what was opened, whatever the commands were,
+            // as long as the bounded history (40 steps) never dropped the oldest ones.
+            var historyTrimmed = session.UndoNames.Count >= 40;
             var guard = 0;
             while (session.CanUndo && guard++ < 10000) session.Undo();
-            Check(ProjectFile.SerializeDocument(session.Document) == initial,
+            Check(historyTrimmed || ProjectFile.SerializeDocument(session.Document) == initial,
                 "Undoing every command of the session brings the cobogó house back exactly as it opened");
         }
         finally

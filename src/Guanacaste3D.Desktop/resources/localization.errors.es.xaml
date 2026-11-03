@@ -13,6 +13,8 @@
   <sys:String x:Key="Error.The wall is straight, so it has no radius.">El muro es recto, por lo que no tiene radio.</sys:String>
   <sys:String x:Key="Error.The wall no longer follows an arc.">El muro ya no sigue un arco.</sys:String>
   <sys:String x:Key="Error.This measurement of a curved wall cannot be typed in; draw the wall again.">Este valor de un muro curvo no se puede escribir; dibuje el muro de nuevo.</sys:String>
+  <sys:String x:Key="Error.An angle cannot be typed in; turn one of the walls instead.">Un ángulo no se puede escribir; gire uno de los muros.</sys:String>
+  <sys:String x:Key="Error.The walls are parallel, so they form no angle.">Los muros son paralelos, por lo que no forman ángulo.</sys:String>
   <sys:String x:Key="Error.The render scene does not exist.">La escena seleccionada ya no existe.</sys:String>
   <sys:String x:Key="Error.The render scene preview is too large.">La miniatura de la foto es demasiado grande.</sys:String>
   <sys:String x:Key="Error.The render scene collection is invalid.">La colección de escenas del proyecto no es válida.</sys:String>

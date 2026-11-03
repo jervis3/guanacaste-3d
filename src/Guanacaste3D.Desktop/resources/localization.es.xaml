@@ -273,6 +273,8 @@
   <sys:String x:Key="Status.SectionBoxOff">Recuadro de sección desactivado: se ve todo el edificio.</sys:String>
   <sys:String x:Key="Status.PickDimensionFirst">Cota lineal: haga clic en el primer muro.</sys:String>
   <sys:String x:Key="Status.PickDimensionSecond">Ahora haga clic en el segundo muro; se medirá la distancia libre entre ambos.</sys:String>
+  <sys:String x:Key="Status.PickAngleFirst">Haga clic en el primer muro del ángulo.</sys:String>
+  <sys:String x:Key="Status.PickAngleSecond">Haga clic en el segundo muro del ángulo.</sys:String>
   <sys:String x:Key="Status.PickCurvedWall">Haga clic en un muro curvo para acotarlo.</sys:String>
   <sys:String x:Key="Status.DimensionAdded">Cota creada: se actualiza sola si algún muro se mueve.</sys:String>
   <sys:String x:Key="Status.Projection3DOrthographic">Vista 3D ortogonal: las líneas paralelas se mantienen paralelas, sin fuga de perspectiva.</sys:String>
@@ -609,6 +611,7 @@
   <sys:String x:Key="Status.OpeningPlacement">Mueve el cursor sobre un muro y haz clic para colocar. Esc cancela.</sys:String>
   <sys:String x:Key="Status.OpeningPlacementBlocked">La abertura no cabe aquí. Busca un muro libre y suficientemente grande.</sys:String>
   <sys:String x:Key="Dimension.Meters">{0:0.00} m</sys:String>
+  <sys:String x:Key="Dimension.Degrees">{0:0.0}°</sys:String>
   <sys:String x:Key="Dimension.Edit">Editar cota</sys:String>
   <sys:String x:Key="Dimension.EnterMeters">Nueva distancia en metros:</sys:String>
   <sys:String x:Key="Dimension.Invalid">Introduce una distancia positiva y finita en metros.</sys:String>
