@@ -110,7 +110,10 @@ public static class IfcExporter
             var below = writer.Add($"IFCCARTESIANPOINT((0.,0.,{Real(floor.ElevationOffset - floor.Thickness)}))");
             var axes = writer.Add($"IFCAXIS2PLACEMENT3D({Ref(below)},$,$)");
             var placement = writer.Add($"IFCLOCALPLACEMENT({Ref(storey.Placement)},{Ref(axes)})");
-            var shape = Extrusion(writer, body, zAxis, Polyline(writer, floor.Boundary), floor.Thickness);
+            // IFC swept profiles require a consistently counter-clockwise outer ring.
+            // User-drawn slabs may be clockwise; never invert their solid when exporting.
+            var shape = Extrusion(writer, body, zAxis,
+                Polyline(writer, OrientRing(floor.Boundary, counterClockwise: true)), floor.Thickness);
             // IFC4 distinguishes floor and roof slabs. Other Guanacaste floor kinds do not
             // have a matching IfcSlab predefined type; do not mislabel them as floors.
             // Pitched roofs and surveyed terrain still need dedicated geometry exporters.
