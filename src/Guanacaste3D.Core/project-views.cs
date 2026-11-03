@@ -105,6 +105,15 @@ public sealed record ProjectView(
 
     /// <summary>Rules that hide the walls they match in this view.</summary>
     public List<ViewFilter> Filters { get; init; } = [];
+
+    /// <summary>The phase this view is drawn at; null draws the latest phase of the project.</summary>
+    public Guid? PhaseId { get; init; }
+
+    /// <summary>Which elements of the view's phase it shows: all, only new, only existing or only demolished.</summary>
+    public PhaseFilter PhaseFilter { get; init; }
+
+    /// <summary>The design options this view shows instead of the primary option of their sets.</summary>
+    public List<OptionChoice> OptionChoices { get; init; } = [];
 }
 
 /// <summary>Creates the standard coordinated views included in every project.</summary>

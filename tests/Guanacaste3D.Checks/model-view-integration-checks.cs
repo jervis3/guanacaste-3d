@@ -20,6 +20,7 @@ internal static class ModelViewIntegrationChecks
         ArcWallChecks.Run(check);
         DetailDraftingChecks.Run(check);
         ViewFilterChecks.Run(check);
+        ProjectStagesChecks.Run(check);
         PlanDimensionChecks.Run(check);
         DoorPlanSymbolChecks.Run(check);
         StructuralChecks.Run(check);

@@ -88,6 +88,12 @@ public sealed class BuildingDocument
     public List<FamilyDocument> SheetFamilies { get; set; } = [];
     public List<ProjectView> Views { get; set; } = [];
     public List<ViewTemplate> ViewTemplates { get; set; } = [];
+    /// <summary>The stages of the building's life in order; empty until the project uses phases.</summary>
+    public List<ProjectPhase> Phases { get; set; } = [];
+    public List<PhaseAssignment> PhaseAssignments { get; set; } = [];
+    /// <summary>Groups of alternatives for a part of the building; empty until the project uses design options.</summary>
+    public List<DesignOptionSet> OptionSets { get; set; } = [];
+    public List<OptionAssignment> OptionAssignments { get; set; } = [];
     public List<ParameterDefinition> ParameterDefinitions { get; set; } = [];
     public List<ParameterValue> ParameterValues { get; set; } = [];
     public List<ScheduleDefinition> Schedules { get; set; } = [];
@@ -155,6 +161,10 @@ public sealed class BuildingDocument
         SheetFamilies = SheetFamilies.Select(family => family.Clone()).ToList(),
         Views = [.. Views],
         ViewTemplates = [.. ViewTemplates],
+        Phases = [.. Phases],
+        PhaseAssignments = [.. PhaseAssignments],
+        OptionSets = OptionSets.Select(set => set with { Options = [.. set.Options] }).ToList(),
+        OptionAssignments = [.. OptionAssignments],
         ParameterDefinitions = ParameterDefinitions
             .Select(definition => definition with { Categories = [.. definition.Categories] }).ToList(),
         ParameterValues = [.. ParameterValues],
@@ -179,6 +189,7 @@ public sealed class BuildingDocument
     {
         if (SchemaVersion != CurrentSchemaVersion) throw new InvalidDataException("Unsupported project schema version.");
         foreach (var view in Views) view.Graphics?.Validate();
+        ProjectStages.Validate(this);
         if (Views.Any(view => view.ModelCrop is { } crop && (!double.IsFinite(crop.MinX + crop.MinY + crop.MaxX + crop.MaxY) ||
                 crop.MaxX - crop.MinX < 0.5 || crop.MaxY - crop.MinY < 0.5 ||
                 view.Kind is ProjectViewKind.Schedule)))

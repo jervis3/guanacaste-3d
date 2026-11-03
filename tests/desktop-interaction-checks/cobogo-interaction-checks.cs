@@ -336,6 +336,58 @@ internal static partial class InteractionChecks
                 Check(session.Document.Views.First(view => view.Id == activeView.Id).Filters.Count == 0 &&
                       ((BuildingDocument)Invoke("ModelDisplayDocument", false)!).Walls.Count == wallsInView,
                     "Typing «quitar» removes the filters and the view shows its walls again");
+                // Phases: the window opens with the two default phases and works on the selected wall and the active view.
+                T Named<T>(string windowField, string name) where T : FrameworkElement =>
+                    (T)System.Windows.LogicalTreeHelper.FindLogicalNode(Field<Window>(windowField), name)!;
+                void Click(string windowField, string name) =>
+                    Named<System.Windows.Controls.Button>(windowField, name).RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent));
+
+                tabs.SelectedIndex = 1;
+                Pump();
+                var totalWalls = ((BuildingDocument)Invoke("ModelDisplayDocument", false)!).Walls.Count;
+                Invoke("SelectElement", longest.Id);
+                Invoke("ExecuteApplicationCommand", "Phases");
+                Pump();
+                var phaseIds = session.Document.Phases.Select(phase => phase.Id).ToArray();
+                Check(phaseIds.Length == 2 && Field<Window>("_phasesWindow").IsVisible, "The Phases command opens its window with an existing and a new phase");
+                Named<System.Windows.Controls.ComboBox>("_phasesWindow", "PhaseCreatedBox").SelectedIndex = 2;
+                Click("_phasesWindow", "PhaseAssign");
+                Check(session.Document.PhaseAssignments.Any(item => item.ElementId == longest.Id && item.CreatedPhaseId == phaseIds[1]),
+                    "Assigning from the window creates the selected wall in the new phase");
+                Named<System.Windows.Controls.ComboBox>("_phasesWindow", "PhaseViewBox").SelectedIndex = 2;
+                Named<System.Windows.Controls.ComboBox>("_phasesWindow", "PhaseFilterBox").SelectedIndex = (int)PhaseFilter.ShowExisting;
+                Click("_phasesWindow", "PhaseViewApply");
+                Check(((BuildingDocument)Invoke("ModelDisplayDocument", false)!).Walls.Count == totalWalls - 1,
+                    "Showing only the existing in the new phase hides the one wall that is new");
+                Named<System.Windows.Controls.ComboBox>("_phasesWindow", "PhaseFilterBox").SelectedIndex = (int)PhaseFilter.ShowAll;
+                Click("_phasesWindow", "PhaseViewApply");
+                Answer("Demolición");
+                Click("_phasesWindow", "PhaseAdd");
+                Check(session.Document.Phases.Count == 3 && session.Document.Phases[2].Name == "Demolición", "A phase added from the window joins the end of the list");
+                Click("_phasesWindow", "PhaseClose");
+                Pump();
+                Check(!Field<Window?>("_phasesWindow")?.IsVisible ?? true, "The window closes");
+
+                // Design options: a set, an alternative, and the wall moved into it.
+                Invoke("ExecuteApplicationCommand", "DesignOptions");
+                Pump();
+                Answer("Fachada", "Cobogó");
+                Click("_optionsWindow", "OptionSetAdd");
+                Answer("Muro liso");
+                Click("_optionsWindow", "OptionAdd");
+                Check(session.Document.OptionSets.Count == 1 && session.Document.OptionSets[0].Options.Select(option => option.Name).SequenceEqual(["Cobogó", "Muro liso"]),
+                    "The window makes the Fachada set with its primary option and an alternative");
+                Named<System.Windows.Controls.ListBox>("_optionsWindow", "OptionList").SelectedIndex = 1;
+                Click("_optionsWindow", "OptionAssign");
+                Check(((BuildingDocument)Invoke("ModelDisplayDocument", false)!).Walls.Count == totalWalls - 1,
+                    "A wall put in the alternative disappears from a view that shows the primary option");
+                Named<System.Windows.Controls.ComboBox>("_optionsWindow", "OptionViewBox").SelectedIndex = 1;
+                Click("_optionsWindow", "OptionViewApply");
+                Check(((BuildingDocument)Invoke("ModelDisplayDocument", false)!).Walls.Count == totalWalls,
+                    "Choosing the alternative for the view brings it back");
+                Click("_optionsWindow", "OptionUnassign");
+                Click("_optionsWindow", "OptionClose");
+                Pump();
                 tabs.SelectedIndex = 0;
                 Pump();
             }

@@ -24,11 +24,19 @@ public static class ViewVisibility
     {
         var copy = document.Clone();
         if (view is null || (view.HiddenElementIds.Count == 0 && view.IsolatedElementIds.Count == 0 &&
-                             view.HiddenCategories.Count == 0 && view.Filters.Count == 0)) return copy;
+                             view.HiddenCategories.Count == 0 && view.Filters.Count == 0 &&
+                             document.OptionAssignments.Count == 0 && !ProjectStages.PhasingActive(document, view))) return copy;
+
+        // Phases and design options hide elements of any kind, so they are worked out once, for every element at once.
+        var staged = document.Walls.Select(item => item.Id).Concat(document.Openings.Select(item => item.Id))
+            .Concat(document.Floors.Select(item => item.Id)).Concat(document.Columns.Select(item => item.Id))
+            .Concat(document.StructuralElements.Select(item => item.Id)).ToArray();
+        var stageHidden = ProjectStages.HiddenByPhase(document, view, staged);
+        stageHidden.UnionWith(ProjectStages.HiddenByOption(document, view));
 
         bool CategoryShown(ViewCategory category) => !view.HiddenCategories.Contains(category);
 
-        bool Shown(Guid id) => !view.HiddenElementIds.Contains(id) &&
+        bool Shown(Guid id) => !view.HiddenElementIds.Contains(id) && !stageHidden.Contains(id) &&
                                (view.IsolatedElementIds.Count == 0 || view.IsolatedElementIds.Contains(id));
 
         copy.Walls.RemoveAll(wall => !Shown(wall.Id) || !CategoryShown(ViewCategory.Walls) ||
