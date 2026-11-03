@@ -9,6 +9,7 @@ functional parity with professional BIM workflows. It complements the strategic
 | [capability-catalog.md](capability-catalog.md) | The 20 capability areas, API anchors, current status, and next step |
 | [evidence-log.md](evidence-log.md) | Analyzed artifacts with hashes and versions; every evidence entry and its class |
 | [rea-runs.md](rea-runs.md) | REA commands, versions, coverage, and limitations |
+| [revit-gap-analysis-2026-11-03.md](revit-gap-analysis-2026-11-03.md) | Study of what Revit does that we lack or do differently, with a prioritized backlog; reproducible with `tools/parity-audit/` |
 | [cards/](cards/) | One capability card per implemented capability |
 
 ## Working rules

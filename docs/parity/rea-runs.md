@@ -39,6 +39,22 @@ re-verified.
 | Most of RevitAPI.dll's 20,378 metadata types are C++ implementation details rather than the 2,866 documented types | Inferred | Ratio between R1 and E1; R8 shows the same pattern in a smaller assembly. Verifiable with a member census once REA's budget allows it |
 | Guanacaste 0.6 changed one public signature compared to 0.3 (binary break for compiled add-ins, source compatible) | Observed | R10 |
 
+## Update 2026-11-03: REA 6.8.0 and craft-anything 0.4.0
+
+- The REA source checkout was fast-forwarded to `8c857ce` (6.8.0). Its changelog does not mention the
+  64 MiB representation budget behind R3–R5, so those runs are still unavailable in REA. The five
+  `third_party/*` submodules stay uninitialized: they serve firmware, Android and JavaScript analysis,
+  not .NET.
+- **R11** `craft-anything-cli managed-members-list` on `RevitAPI.dll` filtered to 25 types (Wall, WallUtils,
+  WallType, CompoundStructure, JoinGeometryUtils, Level, Floor, roofs, Room, StairsRun, StairsLanding,
+  CurtainGrid, ViewPlan, PlanViewRange, Phase, DesignOption, ParameterFilterElement, Workset,
+  RevitLinkInstance, Toposolid and others): coverage `complete` in 2.7 s. Evidence id
+  `ev_81304f17a19cbf4bca5fd277fb71dfbba1fe047d583c12c8293d7dcddb9f9f36`. Only names and signatures were
+  used; no IL listing.
+- **R12** the same tool on `Autodesk.RevitMcpServer.Tools.dll` (Autodesk's read-tools preview): 175 types,
+  955 methods, complete.
+- Results are used in [revit-gap-analysis-2026-11-03.md](revit-gap-analysis-2026-11-03.md).
+
 ## Consequences for Guanacaste 3D
 
 1. Requirements come from the documented API (`RevitAPI.xml`), public
