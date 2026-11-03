@@ -74,6 +74,9 @@
             <Button x:Name="ExportWallLayerQuantitiesButton" Content="{DynamicResource Schedules.ExportWallLayerQuantities}"
                     Click="ExportWallLayerQuantities_Click" Margin="0,6,0,0"
                     ToolTip="{DynamicResource Schedules.ExportWallLayerQuantitiesHint}"/>
+            <Button x:Name="ExportWallLayerSummaryButton" Content="{DynamicResource Schedules.ExportWallLayerSummary}"
+                    Click="ExportWallLayerSummary_Click" Margin="0,6,0,0"
+                    ToolTip="{DynamicResource Schedules.ExportWallLayerSummaryHint}"/>
           </StackPanel>
         </ScrollViewer>
       </Border>
