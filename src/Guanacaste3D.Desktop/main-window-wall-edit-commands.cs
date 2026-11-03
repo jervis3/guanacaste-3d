@@ -24,6 +24,9 @@ public partial class MainWindow
             case "TrimExtend": BeginTrimPick(); return true;
             case "Align": BeginAlignPick(); return true;
             case "MatchProperties": BeginMatchPick(); return true;
+            case "FlipWall": FlipSelectedWall(); return true;
+            case "DetachTopBase":
+            case "DetachAll": DetachSelectedWallTop(); return true;
             default: return false;
         }
     }
@@ -77,6 +80,19 @@ public partial class MainWindow
             return;
         }
         RunWallEdit(() => _session.ArrayWallsLinear([id], (int)count, deltaX, deltaY), "Status.WallArrayed");
+    }
+
+    private void FlipSelectedWall()
+    {
+        if (_selectedWallId is not Guid id) { StatusText.Text = GetText("Status.SelectWallFirst"); return; }
+        RunWallEdit(() => _session.FlipWalls([id]), "Status.SelectedWallFlipped");
+    }
+
+    /// <summary>Releases the top constraint of the selected wall; it keeps its current height.</summary>
+    private void DetachSelectedWallTop()
+    {
+        if (_selectedWallId is not Guid id) { StatusText.Text = GetText("Status.SelectWallFirst"); return; }
+        RunWallEdit(() => _session.SetWallTopConstraint(id, null), "Status.WallTopDetached");
     }
 
     private void TogglePinSelectedWall()

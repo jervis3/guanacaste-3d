@@ -229,6 +229,42 @@ public sealed partial class DocumentSession
         });
     }
 
+    /// <summary>
+    /// Flips walls so their left and right faces trade places, without moving anything in the model. The ends swap,
+    /// so the sides each finish and each placement face refer to are the other way round; doors and windows keep
+    /// their place, their hinge and the side they swing to.
+    /// </summary>
+    public void FlipWalls(IReadOnlyCollection<Guid> wallIds) =>
+        Commit("Transaction.FlipWalls", document =>
+        {
+            var ids = RequireWalls(document, wallIds);
+            foreach (var id in ids) EnsureNotPinned(document, id);
+            foreach (var id in ids)
+            {
+                var index = document.Walls.FindIndex(wall => wall.Id == id);
+                var wall = document.Walls[index];
+                document.Walls[index] = wall with
+                {
+                    Start = wall.End, End = wall.Start, StartJoin = wall.EndJoin, EndJoin = wall.StartJoin,
+                    LocationReference = wall.LocationReference switch
+                    {
+                        WallLocationReference.ExteriorFace => WallLocationReference.InteriorFace,
+                        WallLocationReference.InteriorFace => WallLocationReference.ExteriorFace,
+                        var other => other
+                    }
+                };
+                for (var opening = 0; opening < document.Openings.Count; opening++)
+                {
+                    if (document.Openings[opening].WallId != id) continue;
+                    var hosted = document.Openings[opening];
+                    document.Openings[opening] = hosted with
+                    {
+                        Offset = wall.Length - hosted.Offset, FlipHand = !hosted.FlipHand, FlipFacing = !hosted.FlipFacing
+                    };
+                }
+            }
+        });
+
     /// <summary>Pins or unpins walls. A pinned wall cannot be moved, rotated, edited by the commands here or deleted.</summary>
     public void SetWallsPinned(IReadOnlyCollection<Guid> wallIds, bool pinned) =>
         Commit(pinned ? "Transaction.PinWalls" : "Transaction.UnpinWalls", document =>

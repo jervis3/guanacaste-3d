@@ -265,6 +265,8 @@
   <sys:String x:Key="Status.WallDimensionsApplied">Dimensiones del muro actualizadas.</sys:String>
   <sys:String x:Key="Status.SelectWallToJoin">Seleccione un muro para cambiar su unión.</sys:String>
   <sys:String x:Key="Status.WallJoinChanged">Unión del muro actualizada.</sys:String>
+  <sys:String x:Key="Status.SelectedWallFlipped">Muro volteado: sus caras interior y exterior se intercambiaron.</sys:String>
+  <sys:String x:Key="Status.WallTopDetached">Muro liberado de su nivel superior; conserva su altura actual.</sys:String>
   <sys:String x:Key="Status.WallCopied">Muro copiado. Use Pegar para colocar una copia.</sys:String>
   <sys:String x:Key="Status.WallCut">Muro cortado. Use Pegar para colocarlo de nuevo.</sys:String>
   <sys:String x:Key="Status.WallPasted">Muro pegado.</sys:String>

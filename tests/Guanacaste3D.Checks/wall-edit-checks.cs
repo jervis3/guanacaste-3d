@@ -15,6 +15,7 @@ static class WallEditChecks
         Pin(check);
         PinnedNeighbours(check);
         Match(check);
+        Flip(check);
     }
 
     private static (DocumentSession Session, Guid Level) NewSession()
@@ -233,6 +234,34 @@ static class WallEditChecks
         check(Near(Wall(teeSession, stem).Start, new Point2(2, 0)) &&
               Near(Wall(teeSession, stem).End, new Point2(2, 3)),
             "Moving a tee host does not drag the pinned stem");
+    }
+
+    /// <summary>Flipping swaps a wall's faces but leaves every door where it was and swinging the same way.</summary>
+    private static void Flip(Action<bool, string> check)
+    {
+        var (session, level) = NewSession();
+        var wall = session.AddWall(level, new Point2(0, 0), new Point2(4, 0), locationReference: WallLocationReference.ExteriorFace);
+        var door = session.AddOpening(wall, OpeningKind.Door, offset: 1);
+        session.SetWallJoins([wall], WallJoinSetting.Butt, WallEnd.End);
+
+        session.FlipWalls([wall]);
+        var flipped = Wall(session, wall);
+        var flippedDoor = session.Document.Openings.Single(opening => opening.Id == door);
+        check(Near(flipped.Start, new Point2(4, 0)) && Near(flipped.End, new Point2(0, 0)) &&
+              flipped.LocationReference == WallLocationReference.InteriorFace,
+            "Flipping a wall swaps its ends and its exterior and interior placement faces");
+        check(flipped.StartJoin == WallJoinSetting.Butt && flipped.EndJoin == WallJoinSetting.Miter,
+            "The join settings travel with their physical ends");
+        check(Near(flipped.Start.X - flippedDoor.Offset, 1) && flippedDoor.FlipHand && flippedDoor.FlipFacing,
+            "A door keeps its place in the model, its hinge and the side it swings to");
+        session.FlipWalls([wall]);
+        check(Near(Wall(session, wall).Start, new Point2(0, 0)) && !session.Document.Openings.Single(opening => opening.Id == door).FlipHand &&
+              Near(session.Document.Openings.Single(opening => opening.Id == door).Offset, 1),
+            "Flipping twice restores the wall and its door");
+        session.Undo();
+        check(Near(Wall(session, wall).Start, new Point2(4, 0)), "Undo takes back one flip");
+        session.SetWallsPinned([wall], true);
+        check(Throws(() => session.FlipWalls([wall])), "A pinned wall cannot be flipped");
     }
 
     /// <summary>Matching gives walls the source's type and settings but leaves their place alone.</summary>
