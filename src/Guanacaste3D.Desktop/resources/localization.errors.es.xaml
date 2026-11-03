@@ -108,6 +108,7 @@
   <sys:String x:Key="Error.The wall collection contains duplicate identifiers.">Hay muros con identificadores duplicados.</sys:String>
   <sys:String x:Key="Error.The wall does not exist.">El muro no existe.</sys:String>
   <sys:String x:Key="Error.The wall join setting is invalid.">El ajuste de unión de muros no es válido.</sys:String>
+  <sys:String x:Key="Error.The view category is invalid.">La categoría de la vista no es válida.</sys:String>
   <sys:String x:Key="Error.The mirror axis is too short.">El eje de simetría es demasiado corto.</sys:String>
   <sys:String x:Key="Error.The offset distance is invalid.">La distancia de desfase no es válida.</sys:String>
   <sys:String x:Key="Error.The array count is invalid.">La cantidad de la matriz no es válida.</sys:String>

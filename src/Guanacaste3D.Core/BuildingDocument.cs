@@ -372,6 +372,7 @@ public sealed class BuildingDocument
                 string.IsNullOrWhiteSpace(view.Name) || view.Name.Length > 120 ||
                 !Enum.IsDefined(view.Kind) || !Enum.IsDefined(view.Orientation) ||
                 !Enum.IsDefined(view.SectionMode) ||
+                view.HiddenCategories is null || view.HiddenCategories.Any(category => !Enum.IsDefined(category)) ||
                 (view.Kind != ProjectViewKind.Section && view.SectionMode != SectionDisplayMode.Coordinated) ||
                 (view.Range is not null && (view.Kind != ProjectViewKind.Plan || !view.Range.IsValid)) ||
                 (view.ElevationMarker is not null &&

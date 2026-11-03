@@ -99,6 +99,9 @@ public sealed record ProjectView(
 
     /// <summary>When not empty, this view shows only these elements (and the openings in the walls shown).</summary>
     public List<Guid> IsolatedElementIds { get; init; } = [];
+
+    /// <summary>Categories this view hides altogether, including elements of those categories added later.</summary>
+    public List<ViewCategory> HiddenCategories { get; init; } = [];
 }
 
 /// <summary>Creates the standard coordinated views included in every project.</summary>

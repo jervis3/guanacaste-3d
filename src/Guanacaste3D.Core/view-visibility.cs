@@ -9,6 +9,9 @@ public sealed record ViewTemplate(Guid Id, string Name, List<Guid> HiddenElement
 {
     /// <summary>The display settings (style, detail, sun, edges) the template gives a view; null leaves a view's own settings alone.</summary>
     public ViewGraphicsSettings? Graphics { get; init; }
+
+    /// <summary>The categories the template hides.</summary>
+    public List<ViewCategory> HiddenCategories { get; init; } = [];
 }
 
 public static class ViewVisibility
@@ -20,17 +23,24 @@ public static class ViewVisibility
     public static BuildingDocument Apply(BuildingDocument document, ProjectView? view)
     {
         var copy = document.Clone();
-        if (view is null || (view.HiddenElementIds.Count == 0 && view.IsolatedElementIds.Count == 0)) return copy;
+        if (view is null || (view.HiddenElementIds.Count == 0 && view.IsolatedElementIds.Count == 0 &&
+                             view.HiddenCategories.Count == 0)) return copy;
+
+        bool CategoryShown(ViewCategory category) => !view.HiddenCategories.Contains(category);
 
         bool Shown(Guid id) => !view.HiddenElementIds.Contains(id) &&
                                (view.IsolatedElementIds.Count == 0 || view.IsolatedElementIds.Contains(id));
 
-        copy.Walls.RemoveAll(wall => !Shown(wall.Id));
+        copy.Walls.RemoveAll(wall => !Shown(wall.Id) || !CategoryShown(ViewCategory.Walls));
         // An opening belongs to its wall: it shows with the wall unless it is hidden itself.
-        copy.Openings.RemoveAll(opening => !Shown(opening.Id) || !copy.Walls.Any(wall => wall.Id == opening.WallId));
-        copy.Floors.RemoveAll(floor => !Shown(floor.Id));
-        copy.Columns.RemoveAll(column => !Shown(column.Id));
-        copy.StructuralElements.RemoveAll(element => !Shown(element.Id));
+        copy.Openings.RemoveAll(opening => !Shown(opening.Id) ||
+            !CategoryShown(opening.Kind == OpeningKind.Door ? ViewCategory.Doors : ViewCategory.Windows) ||
+            !copy.Walls.Any(wall => wall.Id == opening.WallId));
+        copy.Floors.RemoveAll(floor => !Shown(floor.Id) || !CategoryShown(ViewCategories.Of(floor.Kind)));
+        copy.Columns.RemoveAll(column => !Shown(column.Id) || !CategoryShown(ViewCategory.Columns));
+        copy.StructuralElements.RemoveAll(element => !Shown(element.Id) ||
+            (ViewCategories.Of(element.Kind) is { } category && !CategoryShown(category)));
+        if (!CategoryShown(ViewCategory.Rooms)) copy.Rooms.Clear();
         return copy;
     }
 }

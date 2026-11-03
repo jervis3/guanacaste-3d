@@ -29,7 +29,8 @@ public sealed partial class DocumentSession
         Commit("Transaction.CreateViewTemplate", document => document.ViewTemplates.Add(new ViewTemplate(
             id, trimmed, source.HiddenElementIds.ToList(), source.IsolatedElementIds.ToList())
         {
-            Graphics = source.Graphics
+            Graphics = source.Graphics,
+            HiddenCategories = source.HiddenCategories.ToList()
         }));
         return id;
     }
@@ -64,6 +65,7 @@ public sealed partial class DocumentSession
                 {
                     HiddenElementIds = template.HiddenElementIds.ToList(),
                     IsolatedElementIds = template.IsolatedElementIds.ToList(),
+                    HiddenCategories = template.HiddenCategories.ToList(),
                     Graphics = MergeGraphics(template.Graphics, document.Views[index].Graphics)
                 };
             }
