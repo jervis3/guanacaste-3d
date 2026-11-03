@@ -49,6 +49,9 @@ public static class MassPlacement
             throw new InvalidDataException("A mass placement path needs at least two valid points.");
         var length = 0.0;
         for (var i = 1; i < path.Count; i++) length += path[i - 1].DistanceTo(path[i]);
+        // Repeated sketch vertices do not define a usable path; do not silently place nothing.
+        if (length < 1e-9)
+            throw new InvalidDataException("A mass placement path needs at least two valid points.");
         if (length / options.Spacing + 1 > MaximumInstances)
             throw new InvalidDataException("The mass placement would create too many instances; increase the spacing.");
 
@@ -114,6 +117,10 @@ public static class MassPlacement
         var active = new List<Point2>();
         void Accept(Point2 point)
         {
+            // The area-based estimate above is only a heuristic, not a strict upper bound
+            // on Poisson-disk density. Enforce the actual limit before allocating another sample.
+            if (samples.Count >= MaximumInstances)
+                throw new InvalidDataException("The mass placement would create too many instances; increase the spacing.");
             grid[Key(point)] = point;
             samples.Add(point);
             active.Add(point);
