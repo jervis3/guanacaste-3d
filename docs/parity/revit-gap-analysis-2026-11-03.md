@@ -250,6 +250,35 @@ Comandos del ribbon con manejador: de 85 a 105 de 277 (`tools/parity-audit/ribbo
 La regla que decide cuánto puede deslizarse una esquina al cambiar un espesor (`AcceptsCornerSlide` en
 `wall-reference-line.cs`) tiene una versión provisional, marcada con `TODO(human)`.
 
+## 7c. Cómo se prueba (y qué encontró)
+
+Cada comando tiene sus escenarios escritos a mano, pero eso solo prueba lo que se imaginó. Se añadieron pruebas
+**aleatorias con semilla** (`tests/Guanacaste3D.Checks/randomized-wall-checks.cs`), que generan disposiciones
+(esquinas, tes, muros sueltos, ángulos cualquiera, puertas) y secuencias de órdenes con argumentos hostiles (NaN,
+infinito, 1e9, muros inexistentes) y exigen después de cada paso:
+
+1. una orden rechazada no cambia nada;
+2. una aceptada deja un proyecto válido, que guardado y reabierto es idéntico;
+3. deshacer y rehacer son exactos;
+4. la geometría es finita y se puede mallar;
+5. IFC, DXF, OBJ, GLB, PDF y los CSV de cantidades se generan, son repetibles y no contienen NaN;
+6. propiedades algebraicas: la cara de referencia no se mueve, voltear o reflejar dos veces es la identidad, dividir
+   conserva longitud y puertas.
+
+Un guardián exige que **cada** orden sea aceptada alguna vez (si no, la prueba sería vacía: así se vio que Alinear
+nunca se ejercía). Por defecto son 24 semillas; `G3D_FUZZ_SEEDS=300` ejecuta 13.500 órdenes. En la interfaz,
+`wall-edit-interaction-checks.cs` ejecuta secuencias aleatorias de comandos de cinta reales.
+
+**Hallazgo real:** un muro a un millón de metros del origen (el norte CRTM05 de Costa Rica ronda esa cifra)
+impedía mallar **todo** el modelo: la malla guarda posiciones `float`, que a 1.000.000 m solo distinguen unos 6 cm
+y colapsan contornos delgados. Ahora un casquete degenerado se omite en vez de abortar y Revisar advertencias avisa
+desde 100 km. **Pendiente de fondo:** un origen flotante en el mallador, que exige revisar todos los consumidores de
+coordenadas (cámaras guardadas, exportes, vínculos).
+
+Revisar advertencias reutiliza `ModelAudit` para superposición de muros y de habitaciones y para la holgura bajo los
+dinteles; solo conserva comprobaciones propias donde el auditor no llega (separación contra el cuerpo del muro,
+duplicados, muros cortos, huecos en el extremo, numeración, pilares apilados, lejanía del origen).
+
 ## 8. Limitaciones y honestidad del estudio
 
 - **No se ejecutó Revit** ni se hizo ningún ensayo de comportamiento; todo lo de Revit es contrato público

@@ -27,6 +27,7 @@ public partial class MainWindow
             case "MeasureAlong": BeginMeasureWall(); return true;
             case "SelectById": SelectElementByTypedId(); return true;
             case "ReviewWarnings": ShowModelWarnings(); return true;
+            case "AreaTag": ShowPlanCategoryTags(TagCategory.Area); return true;
             default: return false;
         }
     }
