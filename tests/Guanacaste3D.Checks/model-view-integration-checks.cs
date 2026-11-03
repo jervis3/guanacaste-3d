@@ -12,6 +12,7 @@ internal static class ModelViewIntegrationChecks
         WallJoinStyleChecks.Run(check);
         WallEditChecks.Run(check);
         ViewCategoryChecks.Run(check);
+        WallClipboardAndWarningChecks.Run(check);
         PlanDimensionChecks.Run(check);
         DoorPlanSymbolChecks.Run(check);
         StructuralChecks.Run(check);
