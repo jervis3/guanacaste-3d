@@ -367,6 +367,13 @@
   <sys:String x:Key="ViewCategory.Rooms">Habitaciones</sys:String>
   <sys:String x:Key="Dialog.ViewCategories">Visibilidad de categorías</sys:String>
   <sys:String x:Key="Dialog.ViewCategories.Hint">Marque lo que esta vista debe mostrar. Lo desmarcado queda oculto aquí, incluidos los elementos nuevos.</sys:String>
+  <sys:String x:Key="Prompt.Filter.Title">Filtros de la vista</sys:String>
+  <sys:String x:Key="Prompt.Filter.None">(ninguno)</sys:String>
+  <sys:String x:Key="Prompt.Filter.Label">Escriba una regla que OCULTE los muros que cumplan, por ejemplo: tipo contiene cobogó · espesor &gt; 0.25 · altura &lt; 2 · largo = 4. Escriba «quitar» para borrar todos o «quitar 2» para borrar el segundo. Filtros actuales: {0}</sys:String>
+  <sys:String x:Key="Prompt.Filter.Remove">quitar</sys:String>
+  <sys:String x:Key="Status.FilterNotFound">Ese filtro no existe en esta vista.</sys:String>
+  <sys:String x:Key="Status.FilterNotUnderstood">No entendí el filtro. Use «propiedad operador valor»: tipo, espesor, altura o largo; contiene, =, &gt; o &lt;.</sys:String>
+  <sys:String x:Key="Status.FiltersChanged">Filtros activos en esta vista: {0}.</sys:String>
   <sys:String x:Key="Status.NoViewForCategories">Abra una planta, un alzado, una sección o la vista 3D para cambiar sus categorías.</sys:String>
   <sys:String x:Key="Status.ViewCategoriesChanged">Categorías ocultas en esta vista: {0}.</sys:String>
   <sys:String x:Key="Status.SelectWallFirst">Seleccione primero un muro.</sys:String>

@@ -102,6 +102,7 @@
   <sys:String x:Key="Transaction.UpdateOpening">Modificar abertura</sys:String>
   <sys:String x:Key="Transaction.RotateWall">Rotar muro</sys:String>
   <sys:String x:Key="Transaction.SetWallJoin">Cambiar unión de muros</sys:String>
+  <sys:String x:Key="Transaction.SetViewFilters">Cambiar filtros de la vista</sys:String>
   <sys:String x:Key="Transaction.SetViewCategories">Cambiar categorías visibles de la vista</sys:String>
   <sys:String x:Key="Transaction.PasteWalls">Pegar muros</sys:String>
   <sys:String x:Key="Transaction.AddArcWall">Crear muro curvo</sys:String>

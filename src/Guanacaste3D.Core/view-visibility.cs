@@ -24,14 +24,15 @@ public static class ViewVisibility
     {
         var copy = document.Clone();
         if (view is null || (view.HiddenElementIds.Count == 0 && view.IsolatedElementIds.Count == 0 &&
-                             view.HiddenCategories.Count == 0)) return copy;
+                             view.HiddenCategories.Count == 0 && view.Filters.Count == 0)) return copy;
 
         bool CategoryShown(ViewCategory category) => !view.HiddenCategories.Contains(category);
 
         bool Shown(Guid id) => !view.HiddenElementIds.Contains(id) &&
                                (view.IsolatedElementIds.Count == 0 || view.IsolatedElementIds.Contains(id));
 
-        copy.Walls.RemoveAll(wall => !Shown(wall.Id) || !CategoryShown(ViewCategory.Walls));
+        copy.Walls.RemoveAll(wall => !Shown(wall.Id) || !CategoryShown(ViewCategory.Walls) ||
+                                     view.Filters.Any(filter => filter.Matches(document, wall)));
         // An opening belongs to its wall: it shows with the wall unless it is hidden itself.
         copy.Openings.RemoveAll(opening => !Shown(opening.Id) ||
             !CategoryShown(opening.Kind == OpeningKind.Door ? ViewCategory.Doors : ViewCategory.Windows) ||

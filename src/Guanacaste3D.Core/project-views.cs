@@ -102,6 +102,9 @@ public sealed record ProjectView(
 
     /// <summary>Categories this view hides altogether, including elements of those categories added later.</summary>
     public List<ViewCategory> HiddenCategories { get; init; } = [];
+
+    /// <summary>Rules that hide the walls they match in this view.</summary>
+    public List<ViewFilter> Filters { get; init; } = [];
 }
 
 /// <summary>Creates the standard coordinated views included in every project.</summary>

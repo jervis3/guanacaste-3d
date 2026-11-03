@@ -316,6 +316,28 @@ internal static partial class InteractionChecks
                 Invoke("ExecuteApplicationCommand", "Scale");
                 Invoke("ExecuteApplicationCommand", "AttachTop");
                 Check(session.Document.Walls.Any(), "Scale and Attach Top run on a real wall without failing");
+
+                // View filters: a typed rule hides the walls it matches in the active view only.
+                tabs.SelectedIndex = 1;
+                Pump();
+                var activeView = (ProjectView)Invoke("ActiveProjectView")!;
+                var wallsInView = ((BuildingDocument)Invoke("ModelDisplayDocument", false)!).Walls.Count;
+                Answer("espesor > 0.01");
+                Invoke("ExecuteApplicationCommand", "Filters");
+                var filteredView = session.Document.Views.First(view => view.Id == activeView.Id);
+                Check(filteredView.Filters.Count == 1 && ((BuildingDocument)Invoke("ModelDisplayDocument", false)!).Walls.Count == 0 &&
+                      session.Document.Walls.Count > 0,
+                    $"The Filters command hides all {wallsInView} walls of the active view with a rule on thickness, and the house keeps them");
+                Answer("blah blah blah");
+                Invoke("ExecuteApplicationCommand", "Filters");
+                Check(session.Document.Views.First(view => view.Id == activeView.Id).Filters.Count == 1, "Text that is not a rule changes nothing");
+                Answer("quitar");
+                Invoke("ExecuteApplicationCommand", "Filters");
+                Check(session.Document.Views.First(view => view.Id == activeView.Id).Filters.Count == 0 &&
+                      ((BuildingDocument)Invoke("ModelDisplayDocument", false)!).Walls.Count == wallsInView,
+                    "Typing «quitar» removes the filters and the view shows its walls again");
+                tabs.SelectedIndex = 0;
+                Pump();
             }
             finally
             {

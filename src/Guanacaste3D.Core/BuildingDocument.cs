@@ -380,6 +380,8 @@ public sealed class BuildingDocument
                 !Enum.IsDefined(view.Kind) || !Enum.IsDefined(view.Orientation) ||
                 !Enum.IsDefined(view.SectionMode) ||
                 view.HiddenCategories is null || view.HiddenCategories.Any(category => !Enum.IsDefined(category)) ||
+                view.Filters is null || view.Filters.Count > DocumentSession.MaximumViewFilters ||
+                view.Filters.Any(filter => filter is null || !filter.IsValid) ||
                 (view.Kind != ProjectViewKind.Section && view.SectionMode != SectionDisplayMode.Coordinated) ||
                 (view.Range is not null && (view.Kind != ProjectViewKind.Plan || !view.Range.IsValid)) ||
                 (view.ElevationMarker is not null &&

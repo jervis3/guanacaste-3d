@@ -1,3 +1,4 @@
+using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using Guanacaste3D.Core;
@@ -12,7 +13,58 @@ public partial class MainWindow
         switch (commandId)
         {
             case "VisibilityGraphics": ShowViewCategoryDialog(); return true;
+            case "Filters": EditViewFilters(); return true;
             default: return false;
+        }
+    }
+
+    /// <summary>
+    /// Asks for one filter rule for the active view ("tipo contiene cobogó", "espesor &gt; 0.25"), or for removing the
+    /// ones it has ("quitar" removes all, "quitar 2" the second). The walls a rule matches are hidden in that view only.
+    /// </summary>
+    private void EditViewFilters()
+    {
+        if (ActiveProjectView() is not { } view)
+        {
+            StatusText.Text = GetText("Status.NoViewForCategories");
+            return;
+        }
+        var current = view.Filters.Count == 0
+            ? GetText("Prompt.Filter.None")
+            : string.Join(Environment.NewLine, view.Filters.Select((filter, index) => $"{index + 1}. {filter.Name}"));
+        var answer = TextPrompt.Ask(this, GetText("Prompt.Filter.Title") + " · " + view.Name,
+            FormatText("Prompt.Filter.Label", current), GetText("Prompt.Accept"), GetText("Prompt.Cancel"));
+        if (string.IsNullOrWhiteSpace(answer)) return;
+        try
+        {
+            var remove = GetText("Prompt.Filter.Remove");
+            var text = answer.Trim();
+            List<ViewFilter> filters;
+            if (text.StartsWith(remove, StringComparison.CurrentCultureIgnoreCase))
+            {
+                var which = text[remove.Length..].Trim();
+                if (which.Length == 0) filters = [];
+                else if (int.TryParse(which, out var number) && number >= 1 && number <= view.Filters.Count)
+                    filters = view.Filters.Where((_, index) => index != number - 1).ToList();
+                else
+                {
+                    StatusText.Text = GetText("Status.FilterNotFound");
+                    return;
+                }
+            }
+            else if (ViewFilterParser.TryParse(text) is { } filter) filters = [.. view.Filters, filter];
+            else
+            {
+                StatusText.Text = GetText("Status.FilterNotUnderstood");
+                return;
+            }
+            _session.SetViewFilters(view.Id, filters);
+            ApplyViewVisibility();
+            StatusText.Text = FormatText("Status.FiltersChanged", filters.Count);
+        }
+        catch (InvalidDataException exception)
+        {
+            StatusText.Text = LocalizedErrors.Translate(exception.Message);
         }
     }
 
