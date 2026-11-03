@@ -121,6 +121,7 @@ internal static partial class InteractionChecks
             TileViewChecks();
             CheckAssociatedDocumentStartup();
             MassPlacementChecks();
+            ScheduleExportChecks();
             StartupSampleChecks();
             Console.WriteLine("Desktop interaction checks passed.");
             return 0;
@@ -140,6 +141,31 @@ internal static partial class InteractionChecks
         }
     }
 
+
+    /// <summary>Wall-layer and roof exports must remain accessible without a saved schedule.</summary>
+    private static void ScheduleExportChecks()
+    {
+        var emptySession = new DocumentSession(BuildingDocument.Create());
+        var window = new SchedulesWindow(emptySession) { Owner = _window };
+        try
+        {
+            window.Show();
+            DrainToIdle();
+            var wallButton = (Button)window.FindName("ExportWallLayerQuantitiesButton");
+            var roofButton = (Button)window.FindName("ExportRoofQuantitiesButton");
+            Check(wallButton.IsEnabled && roofButton.IsEnabled,
+                "Independent quantity exports stay enabled without saved schedule definitions");
+            wallButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            DrainToIdle();
+            var status = (TextBlock)window.FindName("StatusText");
+            Check(!string.IsNullOrWhiteSpace(status.Text),
+                "Wall layer export reports an empty project without opening a save dialog");
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
 
     /// <summary>Routes a real key-down event through the target control, as the keyboard would.</summary>
     private static void PressKey(UIElement target, Key key)
