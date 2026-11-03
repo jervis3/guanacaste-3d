@@ -86,7 +86,7 @@ public partial class MainWindow
             case "About": About_Click(this, eventArguments); return true;
             default: return TryExecutePresentationCommand(commandId) || TryExecuteWallJoinCommand(commandId) ||
                             TryExecuteWallEditCommand(commandId) || TryExecuteViewCategoryCommand(commandId) || TryExecuteManageCommand(commandId) || TryExecuteView3DCommand(commandId) || TryExecuteBulkCommand(commandId) ||
-                            TryExecuteStagesCommand(commandId) || TryExecuteWallProfileCommand(commandId) || TryExecuteStructuralCommand(commandId);
+                            TryExecuteStagesCommand(commandId) || TryExecuteWallProfileCommand(commandId) || TryExecuteUnitsCommand(commandId) || TryExecuteStructuralCommand(commandId);
         }
     }
 

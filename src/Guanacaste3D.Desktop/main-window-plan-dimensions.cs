@@ -54,7 +54,7 @@ public partial class MainWindow
             _dimensionEditorDrawn = true;
             var editor = new TextBox
             {
-                Text = _dimensionEditText ?? measurement.Value.ToString(measurement.IsAngle ? "0.0" : "0.00", CultureInfo.CurrentCulture),
+                Text = _dimensionEditText ?? (measurement.IsAngle ? measurement.Value.ToString("0.0", CultureInfo.CurrentCulture) : Units.LengthNumber(measurement.Value)),
                 Tag = dimension, FontSize = 11, MinWidth = 56, Padding = new Thickness(2, 0, 2, 0),
                 BorderBrush = brush, BorderThickness = new Thickness(1.5), ToolTip = GetText("Dimension.EnterMeters")
             };
@@ -80,7 +80,7 @@ public partial class MainWindow
         {
             var label = new Button
             {
-                Content = FormatText(measurement.IsAngle ? "Dimension.Degrees" : "Dimension.Meters", measurement.Value), Tag = dimension,
+                Content = measurement.IsAngle ? FormatText("Dimension.Degrees", measurement.Value) : Units.FormatLength(measurement.Value), Tag = dimension,
                 Foreground = brush, Background = Brushes.White, FontSize = 11,
                 Padding = new Thickness(3, 1, 3, 1), MinWidth = 0, MinHeight = 0,
                 ToolTip = GetText("Dimension.Edit"), Cursor = Cursors.Hand
@@ -152,10 +152,8 @@ public partial class MainWindow
     /// <summary>Edits a measurement through the transactional solver; invalid input leaves the model intact.</summary>
     private void ApplyDimensionText(PlanDimension dimension, string input)
     {
-        // Either decimal mark is accepted, so "3,5" and "3.5" both mean three and a half meters in any culture.
-        input = input.Trim().TrimEnd('m', 'M').Trim().Replace(',', '.');
-        if (!double.TryParse(input, NumberStyles.Float, CultureInfo.InvariantCulture, out var value) ||
-            !double.IsFinite(value) || value <= 0)
+        // A plain number is in the project's unit; a unit after it (m, cm, mm, ft, in) says otherwise.
+        if (!Units.TryParseLength(input, out var value) || value <= 0)
         {
             StatusText.Text = GetText("Dimension.Invalid");
             RenderPlan();

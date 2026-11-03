@@ -118,6 +118,8 @@
   <sys:String x:Key="Transaction.SetViewOption">Cambiar la opción que muestra la vista</sys:String>
   <sys:String x:Key="Transaction.SetWallProfile">Editar el perfil del muro</sys:String>
   <sys:String x:Key="Transaction.ResetWallProfile">Restablecer el perfil del muro</sys:String>
+  <sys:String x:Key="Transaction.SetProjectUnits">Cambiar las unidades del proyecto</sys:String>
+  <sys:String x:Key="Transaction.ImportSharedParameters">Añadir parámetros compartidos</sys:String>
   <sys:String x:Key="Transaction.SetViewCategories">Cambiar categorías visibles de la vista</sys:String>
   <sys:String x:Key="Transaction.PasteWalls">Pegar muros</sys:String>
   <sys:String x:Key="Transaction.AddArcWall">Crear muro curvo</sys:String>

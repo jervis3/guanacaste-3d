@@ -113,6 +113,8 @@ public sealed class BuildingDocument
     public List<FamilyDocument> SheetFamilies { get; set; } = [];
     public List<ProjectView> Views { get; set; } = [];
     public List<ViewTemplate> ViewTemplates { get; set; } = [];
+    /// <summary>How the project shows and reads lengths, areas and volumes; the model itself is always in meters.</summary>
+    public ProjectUnits Units { get; set; } = ProjectUnits.Default;
     /// <summary>The stages of the building's life in order; empty until the project uses phases.</summary>
     public List<ProjectPhase> Phases { get; set; } = [];
     public List<PhaseAssignment> PhaseAssignments { get; set; } = [];
@@ -186,6 +188,7 @@ public sealed class BuildingDocument
         SheetFamilies = SheetFamilies.Select(family => family.Clone()).ToList(),
         Views = [.. Views],
         ViewTemplates = [.. ViewTemplates],
+        Units = Units,
         Phases = [.. Phases],
         PhaseAssignments = [.. PhaseAssignments],
         OptionSets = OptionSets.Select(set => set with { Options = [.. set.Options] }).ToList(),
@@ -215,6 +218,7 @@ public sealed class BuildingDocument
         if (SchemaVersion != CurrentSchemaVersion) throw new InvalidDataException("Unsupported project schema version.");
         foreach (var view in Views) view.Graphics?.Validate();
         ProjectStages.Validate(this);
+        if (Units is null || !Units.IsValid) throw new InvalidDataException("The project units are invalid.");
         if (Views.Any(view => view.ModelCrop is { } crop && (!double.IsFinite(crop.MinX + crop.MinY + crop.MaxX + crop.MaxY) ||
                 crop.MaxX - crop.MinX < 0.5 || crop.MaxY - crop.MinY < 0.5 ||
                 view.Kind is ProjectViewKind.Schedule)))

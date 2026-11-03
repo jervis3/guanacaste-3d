@@ -29,7 +29,7 @@ public partial class MainWindow
             {
                 var corners = ArcWallGeometry.Points(fit, start, arcEnd);
                 for (var index = 0; index < corners.Count - 1; index++) AddWallPreviewBody(corners[index], corners[index + 1]);
-                AddWallMeasurement(start, arcEnd, FormatText("WallOptions.ArcMeasurement", fit.Radius, fit.Length));
+                AddWallMeasurement(start, arcEnd, FormatText("WallOptions.ArcMeasurement", Units.FormatLength(fit.Radius), Units.FormatLength(fit.Length)));
             }
             else AddWallPreviewBody(start, arcEnd);
             return;
@@ -43,7 +43,7 @@ public partial class MainWindow
             for (var index = 0; index < corners.Length; index++)
                 AddWallPreviewBody(corners[index], corners[(index + 1) % corners.Length]);
             AddWallMeasurement(start, preview, FormatText("WallOptions.RectangleMeasurement",
-                Math.Abs(preview.X - start.X), Math.Abs(preview.Y - start.Y)));
+                Units.FormatLength(Math.Abs(preview.X - start.X)), Units.FormatLength(Math.Abs(preview.Y - start.Y))));
             return;
         }
 
@@ -51,7 +51,7 @@ public partial class MainWindow
         AddWallPreviewBody(start, end);
         var angle = Math.Atan2(end.Y - start.Y, end.X - start.X) * 180 / Math.PI;
         var length = Math.Sqrt(Math.Pow(end.X - start.X, 2) + Math.Pow(end.Y - start.Y, 2));
-        AddWallMeasurement(start, end, FormatText("WallOptions.Measurement", length, angle));
+        AddWallMeasurement(start, end, FormatText("WallOptions.Measurement", Units.FormatLength(length), angle));
     }
 
     /// <summary>

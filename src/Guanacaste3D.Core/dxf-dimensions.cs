@@ -29,7 +29,7 @@ public static partial class DxfExporter
             }
             var label = new Point2((measurement.From.X + measurement.To.X) / 2,
                 (measurement.From.Y + measurement.To.Y) / 2 + 0.2);
-            WriteText(output, label, level.Elevation, layer, measurement.IsAngle ? Number(measurement.Value) + "%%d" : Number(measurement.Value));
+            WriteText(output, label, level.Elevation, layer, measurement.IsAngle ? Number(measurement.Value) + "%%d" : document.Units.Length == LengthUnit.Meters ? Number(measurement.Value) : document.Units.FormatLength(measurement.Value));
         }
     }
 }

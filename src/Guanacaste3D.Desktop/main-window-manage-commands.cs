@@ -136,7 +136,8 @@ public partial class MainWindow
         if (levelId is not { } level) return false;
 
         _activeLevelId = level;
-        _selectedViewId = document.Views.FirstOrDefault(view => view.Kind == ProjectViewKind.Plan && view.LevelId == level)?.Id;
+        // The element is what is selected now, so the panel describes it and not the plan view of its level.
+        _selectedViewId = null;
         _selectedWallId = document.Walls.Any(wall => wall.Id == id) ? id : null;
         _selectedOpeningId = document.Openings.Any(opening => opening.Id == id) ? id : null;
         _selectedRoomId = document.Rooms.Any(room => room.Id == id) ? id : null;

@@ -19,10 +19,10 @@ public partial class MainWindow
     /// <summary>Fills the dimension fields from a wall and remembers the loaded text of each one.</summary>
     private void LoadWallDimensionFields(Wall wall)
     {
-        PropertyLengthInput.Text = wall.Length.ToString("0.00", CultureInfo.CurrentCulture);
-        HeightInput.Text = wall.Height.ToString("0.00", CultureInfo.CurrentCulture);
-        ThicknessInput.Text = wall.Thickness.ToString("0.00", CultureInfo.CurrentCulture);
-        PropertyAreaInput.Text = (wall.Length * wall.Height).ToString("0.00", CultureInfo.CurrentCulture);
+        PropertyLengthInput.Text = Units.LengthNumber(wall.Length);
+        HeightInput.Text = Units.LengthNumber(wall.Height);
+        ThicknessInput.Text = Units.LengthNumber(wall.Thickness);
+        PropertyAreaInput.Text = Units.AreaNumber(wall.Length * wall.Height);
         _loadedWallDimensionTexts =
             [PropertyLengthInput.Text, HeightInput.Text, ThicknessInput.Text, PropertyAreaInput.Text];
         if (FinishPicker.Items.Count == 0)
@@ -76,9 +76,9 @@ public partial class MainWindow
     {
         value = null;
         if (input.Text == _loadedWallDimensionTexts[field]) return true;
-        if (!double.TryParse(input.Text, NumberStyles.Float, CultureInfo.CurrentCulture, out var parsed) ||
-            !double.IsFinite(parsed))
-            return false;
+        // Lengths and thickness are typed in the project's unit (or with a unit after them); the area in its square.
+        var read = field == 3 ? Units.TryParseArea(input.Text, out var parsed) : Units.TryParseLength(input.Text, out parsed);
+        if (!read) return false;
         value = parsed;
         return true;
     }

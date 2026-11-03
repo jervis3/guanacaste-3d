@@ -162,6 +162,56 @@ internal static partial class InteractionChecks
             }
             Invoke("CancelStructuralTool");
 
+            // Project units: the window changes how the wall panel and the dimensions read, and typing a unit is understood.
+            T InWindow<T>(string field, string name) where T : FrameworkElement =>
+                (T)System.Windows.LogicalTreeHelper.FindLogicalNode(Field<Window>(field), name)!;
+            void ClickIn(string field, string name) =>
+                InWindow<System.Windows.Controls.Button>(field, name).RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent));
+            Invoke("SelectElement", angleA);
+            Invoke("RefreshProperties");
+            Pump();
+            var lengthBox = (System.Windows.Controls.TextBox)opened.FindName("PropertyLengthInput");
+            Check(lengthBox.Text.StartsWith("4", StringComparison.Ordinal) && lengthBox.Text.Contains('.'), $"The wall panel shows the 4 m wall as {lengthBox.Text} in meters");
+            Invoke("ExecuteApplicationCommand", "ProjectUnits");
+            Pump();
+            InWindow<System.Windows.Controls.ComboBox>("_unitsWindow", "UnitLengthBox").SelectedIndex = (int)LengthUnit.Feet;
+            InWindow<System.Windows.Controls.ComboBox>("_unitsWindow", "UnitDecimalsBox").SelectedIndex = 1;
+            Check(InWindow<System.Windows.Controls.TextBlock>("_unitsWindow", "UnitSample").Text.Contains("ft"), "The units window shows a sample in the unit chosen");
+            ClickIn("_unitsWindow", "UnitApply");
+            Invoke("SelectElement", angleA);
+            Invoke("RefreshProperties");
+            Pump();
+            Check(session.Document.Units.Length == LengthUnit.Feet && lengthBox.Text == "13.1",
+                $"After choosing feet with one decimal the wall panel shows the 4 m wall as {lengthBox.Text}");
+            var dimensionOfWall = session.Document.Dimensions.Last();
+            Invoke("ApplyDimensionText", dimensionOfWall, "30 cm");
+            Check(session.Document.Dimensions.Count > 0, "A dimension edit typed with a unit (30 cm) is understood while the project is in feet");
+            ClickIn("_unitsWindow", "UnitClose");
+            session.SetProjectUnits(ProjectUnits.Default);
+
+            // Shared parameters: a file with parameters is opened in the window and its parameters are added to the project.
+            var sharedFile = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"shared-{Guid.NewGuid():N}.txt");
+            System.IO.File.WriteAllText(sharedFile, SharedParameterFile.Write(
+                [new ParameterDefinition(Guid.NewGuid(), "Código de obra", ParameterSpec.Text, ParameterBinding.Instance, [ElementCategory.Walls], "Identidad"),
+                 new ParameterDefinition(Guid.NewGuid(), "Carga térmica", ParameterSpec.Number, ParameterBinding.Type, [ElementCategory.Walls], "Energía")]));
+            var parametersBefore = session.Document.ParameterDefinitions.Count;
+            Invoke("ExecuteApplicationCommand", "SharedParameters");
+            Pump();
+            Check((bool)Invoke("LoadSharedParameterFile", sharedFile)! && InWindow<System.Windows.Controls.ListBox>("_sharedWindow", "SharedList").Items.Count == 2,
+                "The Shared Parameters window lists the two parameters of the file");
+            ClickIn("_sharedWindow", "SharedAdd");
+            Check(session.Document.ParameterDefinitions.Count == parametersBefore + 2, "Adding to the project brings both parameters in");
+            ClickIn("_sharedWindow", "SharedAdd");
+            Check(session.Document.ParameterDefinitions.Count == parametersBefore + 2, "Adding them again adds nothing");
+            var exportFile = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"export-{Guid.NewGuid():N}.txt");
+            Check((bool)Invoke("ExportSharedParameters", exportFile)! && SharedParameterFile.Read(System.IO.File.ReadAllText(exportFile)).Parameters.Count == parametersBefore + 2,
+                "The project's own parameters are exported as a shared parameter file");
+            System.IO.File.Delete(sharedFile);
+            System.IO.File.Delete(exportFile);
+            ClickIn("_sharedWindow", "SharedClose");
+            Check(!(bool)Invoke("LoadSharedParameterFile", System.IO.Path.Combine(System.IO.Path.GetTempPath(), "no-such-shared-file.txt"))!,
+                "A file that does not exist is reported, not opened");
+
             // Wall profile: the editor opens on the selected wall, presets fill it, Apply shapes the wall and Reset flattens it.
             T InProfile<T>(string name) where T : FrameworkElement =>
                 (T)System.Windows.LogicalTreeHelper.FindLogicalNode(Field<Window>("_profileWindow"), name)!;

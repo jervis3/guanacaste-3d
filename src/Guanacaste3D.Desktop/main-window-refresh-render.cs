@@ -116,11 +116,11 @@ public partial class MainWindow
         }
         PropertiesText.Text = FormatText(
             "Properties.WallSummary",
-            wall.Length,
-            wall.Thickness,
-            wall.Height,
+            Units.FormatLength(wall.Length),
+            Units.FormatLength(wall.Thickness),
+            Units.FormatLength(wall.Height),
             _session.Document.Openings.Count(opening => opening.WallId == wall.Id),
-            WallGeometry.NetVolume(wall, _session.Document.Openings.Where(opening => opening.WallId == wall.Id)),
+            Units.FormatVolume(WallGeometry.NetVolume(wall, _session.Document.Openings.Where(opening => opening.WallId == wall.Id))),
             wall.Id.ToString()[..8]);
         LoadWallDimensionFields(wall);
         WallTypePicker.SelectedItem = WallTypePicker.Items.OfType<ComboBoxItem>()
