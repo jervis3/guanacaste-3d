@@ -103,6 +103,7 @@ internal static partial class InteractionChecks
             Check(ProjectFile.Load("artifacts/interaction-evidence/placed-elements.g3d").Dimensions.Count == 1,
                 "UI-created annotation survives native save and reopen");
             WallLoopClosingChecks(session);
+            WallEditCommandChecks(session);
             PlantingChecks(session);
             StairToolChecks(session);
             TexturedModelChecks(session);
