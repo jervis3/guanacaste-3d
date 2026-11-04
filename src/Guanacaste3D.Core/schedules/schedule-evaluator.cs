@@ -35,7 +35,7 @@ public static class ScheduleEvaluator
 
     /// <summary>Evaluates a definition. Yes/no labels come from the caller's localization.</summary>
     public static ScheduleTable Evaluate(BuildingDocument document, ScheduleDefinition definition,
-        CultureInfo culture, string yesLabel = "Yes", string noLabel = "No")
+        CultureInfo culture, string yesLabel = "Yes", string noLabel = "No", ProjectUnits? units = null)
     {
         var source = CategoryScheduleService.Build(document, definition.Category);
         var byKey = source.Columns.ToDictionary(column => column.Key, StringComparer.Ordinal);
@@ -55,7 +55,7 @@ public static class ScheduleEvaluator
 
         var output = new List<ScheduleTableRow>();
         string Cell(CategoryScheduleRow row, CategoryScheduleColumn column) =>
-            CategoryScheduleService.FormatCell(row, column, culture, yesLabel, noLabel);
+            CategoryScheduleService.FormatCell(row, column, culture, yesLabel, noLabel, units);
         string GroupKey(CategoryScheduleRow row, int depth) =>
             string.Join("\u001f", sorts.Take(depth + 1).Select(sort => Cell(row, byKey[sort.FieldKey])));
 
@@ -79,7 +79,7 @@ public static class ScheduleEvaluator
                     output.Add(new(ScheduleRowKind.GroupHeader, LabelRow(columns.Count, label, definition.Itemize), members.Count, depth, []));
                 Emit(members, depth + 1);
                 if (sorts[depth].GroupFooter)
-                    output.Add(new(ScheduleRowKind.GroupFooter, TotalsRow(members, columns, label, definition.Itemize, culture),
+                    output.Add(new(ScheduleRowKind.GroupFooter, TotalsRow(members, columns, label, definition.Itemize, culture, units),
                         members.Count, depth, members.Select(row => row.Element.Id).ToArray()));
             }
         }
@@ -98,7 +98,7 @@ public static class ScheduleEvaluator
                 var members = merged.ToList();
                 var cells = columns.Select(column =>
                 {
-                    if (IsSummable(column)) return FormatSum(members, column, culture);
+                    if (IsSummable(column)) return FormatSum(members, column, culture, units);
                     var values = members.Select(row => Cell(row, column)).Distinct().ToArray();
                     return values.Length == 1 ? values[0] : string.Empty;
                 }).Append(members.Count.ToString(culture)).ToArray();
@@ -108,7 +108,7 @@ public static class ScheduleEvaluator
 
         Emit(rows, 0);
         if (definition.GrandTotals)
-            output.Add(new(ScheduleRowKind.GrandTotal, TotalsRow(rows, columns, null, definition.Itemize, culture),
+            output.Add(new(ScheduleRowKind.GrandTotal, TotalsRow(rows, columns, null, definition.Itemize, culture, units),
                 rows.Count, 0, rows.Select(row => row.Element.Id).ToArray()));
         return new ScheduleTable(definition, columns, output, rows.Count, !definition.Itemize);
     }
@@ -137,9 +137,9 @@ public static class ScheduleEvaluator
 
     /// <summary>Builds a footer or grand-total row: label, sums of summable columns, and the element count.</summary>
     private static string[] TotalsRow(IReadOnlyList<CategoryScheduleRow> rows, IReadOnlyList<CategoryScheduleColumn> columns,
-        string? label, bool itemize, CultureInfo culture)
+        string? label, bool itemize, CultureInfo culture, ProjectUnits? units)
     {
-        var cells = columns.Select(column => IsSummable(column) ? FormatSum(rows, column, culture) : string.Empty).ToList();
+        var cells = columns.Select(column => IsSummable(column) ? FormatSum(rows, column, culture, units) : string.Empty).ToList();
         if (!itemize) cells.Add(rows.Count.ToString(culture));
         if (cells.Count > 0 && !IsSummable(columns[0]))
             cells[0] = label is null ? rows.Count.ToString(culture) : $"{label} ({rows.Count.ToString(culture)})";
@@ -153,11 +153,12 @@ public static class ScheduleEvaluator
         : SummableQuantities.Contains(column.Key);
 
     /// <summary>Formats the sum of a column over rows, or empty when no row has a value.</summary>
-    private static string FormatSum(IEnumerable<CategoryScheduleRow> rows, CategoryScheduleColumn column, CultureInfo culture)
+    private static string FormatSum(IEnumerable<CategoryScheduleRow> rows, CategoryScheduleColumn column, CultureInfo culture, ProjectUnits? units = null)
     {
         var numbers = rows.Select(row => Raw(row, column).Number).OfType<double>().ToArray();
         if (numbers.Length == 0) return string.Empty;
         var sum = numbers.Sum();
+        if (units is not null && column.Unit.Length > 0 && units.NumberFor(column.Unit, sum) is { } shown) return shown;
         return column.Definition?.Spec == ParameterSpec.Currency ? sum.ToString("N2", culture) : sum.ToString("0.###", culture);
     }
 

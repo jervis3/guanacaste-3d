@@ -41,6 +41,7 @@ internal static class ModelViewIntegrationChecks
         AddInsChecks.Run(check);
         StudiesChecks.Run(check);
         WallBaseChecks.Run(check);
+        WallExportChecks.Run(check);
         PlanDimensionChecks.Run(check);
         DoorPlanSymbolChecks.Run(check);
         StructuralChecks.Run(check);

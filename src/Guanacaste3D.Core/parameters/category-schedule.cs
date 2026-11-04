@@ -71,8 +71,14 @@ public static class CategoryScheduleService
 
     /// <summary>Formats one cell for display or export; yes/no labels come from the caller's localization.</summary>
     public static string FormatCell(CategoryScheduleRow row, CategoryScheduleColumn column, CultureInfo culture,
-        string yesLabel = "Yes", string noLabel = "No")
+        string yesLabel = "Yes", string noLabel = "No", ProjectUnits? units = null)
     {
+        if (units is not null && column.Unit.Length > 0)
+        {
+            // Lengths, areas and volumes show in the project's units; the stored values stay metric.
+            var metric = column.Definition is { } spec ? row.Values.GetValueOrDefault(spec.Id)?.Number : row.BuiltIns.GetValueOrDefault(column.Key) as double?;
+            if (metric is double value && units.NumberFor(column.Unit, value) is { } shown) return shown;
+        }
         if (column.Definition is { } definition)
             return ParameterValueText.Format(definition.Spec, row.Values.GetValueOrDefault(definition.Id),
                 culture, yesLabel, noLabel);

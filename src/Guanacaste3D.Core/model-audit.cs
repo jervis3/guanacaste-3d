@@ -196,7 +196,8 @@ public static class ModelAudit
         foreach (var opening in document.Openings)
         {
             var wall = walls[opening.WallId];
-            var clearance = wall.Height - opening.Sill - opening.Height;
+            // Under a profiled top the clearance is the least over the opening's width, not the wall's full height.
+            var clearance = new[] { opening.Begin, opening.End }.Concat((wall.TopProfile ?? []).Select(point => point.X).Where(x => x > opening.Begin && x < opening.End)).Min(wall.TopHeightAt) - opening.Sill - opening.Height;
             if (clearance < limit)
                 issues.Add(new(ModelAuditCode.LowOpeningHeadClearance, opening.Id, wall.Id,
                     wall.LevelId, clearance));

@@ -59,6 +59,21 @@ public sealed record ProjectUnits(LengthUnit Length, int Decimals)
     /// <summary>An area in square meters as the number the project shows (square meters or square feet).</summary>
     public string AreaNumber(double squareMeters) => Number(Imperial ? squareMeters / (MetersPerFoot * MetersPerFoot) : squareMeters);
 
+    /// <summary>A volume in cubic meters as the number the project shows (cubic meters or cubic feet).</summary>
+    public string VolumeNumber(double cubicMeters) => Number(Imperial ? cubicMeters / (MetersPerFoot * MetersPerFoot * MetersPerFoot) : cubicMeters);
+
+    /// <summary>The unit a metric unit ("m", "m²", "m³") is shown in; anything else is kept.</summary>
+    public string Symbol(string metricUnit) => metricUnit switch { "m" => LengthSymbol, "m²" => AreaSymbol, "m³" => VolumeSymbol, _ => metricUnit };
+
+    /// <summary>A quantity in a metric unit ("m", "m²", "m³") as the number the project shows; null for any other unit.</summary>
+    public string? NumberFor(string metricUnit, double value) => metricUnit switch
+    {
+        "m" => LengthNumber(value),
+        "m²" => AreaNumber(value),
+        "m³" => VolumeNumber(value),
+        _ => null
+    };
+
     public string FormatArea(double squareMeters) => AreaNumber(squareMeters) + " " + AreaSymbol;
 
     public string FormatVolume(double cubicMeters) =>

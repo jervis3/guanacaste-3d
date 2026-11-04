@@ -74,7 +74,9 @@ public static class IfcExporter
             var direction = writer.Add($"IFCDIRECTION(({Real(dx)},{Real(dy)},0.))");
             var axes = writer.Add($"IFCAXIS2PLACEMENT3D({Ref(start)},{Ref(zAxis)},{Ref(direction)})");
             var placement = writer.Add($"IFCLOCALPLACEMENT({Ref(storey.Placement)},{Ref(axes)})");
-            var shape = Box(writer, body, zAxis, xAxis2D, wall.Length / 2, 0, wall.BaseOffset, wall.Length, wall.Thickness, wall.NetHeight);
+            var shape = wall.TopProfile is { Count: > 1 }
+                ? ProfiledWallBody(writer, body, zAxis, wall)
+                : Box(writer, body, zAxis, xAxis2D, wall.Length / 2, 0, wall.BaseOffset, wall.Length, wall.Thickness, wall.NetHeight);
             var entity = writer.Add($"IFCWALL({Id(wall.Id)},$,{Text(type.Name)},$,$,{Ref(placement)},{Ref(shape)},{Text(wall.Id.ToString("N")[..8])},.STANDARD.)");
             contained[wall.LevelId].Add(entity);
             if (!materials.TryGetValue(type.MaterialName, out var material))
@@ -228,6 +230,25 @@ public static class IfcExporter
         if (derivation is null) return $"'{ToGlobalId(source)}'";
         var bytes = MD5.HashData(Encoding.UTF8.GetBytes(source.ToString("N") + "/" + derivation));
         return $"'{ToGlobalId(new Guid(bytes))}'";
+    }
+
+    /// <summary>
+    /// A wall whose top follows a profile: its outline in elevation (base, then the top from the far end back to the start) extruded
+    /// across the thickness. The outline sits in the wall's own X and Z axes and is extruded toward -Y from the wall's face.
+    /// </summary>
+    private static int ProfiledWallBody(StepWriter writer, int body, int zAxis, Wall wall)
+    {
+        var stations = wall.TopProfile!.Select(point => point.X).Where(x => x > 1e-6 && x < wall.Length - 1e-6).Append(0).Append(wall.Length).Distinct().Order().ToList();
+        var outline = new List<Point2> { new(0, wall.BaseOffset), new(wall.Length, wall.BaseOffset) };
+        for (var index = stations.Count - 1; index >= 0; index--) outline.Add(new Point2(stations[index], wall.TopHeightAt(stations[index])));
+        var polyline = Polyline(writer, outline);
+        var profile = writer.Add($"IFCARBITRARYCLOSEDPROFILEDEF(.AREA.,$,{Ref(polyline)})");
+        var origin = writer.Add($"IFCCARTESIANPOINT((0.,{Real(wall.Thickness / 2)},0.))");
+        var normal = writer.Add("IFCDIRECTION((0.,-1.,0.))");
+        var across = writer.Add("IFCDIRECTION((1.,0.,0.))");
+        var position = writer.Add($"IFCAXIS2PLACEMENT3D({Ref(origin)},{Ref(normal)},{Ref(across)})");
+        var solid = writer.Add($"IFCEXTRUDEDAREASOLID({Ref(profile)},{Ref(position)},{Ref(zAxis)},{Real(wall.Thickness)})");
+        return Representation(writer, body, solid);
     }
 
     /// <summary>Adds a rectangle profile centred at (x, y) and extruded upward from z.</summary>

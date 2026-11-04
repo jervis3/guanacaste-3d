@@ -19,12 +19,12 @@ public partial class SchedulesWindow
     private void RefreshPreview(ScheduleDefinition schedule)
     {
         _table = ScheduleEvaluator.Evaluate(_session.Document, schedule, CultureInfo.CurrentCulture,
-            Text("Parameters.Yes"), Text("Parameters.No"));
+            Text("Parameters.Yes"), Text("Parameters.No"), _session.Document.Units);
         var data = new DataTable { Locale = CultureInfo.CurrentCulture };
         data.Columns.Add(KindColumn, typeof(ScheduleRowKind));
         PreviewGrid.Columns.Clear();
         var headers = _table.Columns.Select(column => CategoryScheduleService.HeaderWithUnit(
-            column.Definition?.Name ?? Text($"Parameters.Column.{column.Key}"), column.Unit)).ToList();
+            column.Definition?.Name ?? Text($"Parameters.Column.{column.Key}"), _session.Document.Units.Symbol(column.Unit))).ToList();
         if (_table.HasCountColumn) headers.Add(Text("Schedules.Count"));
         for (var index = 0; index < headers.Count; index++)
         {
