@@ -12,9 +12,11 @@ public partial class MainWindow
     /// <summary>Routes Load Cloud Family: the shared family library.</summary>
     private bool TryExecuteFamilyLibraryCommand(string commandId)
     {
-        if (commandId != "LoadCloudFamily") return false;
-        ShowFamilyLibraryWindow();
-        return true;
+        switch (commandId)
+        {
+            case "LoadCloudFamily": ShowFamilyLibraryWindow(); return true;
+            default: return false;
+        }
     }
 
     /// <summary>The folder the library lives in: the one the person chose, the environment's when set, or a default under Documents.</summary>
