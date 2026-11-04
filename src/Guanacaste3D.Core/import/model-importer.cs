@@ -15,10 +15,10 @@ public static class ModelImporter
 
     /// <summary>File-dialog filter covering every format that can be inspected.</summary>
     public const string DialogFilter =
-        "Modelos 3D y CAD|*.obj;*.dxf;*.dwg;*.stl;*.ifc;*.skp;*.rvt;*.g3dx;*.rfa;*.rte;*.rft;*.dae;*.glb;*.gltf|" +
+        "Modelos 3D y CAD|*.obj;*.dxf;*.dwg;*.stl;*.ifc;*.skp;*.rvt;*.g3dx;*.rfa;*.rte;*.rft;*.dae;*.glb;*.gltf;*.g3d|" +
         "Wavefront OBJ (*.obj)|*.obj|AutoCAD DXF (*.dxf)|*.dxf|AutoCAD DWG (*.dwg)|*.dwg|" +
         "IFC (*.ifc)|*.ifc|SketchUp (*.skp)|*.skp|Revit (*.rvt;*.rfa)|*.rvt;*.rfa;*.rte;*.rft|Intercambio Revit (*.g3dx)|*.g3dx|" +
-        "STL (*.stl)|*.stl|COLLADA (*.dae)|*.dae|glTF (*.glb;*.gltf)|*.glb;*.gltf";
+        "STL (*.stl)|*.stl|COLLADA (*.dae)|*.dae|glTF (*.glb;*.gltf)|*.glb;*.gltf|Proyecto Guanacaste 3D (*.g3d)|*.g3d";
 
     /// <summary>Recognizes the format from the file's first bytes, falling back to its extension.</summary>
     public static ImportFormat Detect(string path)
@@ -51,6 +51,7 @@ public static class ModelImporter
             ".rvt" or ".rfa" or ".rte" or ".rft" => ImportFormat.Revit,
             ".glb" or ".gltf" => ImportFormat.Gltf,
             ".dae" => ImportFormat.Collada,
+            ".g3d" => ImportFormat.Native,
             _ => LooksLikeDxf(text) ? ImportFormat.Dxf : ImportFormat.Unknown
         };
     }
@@ -86,6 +87,7 @@ public static class ModelImporter
                     ImportFormat.Stl => "STL",
                     ImportFormat.Ifc => "IFC",
                     ImportFormat.Gltf => "glTF",
+                    ImportFormat.Native => "Guanacaste 3D",
                     _ => "COLLADA"
                 };
                 if (format == ImportFormat.Dxf && DxfReader.IsBinary(path))
@@ -122,6 +124,7 @@ public static class ModelImporter
             ImportFormat.Dwg => DwgConverter.Read(path, options, progress, cancellation),
             ImportFormat.Gltf => GltfReader.Read(path, options, progress, cancellation),
             ImportFormat.Collada => ColladaReader.Read(path, options, progress, cancellation),
+            ImportFormat.Native => NativeProjectReader.Read(path, options, progress, cancellation),
             ImportFormat.Revit => throw new InvalidDataException(
                 "Revit keeps its geometry in a proprietary format; export the model to IFC from Revit and import that file."),
             _ => throw new InvalidDataException("The model file format is not supported.")

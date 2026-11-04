@@ -69,6 +69,7 @@ public partial class MainWindow
             case "ImportCad":
             case "LinkCad":
             case "LinkIfc":
+            case "LinkNativeProject":
             case "InsertFromFile": ImportModel_Click(this, eventArguments); return true;
             case "ManageLinks": LinkedModels_Click(this, eventArguments); return true;
             case "AiAssistant": OpenAiAssistant(); return true;

@@ -16,7 +16,10 @@ public enum ImportFormat
     /// <summary>Revit project, family or template (an OLE compound file).</summary>
     Revit,
     Gltf,
-    Collada
+    Collada,
+
+    /// <summary>Another Guanacaste 3D project, read as a model to link.</summary>
+    Native
 }
 
 /// <summary>Which model axis points up in the source file.</summary>
