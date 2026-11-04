@@ -35,6 +35,16 @@
   <sys:String x:Key="Error.The project units are invalid.">Las unidades del proyecto no son válidas.</sys:String>
   <sys:String x:Key="Error.The file is not a shared parameter file.">El archivo no es un archivo de parámetros compartidos.</sys:String>
   <sys:String x:Key="Error.Choose at least one category for the shared parameters.">Elija al menos una categoría para los parámetros compartidos.</sys:String>
+  <sys:String x:Key="Error.Invalid element groups.">Los grupos del proyecto no son válidos.</sys:String>
+  <sys:String x:Key="Error.Select the elements to gather first.">Seleccione primero los elementos que quiere reunir.</sys:String>
+  <sys:String x:Key="Error.A project cannot have so many groups.">El proyecto no admite tantos grupos.</sys:String>
+  <sys:String x:Key="Error.A group with that name already exists.">Ya existe un grupo con ese nombre.</sys:String>
+  <sys:String x:Key="Error.An element is already in another group of this kind.">Algún elemento ya está en otro grupo de este tipo.</sys:String>
+  <sys:String x:Key="Error.A detail group holds only drafting elements.">Un grupo de detalle solo admite elementos de dibujo (líneas de detalle, regiones, nubes, aislamiento y notas).</sys:String>
+  <sys:String x:Key="Error.The group does not exist.">El grupo no existe.</sys:String>
+  <sys:String x:Key="Error.The move distance is invalid.">La distancia no es válida.</sys:String>
+  <sys:String x:Key="Error.The group has nothing left to copy.">Al grupo no le queda nada que copiar.</sys:String>
+  <sys:String x:Key="Error.The file is not a saved group.">El archivo no es un grupo guardado.</sys:String>
   <sys:String x:Key="Error.The render scene does not exist.">La escena seleccionada ya no existe.</sys:String>
   <sys:String x:Key="Error.The render scene preview is too large.">La miniatura de la foto es demasiado grande.</sys:String>
   <sys:String x:Key="Error.The render scene collection is invalid.">La colección de escenas del proyecto no es válida.</sys:String>

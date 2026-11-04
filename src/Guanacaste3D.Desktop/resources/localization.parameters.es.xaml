@@ -120,6 +120,12 @@
   <sys:String x:Key="Transaction.ResetWallProfile">Restablecer el perfil del muro</sys:String>
   <sys:String x:Key="Transaction.SetProjectUnits">Cambiar las unidades del proyecto</sys:String>
   <sys:String x:Key="Transaction.ImportSharedParameters">Añadir parámetros compartidos</sys:String>
+  <sys:String x:Key="Transaction.CreateElementGroup">Crear grupo de elementos</sys:String>
+  <sys:String x:Key="Transaction.RenameElementGroup">Renombrar grupo</sys:String>
+  <sys:String x:Key="Transaction.Ungroup">Disolver grupo</sys:String>
+  <sys:String x:Key="Transaction.MoveElementGroup">Mover grupo</sys:String>
+  <sys:String x:Key="Transaction.CopyElementGroup">Copiar grupo</sys:String>
+  <sys:String x:Key="Transaction.LoadElementGroup">Cargar grupo</sys:String>
   <sys:String x:Key="Transaction.SetViewCategories">Cambiar categorías visibles de la vista</sys:String>
   <sys:String x:Key="Transaction.PasteWalls">Pegar muros</sys:String>
   <sys:String x:Key="Transaction.AddArcWall">Crear muro curvo</sys:String>

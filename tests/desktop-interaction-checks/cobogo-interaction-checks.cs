@@ -474,6 +474,42 @@ internal static partial class InteractionChecks
                 Click("_optionsWindow", "OptionUnassign");
                 Click("_optionsWindow", "OptionClose");
                 Pump();
+
+                // Groups: Create Group gathers the selection, and the manager moves, copies, saves, loads and dissolves it.
+                tabs.SelectedIndex = 0;
+                Pump();
+                var groupWalls = new[] { angleA, angleB };
+                SetField("_viewSelection", new HashSet<Guid>(groupWalls));
+                var wallsWithGroup = session.Document.Walls.Count;
+                Answer("Esquina de prueba");
+                Invoke("ExecuteApplicationCommand", "CreateGroup");
+                Pump();
+                var created = session.Document.ElementGroups.SingleOrDefault(item => item.Name == "Esquina de prueba");
+                Check(created is { Kind: ElementGroupKind.Group } && created.MemberIds.OrderBy(id => id).SequenceEqual(groupWalls.OrderBy(id => id)) &&
+                      Field<Window?>("_groupsWindow")?.IsVisible == true, "Create Group gathers the selected walls and opens the groups window");
+                var startBefore = session.Document.Walls.Single(wall => wall.Id == angleA).Start;
+                Answer("1 0");
+                Click("_groupsWindow", "GroupMove");
+                Check(Math.Abs(session.Document.Walls.Single(wall => wall.Id == angleA).Start.X - (startBefore.X + 1)) < 1e-9,
+                    "Move in the groups window shifts the group by the distance typed");
+                Answer("0 10");
+                Click("_groupsWindow", "GroupCopy");
+                Check(session.Document.ElementGroups.Count(item => item.Kind == ElementGroupKind.Group) == 2 && session.Document.Walls.Count == wallsWithGroup + 2,
+                    "Copy makes a second group with its own walls");
+                var saveFile = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"group-{Guid.NewGuid():N}.g3dgroup");
+                Check((bool)Invoke("SaveGroupFile", created!.Id, saveFile)! && System.IO.File.ReadAllText(saveFile).Contains("G3D-GROUP/1"), "A group is saved to a file");
+                Answer("0 20");
+                Check((bool)Invoke("LoadGroupFile", saveFile)! && session.Document.Walls.Count == wallsWithGroup + 4,
+                    "The saved file loads back as a third group, shifted 20 m");
+                System.IO.File.Delete(saveFile);
+                Answer("no es una pareja");
+                Check(!(bool)Invoke("LoadGroupFile", System.IO.Path.Combine(System.IO.Path.GetTempPath(), "missing.g3dgroup"))!, "A bad shift or a missing file loads nothing");
+                Click("_groupsWindow", "GroupUngroup");
+                Check(session.Document.ElementGroups.Count(item => item.Kind == ElementGroupKind.Group) == 2 && session.Document.Walls.Count == wallsWithGroup + 4,
+                    "Dissolving a group leaves its walls where they are");
+                Click("_groupsWindow", "GroupClose");
+                SetField("_viewSelection", null);
+                Pump();
                 tabs.SelectedIndex = 0;
                 Pump();
             }

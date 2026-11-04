@@ -113,6 +113,8 @@ public sealed class BuildingDocument
     public List<FamilyDocument> SheetFamilies { get; set; } = [];
     public List<ProjectView> Views { get; set; } = [];
     public List<ViewTemplate> ViewTemplates { get; set; } = [];
+    /// <summary>Named sets of elements: groups, assemblies and detail groups.</summary>
+    public List<ElementGroup> ElementGroups { get; set; } = [];
     /// <summary>How the project shows and reads lengths, areas and volumes; the model itself is always in meters.</summary>
     public ProjectUnits Units { get; set; } = ProjectUnits.Default;
     /// <summary>The stages of the building's life in order; empty until the project uses phases.</summary>
@@ -189,6 +191,7 @@ public sealed class BuildingDocument
         Views = [.. Views],
         ViewTemplates = [.. ViewTemplates],
         Units = Units,
+        ElementGroups = ElementGroups.Select(group => group with { MemberIds = [.. group.MemberIds] }).ToList(),
         Phases = [.. Phases],
         PhaseAssignments = [.. PhaseAssignments],
         OptionSets = OptionSets.Select(set => set with { Options = [.. set.Options] }).ToList(),
@@ -212,12 +215,15 @@ public sealed class BuildingDocument
         Lot = Lot
     };
 
+    private void ElementGroups_Validate() => Guanacaste3D.Core.ElementGroups.Validate(this);
+
     /// <summary>Rejects inconsistent projects before mutation, opening, or writing a file.</summary>
     public void Validate()
     {
         if (SchemaVersion != CurrentSchemaVersion) throw new InvalidDataException("Unsupported project schema version.");
         foreach (var view in Views) view.Graphics?.Validate();
         ProjectStages.Validate(this);
+        ElementGroups_Validate();
         if (Units is null || !Units.IsValid) throw new InvalidDataException("The project units are invalid.");
         if (Views.Any(view => view.ModelCrop is { } crop && (!double.IsFinite(crop.MinX + crop.MinY + crop.MaxX + crop.MaxY) ||
                 crop.MaxX - crop.MinX < 0.5 || crop.MaxY - crop.MinY < 0.5 ||

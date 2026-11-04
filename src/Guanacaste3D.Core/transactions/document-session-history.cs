@@ -59,6 +59,7 @@ public sealed partial class DocumentSession
     private static void Regenerate(BuildingDocument document)
     {
         document.Dimensions.RemoveAll(item => PlanDimensions.Resolve(document, item) is null);
+        ElementGroups.Prune(document);
         LevelConstraints.Apply(document);
         OpeningTypeRules.SynchronizeInstances(document);
         ParameterRules.RemoveOrphanedValues(document);

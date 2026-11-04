@@ -10,6 +10,9 @@ public sealed partial class DocumentSession
     {
         ArgumentNullException.ThrowIfNull(ids);
         var chosen = ids.ToHashSet();
+        // Deleting one member of a group deletes the whole group, as it does for the structural groups.
+        foreach (var group in Document.ElementGroups.Where(item => item.Kind != ElementGroupKind.Assembly && item.MemberIds.Any(chosen.Contains)).ToArray())
+            chosen.UnionWith(group.MemberIds);
         var found = Document.Walls.Count(item => chosen.Contains(item.Id)) +
                     Document.Openings.Count(item => chosen.Contains(item.Id)) +
                     Document.Floors.Count(item => chosen.Contains(item.Id)) +
