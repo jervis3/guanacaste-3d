@@ -165,6 +165,10 @@
   <sys:String x:Key="Error.The base would cut below a door or window of the wall.">La base quedaría más arriba que el borde de abajo de una puerta o ventana del muro.</sys:String>
   <sys:String x:Key="Error.The profile cuts below the base of the wall.">El perfil baja por debajo de la base del muro.</sys:String>
   <sys:String x:Key="Error.There is no slab to attach the base of the wall to.">No hay una losa bajo el muro a la que atar su base.</sys:String>
+  <sys:String x:Key="Error.The extension key is invalid.">La clave de los datos no es válida.</sys:String>
+  <sys:String x:Key="Error.The extension value is too long.">Los datos son demasiado grandes para guardarse en el proyecto.</sys:String>
+  <sys:String x:Key="Error.The project holds too many extensions.">El proyecto ya guarda demasiados conjuntos de datos.</sys:String>
+  <sys:String x:Key="Error.Invalid project extensions.">Los datos guardados por las funciones del proyecto no son válidos.</sys:String>
   <sys:String x:Key="Error.The render scene does not exist.">La escena seleccionada ya no existe.</sys:String>
   <sys:String x:Key="Error.The render scene preview is too large.">La miniatura de la foto es demasiado grande.</sys:String>
   <sys:String x:Key="Error.The render scene collection is invalid.">La colección de escenas del proyecto no es válida.</sys:String>

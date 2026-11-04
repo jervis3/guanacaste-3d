@@ -148,6 +148,8 @@ public sealed class BuildingDocument
     public ResultsMetric ResultsMetric { get; set; }
     /// <summary>Studies that try shapes of a mass and rank them.</summary>
     public List<DesignStudy> Studies { get; set; } = [];
+    /// <summary>Named blobs of text (usually JSON) that other features keep in the project, such as the render's animation keys. See <see cref="ProjectExtensions"/>.</summary>
+    public Dictionary<string, string> Extensions { get; set; } = new();
     /// <summary>Saved sequences of commands that can be played again.</summary>
     public List<AutomationScript> Automations { get; set; } = [];
     /// <summary>Images laid in the plan of a level as drawings to trace over.</summary>
@@ -241,6 +243,7 @@ public sealed class BuildingDocument
         Zones = Zones.Select(zone => zone with { RoomIds = [.. zone.RoomIds] }).ToList(),
         ResultsMetric = ResultsMetric,
         Studies = [.. Studies],
+        Extensions = new Dictionary<string, string>(Extensions),
         Automations = Automations.Select(script => script with { Steps = script.Steps.Select(step => step with { Answers = [.. step.Answers] }).ToList() }).ToList(),
         Underlays = [.. Underlays],
         PointClouds = [.. PointClouds],
@@ -293,6 +296,7 @@ public sealed class BuildingDocument
         if (Studies is null || Studies.Count > DesignStudies.MaximumStudies || Studies.Any(study => study is null || !study.IsValid) || Studies.Select(study => study.Id).Distinct().Count() != Studies.Count ||
             Automations is null || Automations.Count > AutomationScripts.MaximumScripts || Automations.Any(script => !AutomationScripts.IsValid(script)) || Automations.Select(script => script.Id).Distinct().Count() != Automations.Count)
             throw new InvalidDataException("Invalid studies or scripts.");
+        if (!ProjectExtensions.IsValid(Extensions)) throw new InvalidDataException("Invalid project extensions.");
         if (CoverOverrides is null || CoverOverrides.Count > 100000 || CoverOverrides.Any(item => item is null || item.Cover is < 0.01 or > 0.15) || CoverOverrides.Select(item => item.Id).Distinct().Count() != CoverOverrides.Count)
             throw new InvalidDataException("The cover is invalid.");
         if (Units is null || !Units.IsValid) throw new InvalidDataException("The project units are invalid.");

@@ -185,6 +185,7 @@
   <sys:String x:Key="Transaction.RunAutomation">Reproducir un guion de automatización</sys:String>
   <sys:String x:Key="Transaction.SetWallBaseOffset">Cambiar la base de un muro</sys:String>
   <sys:String x:Key="Transaction.DetachWall">Soltar un muro de sus ataduras</sys:String>
+  <sys:String x:Key="Transaction.SetExtension">Guardar datos de una función en el proyecto</sys:String>
   <sys:String x:Key="Transaction.SetViewCategories">Cambiar categorías visibles de la vista</sys:String>
   <sys:String x:Key="Transaction.PasteWalls">Pegar muros</sys:String>
   <sys:String x:Key="Transaction.AddArcWall">Crear muro curvo</sys:String>

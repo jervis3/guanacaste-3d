@@ -16,6 +16,7 @@ static class WallBaseChecks
 
     public static void Run(Action<bool, string> check)
     {
+        Extensions(check);
         var session = new DocumentSession(BuildingDocument.Create("Base"));
         var level = session.Document.Levels[0].Id;
         var wall = session.AddWall(level, new Point2(0, 0), new Point2(10, 0), 0.2, 3, BuiltInWallTypes.Exterior300Id);
@@ -80,5 +81,29 @@ static class WallBaseChecks
         squat.SetWallBaseOffset(tall, 2.0);
         squat.UpdateWall(tall, 0.2, 2.05);
         check(squat.Document.Walls.Single().BaseOffset <= squat.Document.Walls.Single().Height - 0.1 + 1e-9, "Shortening a wall below its lifted base brings the base down with it");
+    }
+
+    public static void Extensions(Action<bool, string> check)
+    {
+        var session = new DocumentSession(BuildingDocument.Create("Extensiones"));
+        check(session.GetExtension("render.layers") is null, "A project starts with no extensions");
+        session.SetExtension("render.layers", "{\"keys\":[1,2,3]}");
+        check(session.GetExtension("render.layers") == "{\"keys\":[1,2,3]}", "A feature saves its text under a key");
+        var steps = session.CanUndo;
+        session.SetExtension("render.layers", "{\"keys\":[1,2,3]}");
+        session.Undo();
+        check(steps && session.GetExtension("render.layers") is null && !session.CanUndo, "Saving the same text again adds no step, and undo removes the one that was saved");
+        session.Redo();
+        var back = ProjectFile.DeserializeDocument(ProjectFile.SerializeDocument(session.Document));
+        check(back.Extensions["render.layers"] == "{\"keys\":[1,2,3]}" && session.Document.Clone().Extensions is { Count: 1 }, "Extensions are saved with the project and copied with it");
+        var copy = session.Document.Clone();
+        copy.Extensions["render.other"] = "x";
+        check(session.Document.Extensions.Count == 1, "A copy of the project does not share its extensions");
+        session.SetExtension("render.layers", null);
+        check(session.Document.Extensions.Count == 0, "Saving nothing removes the key");
+        check(Throws(() => session.SetExtension("Render Layers", "x")) && Throws(() => session.SetExtension("", "x")) && Throws(() => session.SetExtension("a.b.c.d.e", "x")) && Throws(() => session.SetExtension("render.big", new string('x', 500_001))),
+            "Keys that are not lowercase dotted names and values that are too long are refused");
+        for (var number = 0; number < ProjectExtensions.MaximumKeys; number++) session.SetExtension("clave.k" + number, "v");
+        check(Throws(() => session.SetExtension("clave.una.mas", "v")) && session.Document.Extensions.Count == ProjectExtensions.MaximumKeys, "A project holds at most 50 keys");
     }
 }
