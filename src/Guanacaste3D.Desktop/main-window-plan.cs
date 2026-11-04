@@ -336,6 +336,8 @@ public partial class MainWindow
         if (ElectricalPlanVisibility?.IsChecked == true) RenderElectricalPlan();
         if (PlumbingPlanVisibility?.IsChecked == true) RenderPlumbingPlan();
         RenderMovePreview();
+        RenderAnalyticalOverlay();
+        AddResultsFillLegend();
         AddNorthArrow();
         RenderTemporaryDimensions();
         RenderWallSketchOverlay();

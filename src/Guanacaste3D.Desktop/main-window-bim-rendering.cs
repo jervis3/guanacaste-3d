@@ -84,7 +84,9 @@ public partial class MainWindow
             PlanCanvas.Children.Add(new System.Windows.Shapes.Path
             {
                 Data = footprint,
-                Fill = colourByName
+                Fill = document.ResultsMetric != ResultsMetric.None
+                    ? new SolidColorBrush(Color.FromArgb(150, ResultsFill.ColorAt(ResultsFill.Position(document, room, document.ResultsMetric)).R, ResultsFill.ColorAt(ResultsFill.Position(document, room, document.ResultsMetric)).G, ResultsFill.ColorAt(ResultsFill.Position(document, room, document.ResultsMetric)).B))
+                    : colourByName
                     ? new SolidColorBrush(Color.FromArgb(120, RoomColors.Of(room.Name).R, RoomColors.Of(room.Name).G, RoomColors.Of(room.Name).B))
                     : new SolidColorBrush(Color.FromArgb(45, 61, 132, 181)),
                 Stroke = room.Id == _selectedRoomId ? Brushes.DarkOrange : Brushes.SteelBlue,

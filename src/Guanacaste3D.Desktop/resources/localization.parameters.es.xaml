@@ -171,6 +171,10 @@
   <sys:String x:Key="Transaction.AddFabricArea">Cubrir un área con malla</sys:String>
   <sys:String x:Key="Transaction.DivideWallIntoPanels">Dividir un muro en paneles</sys:String>
   <sys:String x:Key="Transaction.AddPanelReinforcement">Armar paneles prefabricados</sys:String>
+  <sys:String x:Key="Transaction.CreateZone">Crear zona térmica</sys:String>
+  <sys:String x:Key="Transaction.RemoveZone">Quitar zona térmica</sys:String>
+  <sys:String x:Key="Transaction.SetResultsMetric">Cambiar el relleno de resultados</sys:String>
+  <sys:String x:Key="Transaction.GenerateMassVariants">Crear formas alternativas de una masa</sys:String>
   <sys:String x:Key="Transaction.SetViewCategories">Cambiar categorías visibles de la vista</sys:String>
   <sys:String x:Key="Transaction.PasteWalls">Pegar muros</sys:String>
   <sys:String x:Key="Transaction.AddArcWall">Crear muro curvo</sys:String>

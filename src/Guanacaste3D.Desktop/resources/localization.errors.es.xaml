@@ -126,6 +126,12 @@
   <sys:String x:Key="Error.The area would get too many sheets.">El área recibiría demasiadas hojas de malla.</sys:String>
   <sys:String x:Key="Error.The wall is no wider than a panel.">El muro no es más ancho que un panel.</sys:String>
   <sys:String x:Key="Error.The wall would get too many panels.">El muro recibiría demasiados paneles.</sys:String>
+  <sys:String x:Key="Error.Invalid zones.">Las zonas del proyecto no son válidas.</sys:String>
+  <sys:String x:Key="Error.A zone with that name already exists.">Ya existe una zona con ese nombre.</sys:String>
+  <sys:String x:Key="Error.A room is already in another zone.">Alguna habitación ya está en otra zona.</sys:String>
+  <sys:String x:Key="Error.The zone does not exist.">La zona no existe.</sys:String>
+  <sys:String x:Key="Error.The metric is invalid.">La medida no es válida.</sys:String>
+  <sys:String x:Key="Error.The proportions are invalid.">Las proporciones deben ser de 1 a 10, hasta 8 distintas.</sys:String>
   <sys:String x:Key="Error.The render scene does not exist.">La escena seleccionada ya no existe.</sys:String>
   <sys:String x:Key="Error.The render scene preview is too large.">La miniatura de la foto es demasiado grande.</sys:String>
   <sys:String x:Key="Error.The render scene collection is invalid.">La colección de escenas del proyecto no es válida.</sys:String>

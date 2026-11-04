@@ -1016,6 +1016,90 @@ internal static partial class InteractionChecks
                 System.IO.File.Delete(shopFile);
                 System.IO.File.Delete(camFile);
 
+                // Analyze: the analytical overlay, zones, the three reports, shapes of a mass and the results fill.
+                Invoke("ExecuteApplicationCommand", "AnalyticalMember");
+                Pump();
+                var analyticalLayers = Field<System.Collections.Generic.HashSet<string>>("_analyticalLayers");
+                Check(analyticalLayers.Contains("Member") && InWindow<System.Windows.Controls.CheckBox>("_analyticalWindow", "Layer_Member").IsChecked == true, "Analytical Member turns on the bars layer");
+                InWindow<System.Windows.Controls.CheckBox>("_analyticalWindow", "Layer_Boundary").IsChecked = true;
+                InWindow<System.Windows.Controls.CheckBox>("_analyticalWindow", "Layer_Link").IsChecked = true;
+                InWindow<System.Windows.Controls.CheckBox>("_analyticalWindow", "Layer_Panel").IsChecked = true;
+                InWindow<System.Windows.Controls.CheckBox>("_analyticalWindow", "Layer_Opening").IsChecked = true;
+                Pump();
+                Check(analyticalLayers.Count == 5, "Each analytical layer can be turned on from the window");
+                InWindow<System.Windows.Controls.CheckBox>("_analyticalWindow", "Layer_Member").IsChecked = false;
+                Check(!analyticalLayers.Contains("Member") && analyticalLayers.Count == 4, "A layer can be turned off");
+                ClickIn("_analyticalWindow", "AnalyticalClose");
+                analyticalLayers.Clear();
+                Invoke("RenderPlan");
+
+                var zoneLevel = Field<Guid>("_activeLevelId");
+                var zoneRoomA = session.AddRoom(zoneLevel, new Point2(700, 700), new Point2(704, 703), "Zona A");
+                var zoneRoomB = session.AddRoom(zoneLevel, new Point2(704, 700), new Point2(708, 703), "Zona B");
+                Invoke("ExecuteApplicationCommand", "Zone");
+                Pump();
+                foreach (var box in InWindow<System.Windows.Controls.StackPanel>("_zoneWindow", "ZoneRooms").Children.OfType<System.Windows.Controls.CheckBox>()
+                             .Where(box => (Guid)box.Tag == zoneRoomA || (Guid)box.Tag == zoneRoomB))
+                    box.IsChecked = true;
+                InWindow<System.Windows.Controls.TextBox>("_zoneWindow", "ZoneName").Text = "Zona prueba";
+                ClickIn("_zoneWindow", "ZoneCreate");
+                Check(session.Document.Zones.Any(zone => zone.Name == "Zona prueba" && zone.RoomIds.Contains(zoneRoomA) && zone.RoomIds.Contains(zoneRoomB)), "The zone window creates a zone with the rooms ticked");
+                Pump();
+                Check(InWindow<System.Windows.Controls.ListBox>("_zoneWindow", "ZoneList").Items.Count == session.Document.Zones.Count, "The zone window lists the zones of the project");
+                InWindow<System.Windows.Controls.TextBox>("_zoneWindow", "ZoneName").Text = "Zona prueba";
+                ClickIn("_zoneWindow", "ZoneCreate");
+                Check(session.Document.Zones.Count(zone => zone.Name == "Zona prueba") == 1, "A zone with the same name is refused");
+                var zoneList = InWindow<System.Windows.Controls.ListBox>("_zoneWindow", "ZoneList");
+                zoneList.SelectedIndex = session.Document.Zones.FindIndex(zone => zone.Name == "Zona prueba");
+                ClickIn("_zoneWindow", "ZoneRemove");
+                Check(session.Document.Zones.All(zone => zone.Name != "Zona prueba"), "The zone window removes the zone selected");
+                ClickIn("_zoneWindow", "ZoneClose");
+
+                Invoke("ExecuteApplicationCommand", "StructuralAnalysis");
+                Pump();
+                var structuralText = InWindow<System.Windows.Controls.TextBox>("_reportWindow", "ReportText").Text;
+                Check(structuralText.Contains("kg") && structuralText.Contains("Carga muerta"), "Structural Analysis reports the weights and the loads");
+                ClickIn("_reportWindow", "ReportClose");
+                Invoke("ExecuteApplicationCommand", "SystemsAnalysis");
+                Pump();
+                var systemsText = InWindow<System.Windows.Controls.TextBox>("_reportWindow", "ReportText").Text;
+                Check(systemsText.Contains("Plomería") && systemsText.Contains("Electricidad"), "Systems Analysis reports plumbing and electricity");
+                ClickIn("_reportWindow", "ReportClose");
+                Invoke("ExecuteApplicationCommand", "EnergyOptimization");
+                Pump();
+                var energyText = InWindow<System.Windows.Controls.TextBox>("_reportWindow", "ReportText").Text;
+                Check(energyText.Contains("Norte") && energyText.Contains("Sur") && energyText.Contains("•"), "Energy Optimization reports each orientation and gives advice");
+                ClickIn("_reportWindow", "ReportClose");
+
+                Invoke("CreateStructuralFromTool", StructuralElementKind.Mass, new Point2(720, 720), new Point2(730, 726));
+                var formMass = session.Document.StructuralElements.Last();
+                SetField("_selectedStructuralId", (Guid?)formMass.Id);
+                var formSetsBefore = session.Document.OptionSets.Count;
+                var formMassesBefore = session.Document.StructuralElements.Count(item => item.Kind == StructuralElementKind.Mass);
+                Answer("1 2 3");
+                Invoke("ExecuteApplicationCommand", "FormCreation");
+                Pump();
+                Check(session.Document.OptionSets.Count == formSetsBefore + 1 && session.Document.StructuralElements.Count(item => item.Kind == StructuralElementKind.Mass) == formMassesBefore + 3,
+                    "Form Creation makes three shapes of the mass in a new option set");
+                Check(InWindow<System.Windows.Controls.TextBox>("_reportWindow", "ReportText").Text.Contains("1:1"), "Form Creation lists the shapes it made");
+                ClickIn("_reportWindow", "ReportClose");
+                Answer("0");
+                SetField("_selectedStructuralId", (Guid?)formMass.Id);
+                var formMassesAfter = session.Document.StructuralElements.Count(item => item.Kind == StructuralElementKind.Mass);
+                Invoke("ExecuteApplicationCommand", "FormCreation");
+                Check(session.Document.StructuralElements.Count(item => item.Kind == StructuralElementKind.Mass) == formMassesAfter, "A proportion of 0 makes no shapes");
+
+                Invoke("ExecuteApplicationCommand", "ResultsFill");
+                Pump();
+                InWindow<System.Windows.Controls.ComboBox>("_fillWindow", "FillMetric").SelectedIndex = (int)ResultsMetric.Area;
+                ClickIn("_fillWindow", "FillApply");
+                Check(session.Document.ResultsMetric == ResultsMetric.Area, "Results Fill applies the area metric");
+                session.Undo();
+                Check(session.Document.ResultsMetric == ResultsMetric.None, "The results fill can be undone");
+                session.Redo();
+                ClickIn("_fillWindow", "FillClose");
+                session.SetResultsMetric(ResultsMetric.None);
+
                 SetField("_viewSelection", null);
                 Pump();
                 tabs.SelectedIndex = 0;

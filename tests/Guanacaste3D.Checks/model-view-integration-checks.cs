@@ -36,6 +36,7 @@ internal static class ModelViewIntegrationChecks
         MepChecks.Run(check);
         SteelChecks.Run(check);
         ConcreteChecks.Run(check);
+        AnalysisChecks.Run(check);
         PlanDimensionChecks.Run(check);
         DoorPlanSymbolChecks.Run(check);
         StructuralChecks.Run(check);

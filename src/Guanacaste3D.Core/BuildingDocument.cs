@@ -136,6 +136,10 @@ public sealed class BuildingDocument
     public ConcreteSettings Concrete { get; set; } = ConcreteSettings.Default;
     /// <summary>Elements whose cover is not the project's.</summary>
     public List<CoverOverride> CoverOverrides { get; set; } = [];
+    /// <summary>Groups of rooms treated as one thermal zone.</summary>
+    public List<Zone> Zones { get; set; } = [];
+    /// <summary>The measure that colours the rooms in the plan; none leaves them as they are.</summary>
+    public ResultsMetric ResultsMetric { get; set; }
     /// <summary>Images laid in the plan of a level as drawings to trace over.</summary>
     public List<ImageUnderlay> Underlays { get; set; } = [];
     /// <summary>Scanned or surveyed points kept as a reference in the plan.</summary>
@@ -224,6 +228,8 @@ public sealed class BuildingDocument
         Precast = Precast,
         Concrete = Concrete,
         CoverOverrides = [.. CoverOverrides],
+        Zones = Zones.Select(zone => zone with { RoomIds = [.. zone.RoomIds] }).ToList(),
+        ResultsMetric = ResultsMetric,
         Underlays = [.. Underlays],
         PointClouds = [.. PointClouds],
         ElementGroups = ElementGroups.Select(group => group with { MemberIds = [.. group.MemberIds] }).ToList(),
@@ -268,6 +274,10 @@ public sealed class BuildingDocument
         if (Reinforcement is null || !Reinforcement.IsValid) throw new InvalidDataException("The reinforcement settings are invalid.");
         if (Precast is null || !Precast.IsValid) throw new InvalidDataException("The precast settings are invalid.");
         if (Concrete is null || !Concrete.IsValid) throw new InvalidDataException("The concrete settings are invalid.");
+        if (Zones is null || Zones.Count > 500 || !Enum.IsDefined(ResultsMetric) ||
+            Zones.Any(zone => zone is null || zone.Id == Guid.Empty || string.IsNullOrWhiteSpace(zone.Name) || zone.Name.Length > 120 || zone.RoomIds is null || zone.RoomIds.Count == 0) ||
+            Zones.Select(zone => zone.Id).Distinct().Count() != Zones.Count)
+            throw new InvalidDataException("Invalid zones.");
         if (CoverOverrides is null || CoverOverrides.Count > 100000 || CoverOverrides.Any(item => item is null || item.Cover is < 0.01 or > 0.15) || CoverOverrides.Select(item => item.Id).Distinct().Count() != CoverOverrides.Count)
             throw new InvalidDataException("The cover is invalid.");
         if (Units is null || !Units.IsValid) throw new InvalidDataException("The project units are invalid.");
