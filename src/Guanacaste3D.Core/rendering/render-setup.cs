@@ -128,6 +128,11 @@ public sealed record RenderSetup
     /// <summary>Weather laid over the picture, 0–1: rain streaks and falling snow with a white cover.</summary>
     public double Rain { get; init; }
     public double Snow { get; init; }
+    /// <summary>Camera effects laid over the picture: lens flare, light rays and tilt-shift (0–1), and the band's place (−1 to 1).</summary>
+    public double LensFlare { get; init; }
+    public double LightRays { get; init; }
+    public double TiltShift { get; init; }
+    public double TiltShiftPosition { get; init; }
     /// <summary>Built-in photo LUT or custom to load a .cube file (none is neutral).</summary>
     public string LutPresetId { get; init; } = "none";
     /// <summary>Optional custom .cube path, relative to the .g3d when bundled with the project.</summary>
@@ -165,6 +170,8 @@ public sealed record RenderSetup
             (SkyPresetId is not null && RenderLooks.Skies.All(sky => sky.Id != SkyPresetId)) ||
             LutStrength is < 0 or > 1 || HighlightDim is < 0 or > 1 || !double.IsFinite(HighlightDim) ||
             Rain is < 0 or > 1 || Snow is < 0 or > 1 || !double.IsFinite(Rain) || !double.IsFinite(Snow) ||
+            LensFlare is < 0 or > 1 || LightRays is < 0 or > 1 || TiltShift is < 0 or > 1 || TiltShiftPosition is < -1 or > 1 ||
+            !double.IsFinite(LensFlare) || !double.IsFinite(LightRays) || !double.IsFinite(TiltShift) || !double.IsFinite(TiltShiftPosition) ||
             (HighlightMaterial is { Length: > 120 }) ||
             (LutPresetId != "custom" && ColorLutPresets.All.All(preset => preset.Id != LutPresetId)) ||
             (LutPath is not null && (string.IsNullOrWhiteSpace(LutPath) || LutPath.Length > 1024)) ||

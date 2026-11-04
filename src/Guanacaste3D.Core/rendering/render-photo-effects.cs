@@ -18,6 +18,7 @@ public static class RenderPhotoEffects
         FilmGrain = source.FilmGrain, Monochrome = source.Monochrome,
         HighlightMaterial = source.HighlightMaterial, HighlightDim = source.HighlightDim,
         Rain = source.Rain, Snow = source.Snow,
+        LensFlare = source.LensFlare, LightRays = source.LightRays, TiltShift = source.TiltShift, TiltShiftPosition = source.TiltShiftPosition,
         LutPresetId = source.LutPresetId, LutPath = source.LutPath, LutStrength = source.LutStrength
     };
 }

@@ -531,6 +531,30 @@
                     <Slider x:Name="SnowSlider" Minimum="0" Maximum="1" Value="0" TickFrequency="0.05"
                             IsSnapToTickEnabled="True" ValueChanged="Finish_SliderChanged"/>
                   </DockPanel>
+                  <TextBlock Style="{StaticResource PanelLabel}" Text="{DynamicResource Render.Camera.LensFlare}"/>
+                  <DockPanel>
+                    <TextBlock Style="{StaticResource SliderValue}" Text="{Binding Value, ElementName=LensFlareSlider, StringFormat={}{0:0%}}"/>
+                    <Slider x:Name="LensFlareSlider" Minimum="0" Maximum="1" Value="0" TickFrequency="0.05"
+                            IsSnapToTickEnabled="True" ValueChanged="Finish_SliderChanged"/>
+                  </DockPanel>
+                  <TextBlock Style="{StaticResource PanelLabel}" Text="{DynamicResource Render.Camera.LightRays}"/>
+                  <DockPanel>
+                    <TextBlock Style="{StaticResource SliderValue}" Text="{Binding Value, ElementName=LightRaysSlider, StringFormat={}{0:0%}}"/>
+                    <Slider x:Name="LightRaysSlider" Minimum="0" Maximum="1" Value="0" TickFrequency="0.05"
+                            IsSnapToTickEnabled="True" ValueChanged="Finish_SliderChanged"/>
+                  </DockPanel>
+                  <TextBlock Style="{StaticResource PanelLabel}" Text="{DynamicResource Render.Camera.TiltShift}"/>
+                  <DockPanel>
+                    <TextBlock Style="{StaticResource SliderValue}" Text="{Binding Value, ElementName=TiltShiftSlider, StringFormat={}{0:0%}}"/>
+                    <Slider x:Name="TiltShiftSlider" Minimum="0" Maximum="1" Value="0" TickFrequency="0.05"
+                            IsSnapToTickEnabled="True" ValueChanged="Finish_SliderChanged"/>
+                  </DockPanel>
+                  <TextBlock Style="{StaticResource PanelLabel}" Text="{DynamicResource Render.Camera.TiltShiftPosition}"/>
+                  <DockPanel>
+                    <TextBlock Style="{StaticResource SliderValue}" Text="{Binding Value, ElementName=TiltShiftPositionSlider, StringFormat={}{0:+0.00;-0.00;0}}"/>
+                    <Slider x:Name="TiltShiftPositionSlider" Minimum="-1" Maximum="1" Value="0" TickFrequency="0.05"
+                            IsSnapToTickEnabled="True" ValueChanged="Finish_SliderChanged"/>
+                  </DockPanel>
                   <CheckBox x:Name="LayersAnimationCheck" Style="{StaticResource PanelCheck}" IsChecked="False" Margin="0,12,0,0"
                             Content="{DynamicResource Render.Layers.Use}" Checked="Layers_Changed" Unchecked="Layers_Changed"/>
                   <TextBlock Style="{StaticResource PanelLabel}" Margin="0,12,0,0" Text="{DynamicResource RenderPanel.HighlightMaterial}"/>

@@ -139,6 +139,10 @@ public partial class RenderPanel
         HighlightDim = (float)HighlightDimSlider.Value,
         Rain = (float)RainSlider.Value,
         Snow = (float)SnowSlider.Value,
+        LensFlare = (float)LensFlareSlider.Value,
+        LightRays = (float)LightRaysSlider.Value,
+        TiltShift = (float)TiltShiftSlider.Value,
+        TiltShiftPosition = (float)TiltShiftPositionSlider.Value,
         Lut = SelectedLut(),
         LutStrength = (float)LutStrengthSlider.Value
     };

@@ -163,6 +163,35 @@ internal static partial class InteractionChecks
         }
     }
 
+    /// <summary>
+    /// Every effect of the picker edits a control that really exists in the Render panel, with a range the effect's own
+    /// starting value and neutral value fit in, so adding or muting an effect can never silently do nothing.
+    /// </summary>
+    private static void EffectControlChecks(RenderPanel panel)
+    {
+        var problems = new List<string>();
+        foreach (var effect in RenderFx.All)
+            foreach (var control in effect.Controls)
+            {
+                switch (panel.FindName(control.Key))
+                {
+                    case Slider slider:
+                        if (control.Kind != FxControlKind.Slider || control.Neutral < slider.Minimum || control.Neutral > slider.Maximum ||
+                            control.StartValue < slider.Minimum || control.StartValue > slider.Maximum)
+                            problems.Add($"{effect.Id}/{control.Key} (range)");
+                        break;
+                    case CheckBox when control.Kind == FxControlKind.Toggle:
+                    case ComboBox when control.Kind == FxControlKind.Choice:
+                        break;
+                    default:
+                        problems.Add($"{effect.Id}/{control.Key} (missing)");
+                        break;
+                }
+            }
+        Check(problems.Count == 0 && RenderFx.All.Count >= 20, "Every control of every effect exists in the Render panel and its range holds the effect's start and neutral values" +
+                                                                (problems.Count == 0 ? "" : ": " + string.Join(", ", problems)));
+    }
+
     private static T Await<T>(Task<T> task)
     {
         var deadline = DateTime.UtcNow.AddSeconds(120);

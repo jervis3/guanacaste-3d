@@ -211,6 +211,14 @@ public sealed record ImageFinish
     public float Rain { get; init; }
     /// <summary>Falling snow, a cold cast and a white cover on surfaces that face up, 0–1 (0 is off).</summary>
     public float Snow { get; init; }
+    /// <summary>Ghosts and rings of the brightest light, as a lens makes them, 0–1 (0 is off); needs a bright light in view.</summary>
+    public float LensFlare { get; init; }
+    /// <summary>Rays of light streaming from the brightest light, 0–1 (0 is off); needs a bright light in view.</summary>
+    public float LightRays { get; init; }
+    /// <summary>The miniature look: a sharp band with the rest blurred, 0–1 (0 is off).</summary>
+    public float TiltShift { get; init; }
+    /// <summary>Where the sharp band of <see cref="TiltShift"/> sits, −1 (high) to 1 (low); 0 is the middle.</summary>
+    public float TiltShiftPosition { get; init; }
     /// <summary>Optional 3D color lookup table applied after tone mapping and prior to lens effects.</summary>
     public ColorLookupTable? Lut { get; init; }
     /// <summary>Blend from unmodified color to LUT-graded color, between zero and one.</summary>

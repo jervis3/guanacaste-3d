@@ -68,6 +68,10 @@ public partial class RenderPanel
         HighlightDimSlider.Value = setup.HighlightDim;
         RainSlider.Value = setup.Rain;
         SnowSlider.Value = setup.Snow;
+        LensFlareSlider.Value = setup.LensFlare;
+        LightRaysSlider.Value = setup.LightRays;
+        TiltShiftSlider.Value = setup.TiltShift;
+        TiltShiftPositionSlider.Value = setup.TiltShiftPosition;
         SelectHighlight(setup.HighlightMaterial);
         Select(LutPicker, setup.LutPresetId);
         LutStrengthSlider.Value = setup.LutStrength;
@@ -123,6 +127,8 @@ public partial class RenderPanel
             Monochrome = MonochromeCheck.IsChecked == true,
             HighlightMaterial = SelectedHighlight(), HighlightDim = HighlightDimSlider.Value,
             Rain = RainSlider.Value, Snow = SnowSlider.Value,
+            LensFlare = LensFlareSlider.Value, LightRays = LightRaysSlider.Value,
+            TiltShift = TiltShiftSlider.Value, TiltShiftPosition = TiltShiftPositionSlider.Value,
             LutPresetId = Mode(LutPicker) is { Length: > 0 } lutId ? lutId : "none",
             LutPath = RenderSetup.SelectedCustomLutPath(Mode(LutPicker), _lutFilePath),
             LutStrength = LutStrengthSlider.Value

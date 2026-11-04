@@ -53,6 +53,10 @@ public static partial class ImageProcessor
 
         var glow = finish.Bloom > 0.001f ? Bloom(exposed, width, height) : null;
         var streaks = finish.Glare > 0.001f ? Glare(exposed, width, height) : null;
+        // Flare and rays come from the brightest light in view; with none in view they add nothing.
+        var spot = finish.LensFlare > 0.001f || finish.LightRays > 0.001f ? FindLightSpot(exposed, width, height) : null;
+        var ghosts = spot is not null && finish.LensFlare > 0.001f ? FlareGhosts(spot, width, height, finish.LensFlare) : null;
+        var lightRays = spot is not null && finish.LightRays > 0.001f ? LightRays(exposed, width, height, spot, finish.LightRays) : ((Vector3[] Rays, int Width, int Height)?)null;
         var display = new Vector3[width * height];
         var bloomStrength = Math.Clamp(finish.Bloom, 0f, 1f) * 0.6f;
         var vignette = Math.Clamp(finish.Vignette, 0f, 1f);
@@ -64,6 +68,8 @@ public static partial class ImageProcessor
                 var color = exposed[index];
                 if (glow is not null) color += glow[index] * bloomStrength;
                 if (streaks is not null) color += streaks[index] * Math.Clamp(finish.Glare, 0f, 1f);
+                if (ghosts is not null) color += FlareAt(ghosts, column, row);
+                if (lightRays is { } rays) color += ReadScaled(rays.Rays, rays.Width, rays.Height, RayScale, column, row);
                 color = ToneMap(color, finish.ToneMapper);
                 color = Grade(color, finish);
                 if (finish.Contrast != 1)
@@ -94,6 +100,7 @@ public static partial class ImageProcessor
                 display[index] = color;
             }
         });
+        if (finish.TiltShift > 0.001f) display = TiltShift(display, width, height, finish.TiltShift, finish.TiltShiftPosition);
         display = Lens(display, width, height, finish);
         var pixels = new byte[width * height * 4];
         Parallel.For(0, height, row =>
