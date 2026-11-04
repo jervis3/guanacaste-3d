@@ -578,7 +578,7 @@
                   <DockPanel>
                     <TextBlock Style="{StaticResource SliderValue}" Text="{Binding Value, ElementName=RainSlider, StringFormat={}{0:0%}}"/>
                     <Slider x:Name="RainSlider" Minimum="0" Maximum="1" Value="0" TickFrequency="0.05"
-                            IsSnapToTickEnabled="True" ValueChanged="Finish_SliderChanged"/>
+                            IsSnapToTickEnabled="True" ValueChanged="Rain_SliderChanged"/>
                   </DockPanel>
                   <TextBlock Style="{StaticResource PanelLabel}" Text="{DynamicResource RenderPanel.Snow}"/>
                   <DockPanel>

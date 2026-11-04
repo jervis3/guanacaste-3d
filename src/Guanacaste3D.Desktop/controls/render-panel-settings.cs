@@ -207,7 +207,7 @@ public partial class RenderPanel
         return lighting with
         {
             AerialPerspective = HazeCheck.IsChecked == true ? 1f : 0f,
-            Wetness = (float)WetnessSlider.Value,
+            Wetness = RainWetness.Effective((float)WetnessSlider.Value, (float)RainSlider.Value),
             CloudCover = _hdriEnvironment is null ? (float)(CloudSlider.Value / 100) : 0f,
             Clouds = SelectedClouds(),
             CloudSeed = (uint)CloudSeedSlider.Value,
@@ -410,6 +410,13 @@ public partial class RenderPanel
 
     /// <summary>Routes image adjustment sliders through the non-destructive finish path.</summary>
     private void Finish_SliderChanged(object sender, RoutedPropertyChangedEventArgs<double> e) => Finish_Changed(sender, e);
+
+    /// <summary>Rain is a finish (the streaks) and also wets the ground, which is a lighting setting, so both are refreshed.</summary>
+    private void Rain_SliderChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+    {
+        Lighting_Changed(sender, e);
+        Finish_Changed(sender, e);
+    }
 
     /// <summary>Refreshes preview rays after a lens or focus setting changes.</summary>
     private void Camera_Changed(object sender, RoutedEventArgs e)

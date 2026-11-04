@@ -71,6 +71,10 @@ static class RenderWetChecks
             "A mirror, like glass, metal, lights and water, does not get wet");
 
         // The choice is part of the project and of a photo's look, and rejects nonsense.
+        // Rain wets the ground by itself; the wetness slider can only add to it.
+        check(RainWetness.Effective(0, 0) == 0 && RainWetness.Effective(0, 0.5f) > 0.4f && RainWetness.Effective(0, 1) == RainWetness.AtFullRain &&
+              RainWetness.Effective(0.95f, 0.3f) == 0.95f && RainWetness.Effective(float.NaN, float.NaN) == 0,
+              "Rain leaves the ground wet on its own, a wetter slider wins, and no rain with no slider stays dry");
         var setup = new RenderSetup { Wetness = 0.7 };
         setup.Validate();
         var rejected = 0;
