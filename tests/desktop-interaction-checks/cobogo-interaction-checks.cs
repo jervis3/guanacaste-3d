@@ -1318,6 +1318,25 @@ internal static partial class InteractionChecks
                 Field<System.Windows.Window>("_libraryWindow").Close();
                 System.IO.Directory.Delete(libraryRoot, true);
 
+                // Wall: attach the base to the slab under the wall, and release it.
+                var baseLevel = Field<Guid>("_activeLevelId");
+                var baseWall = session.AddWall(baseLevel, new Point2(900, 900), new Point2(910, 900), 0.2, 3);
+                var baseSlab = session.AddFloor(baseLevel, [new Point2(899, 899), new Point2(911, 899), new Point2(911, 901), new Point2(899, 901)], 0.3);
+                session.UpdateFloor(baseSlab, "Zapata UI", 0.3, -0.6);
+                SetField("_selectedWallId", (Guid?)null);
+                Invoke("ExecuteApplicationCommand", "AttachBase");
+                Check(!string.IsNullOrWhiteSpace(((System.Windows.Controls.TextBlock)opened.FindName("StatusText")).Text) && Math.Abs(session.Document.Walls.Single(wall => wall.Id == baseWall).BaseOffset) < 1e-9, "Attach Base with no wall selected changes nothing");
+                SetField("_selectedWallId", (Guid?)baseWall);
+                Invoke("ExecuteApplicationCommand", "AttachBase");
+                var attachedWall = session.Document.Walls.Single(wall => wall.Id == baseWall);
+                Check(Math.Abs(attachedWall.BaseOffset + 0.6) < 1e-9 && Math.Abs(attachedWall.NetHeight - 3.6) < 1e-9, "Attach Base takes the selected wall down to the footing under it");
+                SetField("_selectedWallId", (Guid?)baseWall);
+                Invoke("ExecuteApplicationCommand", "DetachAll");
+                Check(Math.Abs(session.Document.Walls.Single(wall => wall.Id == baseWall).BaseOffset) < 1e-9, "Detaching the wall also releases its base");
+                session.Undo();
+                Check(Math.Abs(session.Document.Walls.Single(wall => wall.Id == baseWall).BaseOffset + 0.6) < 1e-9, "One undo gives the wall its base back");
+                session.Redo();
+
                 SetField("_viewSelection", null);
                 Pump();
                 tabs.SelectedIndex = 0;

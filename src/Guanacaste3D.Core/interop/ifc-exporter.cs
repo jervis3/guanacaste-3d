@@ -74,7 +74,7 @@ public static class IfcExporter
             var direction = writer.Add($"IFCDIRECTION(({Real(dx)},{Real(dy)},0.))");
             var axes = writer.Add($"IFCAXIS2PLACEMENT3D({Ref(start)},{Ref(zAxis)},{Ref(direction)})");
             var placement = writer.Add($"IFCLOCALPLACEMENT({Ref(storey.Placement)},{Ref(axes)})");
-            var shape = Box(writer, body, zAxis, xAxis2D, wall.Length / 2, 0, 0, wall.Length, wall.Thickness, wall.Height);
+            var shape = Box(writer, body, zAxis, xAxis2D, wall.Length / 2, 0, wall.BaseOffset, wall.Length, wall.Thickness, wall.NetHeight);
             var entity = writer.Add($"IFCWALL({Id(wall.Id)},$,{Text(type.Name)},$,$,{Ref(placement)},{Ref(shape)},{Text(wall.Id.ToString("N")[..8])},.STANDARD.)");
             contained[wall.LevelId].Add(entity);
             if (!materials.TryGetValue(type.MaterialName, out var material))

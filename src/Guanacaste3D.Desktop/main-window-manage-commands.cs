@@ -110,7 +110,7 @@ public partial class MainWindow
         {
             var wall = _session.Document.Walls.Single(candidate => candidate.Id == id);
             StatusText.Text = string.Format(CultureInfo.CurrentCulture, GetText("Status.MeasureWallResult"),
-                wall.Length, wall.Thickness, wall.Height, wall.Length * wall.Height);
+                wall.Length, wall.Thickness, wall.Height, wall.ElevationArea);
             return false;
         }, "Status.MeasureWallPick");
 

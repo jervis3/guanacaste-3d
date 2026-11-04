@@ -25,6 +25,7 @@ public partial class MainWindow
             case "Align": BeginAlignPick(); return true;
             case "MatchProperties": BeginMatchPick(); return true;
             case "FlipWall": FlipSelectedWall(); return true;
+            case "AttachBase": AttachSelectedWallBase(); return true;
             case "AttachTop":
             case "AttachTopBase": AttachSelectedWallTop(); return true;
             case "DetachTopBase":
@@ -103,6 +104,13 @@ public partial class MainWindow
         RunWallEdit(() => _session.AttachWallTopToSlabAbove(id), "Status.WallTopAttached");
     }
 
+    /// <summary>Takes the base of the selected wall to the top of the slab under it.</summary>
+    private void AttachSelectedWallBase()
+    {
+        if (_selectedWallId is not Guid id) { StatusText.Text = GetText("Status.SelectWallFirst"); return; }
+        RunWallEdit(() => _session.AttachWallBaseToSlab(id), "Status.WallBaseAttached");
+    }
+
     private void FlipSelectedWall()
     {
         if (_selectedWallId is not Guid id) { StatusText.Text = GetText("Status.SelectWallFirst"); return; }
@@ -113,7 +121,13 @@ public partial class MainWindow
     private void DetachSelectedWallTop()
     {
         if (_selectedWallId is not Guid id) { StatusText.Text = GetText("Status.SelectWallFirst"); return; }
-        RunWallEdit(() => _session.SetWallTopConstraint(id, null), "Status.WallTopDetached");
+        RunWallEdit(() =>
+        {
+            var mark = _session.MarkHistory();
+            _session.SetWallTopConstraint(id, null);
+            if (_session.Document.Walls.FirstOrDefault(wall => wall.Id == id) is { BaseOffset: not 0 }) _session.SetWallBaseOffset(id, 0);
+            _session.CollapseHistorySince(mark, "Transaction.DetachWall");
+        }, "Status.WallTopDetached");
     }
 
     private void TogglePinSelectedWall()

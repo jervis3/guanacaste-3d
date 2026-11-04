@@ -979,6 +979,7 @@
   <sys:String x:Key="Library.Published">Familia publicada en la biblioteca: {0}.</sys:String>
   <sys:String x:Key="Library.Kind.Native">Familia</sys:String>
   <sys:String x:Key="Library.Kind.Opening">Puerta o ventana</sys:String>
+  <sys:String x:Key="Status.WallBaseAttached">La base del muro está ahora en la losa que tiene debajo.</sys:String>
   <sys:String x:Key="Status.NoViewForCategories">Abra una planta, un alzado, una sección o la vista 3D para cambiar sus categorías.</sys:String>
   <sys:String x:Key="Status.ViewCategoriesChanged">Categorías ocultas en esta vista: {0}.</sys:String>
   <sys:String x:Key="Status.SelectWallFirst">Seleccione primero un muro.</sys:String>

@@ -161,6 +161,10 @@
   <sys:String x:Key="Error.The script does not exist.">El guion no existe.</sys:String>
   <sys:String x:Key="Error.The folder does not exist.">La carpeta no existe.</sys:String>
   <sys:String x:Key="Error.The family file is not valid.">El archivo de la familia no es válido.</sys:String>
+  <sys:String x:Key="Error.The wall base is invalid.">La base del muro no es válida.</sys:String>
+  <sys:String x:Key="Error.The base would cut below a door or window of the wall.">La base quedaría más arriba que el borde de abajo de una puerta o ventana del muro.</sys:String>
+  <sys:String x:Key="Error.The profile cuts below the base of the wall.">El perfil baja por debajo de la base del muro.</sys:String>
+  <sys:String x:Key="Error.There is no slab to attach the base of the wall to.">No hay una losa bajo el muro a la que atar su base.</sys:String>
   <sys:String x:Key="Error.The render scene does not exist.">La escena seleccionada ya no existe.</sys:String>
   <sys:String x:Key="Error.The render scene preview is too large.">La miniatura de la foto es demasiado grande.</sys:String>
   <sys:String x:Key="Error.The render scene collection is invalid.">La colección de escenas del proyecto no es válida.</sys:String>

@@ -117,6 +117,7 @@ public sealed partial class DocumentSession
         if (!WallProfiles.IsValid(points)) throw new InvalidDataException("The wall profile is invalid.");
         var wall = Document.Walls.FirstOrDefault(candidate => candidate.Id == wallId) ?? throw new InvalidDataException("The wall does not exist.");
         var candidate = wall with { TopProfile = [.. points] };
+        if (points.Min(point => point.Y) < wall.BaseOffset + WallProfiles.MinimumHeight) throw new InvalidDataException("The profile cuts below the base of the wall.");
         foreach (var opening in Document.Openings.Where(item => item.WallId == wallId))
         {
             var span = points.Select(point => point.X).Where(x => x > opening.Begin && x < opening.End).Append(opening.Begin).Append(opening.End);

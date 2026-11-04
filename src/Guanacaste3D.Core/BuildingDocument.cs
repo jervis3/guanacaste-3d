@@ -33,6 +33,12 @@ public sealed record Wall(Guid Id, Guid LevelId, Point2 Start, Point2 End, doubl
     /// <summary>Distance in meters from the top level to the wall top (negative is below it).</summary>
     public double TopOffset { get; init; }
 
+    /// <summary>Meters from the level elevation to the wall base: positive lifts the base above the level, negative takes the wall down (to a footing, say).</summary>
+    public double BaseOffset { get; init; }
+
+    /// <summary>The height of the wall from its base to its top.</summary>
+    [JsonIgnore] public double NetHeight => Height - BaseOffset;
+
     /// <summary>Finish applied to both faces of the wall, used for finish area takeoff.</summary>
     public FinishKind Finish { get; init; }
 
@@ -74,12 +80,12 @@ public sealed record Wall(Guid Id, Guid LevelId, Point2 Start, Point2 End, doubl
     {
         get
         {
-            if (TopProfile is not { Count: > 1 } profile) return Length * Height;
+            if (TopProfile is not { Count: > 1 } profile) return Length * NetHeight;
             var stations = profile.Select(point => point.X).Where(x => x > 0 && x < Length).Append(0).Append(Length).Order().ToArray();
             var area = 0.0;
             for (var index = 1; index < stations.Length; index++)
                 area += (stations[index] - stations[index - 1]) * (TopHeightAt(stations[index - 1]) + TopHeightAt(stations[index])) / 2;
-            return area;
+            return Math.Max(0, area - Length * BaseOffset);
         }
     }
 
@@ -355,7 +361,7 @@ public sealed class BuildingDocument
                 (wall.TopProfile is not null && !WallProfiles.IsValid(wall.TopProfile)) ||
                 !double.IsFinite(wall.Thickness) || !double.IsFinite(wall.Height) ||
                 wall.Length < 0.05 || wall.Length > 100000 ||
-                wall.Thickness is < 0.05 or > 5 || wall.Height is < 0.1 or > 1000 ||
+                wall.Thickness is < 0.05 or > 5 || wall.Height is < 0.1 or > 1000 || !double.IsFinite(wall.BaseOffset) || wall.BaseOffset < -50 || wall.BaseOffset > wall.Height - 0.1 ||
                 !Enum.IsDefined(wall.Finish) || !Enum.IsDefined(wall.LocationReference) ||
                 !Enum.IsDefined(wall.StartJoin) || !Enum.IsDefined(wall.EndJoin) ||
                 !double.IsFinite(wall.CurveRadius) || wall.CurveRadius < 0 || (wall.CurveGroupId is null && wall.CurveRadius != 0))

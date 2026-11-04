@@ -39,7 +39,7 @@ public sealed class ElementPicker
         foreach (var wall in document.Walls)
         {
             var z = Elevation(wall.LevelId);
-            _prisms.Add(WallPrism(PickedKind.Wall, wall.Id, null, wall, 0, wall.Length, z, z + (float)wall.Height, z, 0));
+            _prisms.Add(WallPrism(PickedKind.Wall, wall.Id, null, wall, 0, wall.Length, z + (float)wall.BaseOffset, z + (float)wall.Height, z, 0));
         }
         foreach (var opening in document.Openings)
         {

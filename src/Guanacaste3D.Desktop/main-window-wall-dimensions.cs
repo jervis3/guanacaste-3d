@@ -22,7 +22,7 @@ public partial class MainWindow
         PropertyLengthInput.Text = Units.LengthNumber(wall.Length);
         HeightInput.Text = Units.LengthNumber(wall.Height);
         ThicknessInput.Text = Units.LengthNumber(wall.Thickness);
-        PropertyAreaInput.Text = Units.AreaNumber(wall.Length * wall.Height);
+        PropertyAreaInput.Text = Units.AreaNumber(wall.ElevationArea);
         _loadedWallDimensionTexts =
             [PropertyLengthInput.Text, HeightInput.Text, ThicknessInput.Text, PropertyAreaInput.Text];
         if (FinishPicker.Items.Count == 0)

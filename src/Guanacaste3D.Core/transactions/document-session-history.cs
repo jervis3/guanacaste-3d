@@ -61,6 +61,9 @@ public sealed partial class DocumentSession
     {
         document.Dimensions.RemoveAll(item => PlanDimensions.Resolve(document, item) is null);
         ElementGroups.Prune(document);
+        for (var index = 0; index < document.Walls.Count; index++)
+            if (document.Walls[index].BaseOffset > document.Walls[index].Height - 0.1)
+                document.Walls[index] = document.Walls[index] with { BaseOffset = Math.Max(0, document.Walls[index].Height - 0.1) };
         document.Studies.RemoveAll(study => !document.StructuralElements.Any(item => item.Id == study.MassId && item.Kind == StructuralElementKind.Mass));
         foreach (var zone in document.Zones.ToArray())
         {

@@ -89,7 +89,7 @@ public static class BudgetCalculator
         document.Validate();
 
         var wallArea = document.Walls.Sum(wall => Math.Max(0,
-            wall.Length * wall.Height - document.Openings.Where(o => o.WallId == wall.Id).Sum(o => o.Width * o.Height)));
+            wall.ElevationArea - document.Openings.Where(o => o.WallId == wall.Id).Sum(o => o.Width * o.Height)));
         var lines = new List<BudgetLine>();
         Add(lines, prices, UnitPriceList.WallArea, wallArea);
         Add(lines, prices, UnitPriceList.FloorArea,

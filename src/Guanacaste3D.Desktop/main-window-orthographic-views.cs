@@ -237,7 +237,7 @@ public partial class MainWindow
         }
         else
         {
-            wallShape = new Rectangle { Width = wallWidth, Height = wall.Height * scale };
+            wallShape = new Rectangle { Width = wallWidth, Height = wall.NetHeight * scale };
             Canvas.SetLeft(wallShape, left);
             Canvas.SetTop(wallShape, top);
         }

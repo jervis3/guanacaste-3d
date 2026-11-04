@@ -103,7 +103,28 @@ public static class WallGeometry
         if (wall.Length - cursor >= 0.000001)
             parts.Add(new WallSolid(cursor, wall.Length, 0, wall.Height));
 
-        return wall.TopProfile is { Count: > 1 } profile ? FollowProfile(wall, profile, parts) : parts;
+        var shaped = wall.TopProfile is { Count: > 1 } profile ? FollowProfile(wall, profile, parts) : parts;
+        return wall.BaseOffset == 0 ? shaped : ReshapeBase(wall, shaped);
+    }
+
+    /// <summary>
+    /// Moves the base of the solids to the wall's base: a raised base trims what lies below it, and a base taken below the level
+    /// lengthens every piece that started at the level. Openings keep their place, measured from the level.
+    /// </summary>
+    private static List<WallSolid> ReshapeBase(Wall wall, List<WallSolid> parts)
+    {
+        var result = new List<WallSolid>();
+        foreach (var part in parts)
+        {
+            if (wall.BaseOffset > 0)
+            {
+                var highest = Math.Max(part.Top, Math.Max(part.TopAtFrom ?? part.Top, part.TopAtTo ?? part.Top));
+                if (highest <= wall.BaseOffset + 1e-9) continue;
+                result.Add(part.Bottom < wall.BaseOffset ? part with { Bottom = wall.BaseOffset } : part);
+            }
+            else result.Add(part.Bottom <= 1e-9 ? part with { Bottom = wall.BaseOffset } : part);
+        }
+        return result;
     }
 
     /// <summary>
