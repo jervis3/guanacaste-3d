@@ -270,4 +270,7 @@ public sealed record DrawingSheet(
     public string Description { get; init; } = string.Empty;
     public string Subtitle { get; init; } = string.Empty;
     public string DateText { get; init; } = string.Empty;
+
+    /// <summary>Spacing, in sheet millimeters, of the guide grid shown while composing the sheet; 0 shows none. It is never printed.</summary>
+    public double GuideGridMm { get; init; }
 }

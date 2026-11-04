@@ -24,7 +24,7 @@ public partial class MainWindow
     {
         StructuralElementKind.Downspout or StructuralElementKind.IsolatedFoundation or
             StructuralElementKind.Component or StructuralElementKind.Connection or
-            StructuralElementKind.ModelText or StructuralElementKind.Planting => StructuralPlacementMode.Point,
+            StructuralElementKind.ModelText or StructuralElementKind.Planting or StructuralElementKind.ViewReference => StructuralPlacementMode.Point,
         StructuralElementKind.Skylight or StructuralElementKind.Area or StructuralElementKind.Dormer or
             StructuralElementKind.Opening or StructuralElementKind.Shaft or StructuralElementKind.FilledRegion or
             StructuralElementKind.RevisionCloud or StructuralElementKind.Mass or StructuralElementKind.ParkingSpace => StructuralPlacementMode.Rectangle,
@@ -306,6 +306,8 @@ public partial class MainWindow
         StructuralElementKind.RevisionCloud => "Entity.RevisionCloud",
         StructuralElementKind.Insulation => "Entity.Insulation",
         StructuralElementKind.Mass => "Entity.Mass",
+        StructuralElementKind.Matchline => "Entity.Matchline",
+        StructuralElementKind.ViewReference => "Entity.ViewReference",
         StructuralElementKind.ParkingSpace => "Entity.ParkingSpace",
         _ => null
     };

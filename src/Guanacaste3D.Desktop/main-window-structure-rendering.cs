@@ -24,6 +24,11 @@ public partial class MainWindow
                 AddAreaOutline(element, selected);
                 continue;
             }
+            if (element.Kind == StructuralElementKind.ViewReference)
+            {
+                AddViewReferenceSymbol(element, selected);
+                continue;
+            }
             if (element.Kind is StructuralElementKind.FilledRegion or StructuralElementKind.RevisionCloud or StructuralElementKind.Insulation or StructuralElementKind.ParkingSpace)
             {
                 AddDetailSymbol(element, selected);
@@ -138,6 +143,7 @@ public partial class MainWindow
             StructuralElementKind.RoomSeparator => (Brushes.MediumVioletRed, 1.5, new DoubleCollection { 6, 2 }),
             StructuralElementKind.AreaBoundary => (Brushes.Firebrick, 1.5, new DoubleCollection { 2, 2 }),
             StructuralElementKind.DetailLine => (Brushes.Black, 1.0, (DoubleCollection?)null),
+            StructuralElementKind.Matchline => (Brushes.Purple, 3.0, new DoubleCollection { 10, 3, 2, 3 }),
             _ => (Brushes.Black, 1.5, (DoubleCollection?)null)
         };
         var start = WorldToCanvas(element.Start);
@@ -150,8 +156,8 @@ public partial class MainWindow
             StrokeDashArray = dashes,
             Tag = element.Id
         });
-        if (element.Kind != StructuralElementKind.ReferencePlane || string.IsNullOrWhiteSpace(element.Name)) return;
-        var label = new TextBlock { Text = element.Name, FontSize = 10, Foreground = Brushes.ForestGreen, Tag = element.Id };
+        if (element.Kind is not (StructuralElementKind.ReferencePlane or StructuralElementKind.Matchline) || string.IsNullOrWhiteSpace(element.Name)) return;
+        var label = new TextBlock { Text = element.Name, FontSize = 10, Foreground = element.Kind == StructuralElementKind.Matchline ? Brushes.Purple : Brushes.ForestGreen, Tag = element.Id };
         Canvas.SetLeft(label, start.X + 3);
         Canvas.SetTop(label, start.Y - 14);
         PlanCanvas.Children.Add(label);
@@ -308,7 +314,7 @@ public partial class MainWindow
         if (tool.Kind == StructuralElementKind.Planting)
             AddPlantingSymbol(preview, selected: false, preview: true);
         else if (tool.Kind is StructuralElementKind.ReferencePlane or StructuralElementKind.RoomSeparator
-            or StructuralElementKind.AreaBoundary or StructuralElementKind.ModelLine or StructuralElementKind.DetailLine)
+            or StructuralElementKind.AreaBoundary or StructuralElementKind.ModelLine or StructuralElementKind.DetailLine or StructuralElementKind.Matchline)
             AddStructuralPreviewOutline([origin, pointer]);
         else if (HasDetailedPlanParts(preview))
             foreach (var part in ElementGeometry.Parts(preview).Take(400)) AddStructuralPreviewOutline(part.Footprint);

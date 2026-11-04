@@ -579,6 +579,38 @@ internal static partial class InteractionChecks
                 Check(InWindow<System.Windows.Controls.TextBlock>("_contextWindow", "ContextText").Text.Contains("Solsticio de junio"), "Site Data lists the sun's day for the key dates of the year");
                 ClickIn("_contextWindow", "ContextClose");
 
+                // Sheet aids: the matchline tool, a guide grid on the open sheet and a reference to another view.
+                Invoke("ExecuteApplicationCommand", "Matchline");
+                Check(Field<object>("_structuralTool").ToString() == "(Matchline, Line)", "Matchline arms a line tool of its own kind");
+                Invoke("CancelStructuralTool");
+                tabs.SelectedIndex = 3;
+                Pump();
+                Answer("30");
+                Invoke("ExecuteApplicationCommand", "GuideGrid");
+                Check(session.Document.Sheets.Any(sheet => sheet.GuideGridMm == 30), "Guide Grid sets the spacing asked for on the open sheet");
+                Answer("abc");
+                Invoke("ExecuteApplicationCommand", "GuideGrid");
+                Check(session.Document.Sheets.Any(sheet => sheet.GuideGridMm == 30), "A spacing that is not a number changes nothing");
+                Answer("0");
+                Invoke("ExecuteApplicationCommand", "GuideGrid");
+                Check(session.Document.Sheets.All(sheet => sheet.GuideGridMm == 0), "Zero removes the guide grid");
+                tabs.SelectedIndex = 0;
+                Pump();
+                var targetView = session.Document.Views.First(view => view.Kind == ProjectViewKind.Elevation || view.Kind == ProjectViewKind.Section).Name;
+                Answer("zzz no existe");
+                Invoke("ExecuteApplicationCommand", "ViewReference");
+                Check(Field<object>("_structuralTool") is null || Field<object>("_structuralTool").ToString() != "(ViewReference, Point)", "A view name that matches nothing arms nothing");
+                Answer(targetView);
+                Invoke("ExecuteApplicationCommand", "ViewReference");
+                Check(Field<object>("_structuralTool").ToString() == "(ViewReference, Point)", "View Reference asks for a view and arms a click in the plan");
+                var referencesBefore = session.Document.StructuralElements.Count(element => element.Kind == StructuralElementKind.ViewReference);
+                Invoke("PlaceViewReference", new Point2(603, 603));
+                Invoke("RenderPlan");
+                Pump();
+                Check(session.Document.StructuralElements.Count(element => element.Kind == StructuralElementKind.ViewReference) == referencesBefore + 1 &&
+                      session.Document.StructuralElements.Last().Name.StartsWith(targetView, StringComparison.Ordinal), "The click puts the reference, named after the view it points to");
+                Invoke("CancelStructuralTool");
+
                 SetField("_viewSelection", null);
                 Pump();
                 tabs.SelectedIndex = 0;

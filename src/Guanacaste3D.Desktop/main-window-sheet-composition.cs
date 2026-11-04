@@ -61,6 +61,7 @@ public partial class MainWindow
             SheetCanvas.Children.Add(layer);
         }
         foreach (var graphic in composition.Graphics) DrawSheetPrimitive(SheetCanvas, graphic);
+        DrawGuideGrid(SheetCanvas, composition.Width, composition.Height, sheet.GuideGridMm);
         SheetCanvas.ToolTip = GetText("SheetEditor.Hint");
     }
 

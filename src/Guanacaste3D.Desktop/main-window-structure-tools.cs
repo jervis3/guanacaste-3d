@@ -104,6 +104,7 @@ public partial class MainWindow
         if (tool.Mode == StructuralPlacementMode.Point)
         {
             if (tool.Kind == StructuralElementKind.ModelText) PlaceModelText(point);
+            else if (tool.Kind == StructuralElementKind.ViewReference) PlaceViewReference(point);
             else if (tool.Kind == StructuralElementKind.Opening) CreateOpeningFromTool(tool.Kind, point, point);
             else CreateStructuralFromTool(tool.Kind, point, point);
             return true;

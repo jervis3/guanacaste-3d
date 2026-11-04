@@ -110,7 +110,13 @@ public enum StructuralElementKind
     Mass,
 
     /// <summary>A parking space drawn between two corners in the plan. It has no solid.</summary>
-    ParkingSpace
+    ParkingSpace,
+
+    /// <summary>A line that marks where one plan continues on another sheet. It has no solid.</summary>
+    Matchline,
+
+    /// <summary>A mark in a view that points to another view and the sheet it is on; its text is the element's name. It has no solid.</summary>
+    ViewReference
 }
 
 /// <summary>Variant of an element's geometry. Which values apply depends on the element kind.</summary>
@@ -242,12 +248,13 @@ public sealed record StructuralElement(
         or StructuralElementKind.Shaft or StructuralElementKind.ModelText or StructuralElementKind.ReferencePlane
         or StructuralElementKind.RoomSeparator or StructuralElementKind.AreaBoundary or StructuralElementKind.Area
         or StructuralElementKind.DetailLine or StructuralElementKind.FilledRegion or StructuralElementKind.RevisionCloud
-        or StructuralElementKind.Insulation or StructuralElementKind.ParkingSpace);
+        or StructuralElementKind.Insulation or StructuralElementKind.ParkingSpace or StructuralElementKind.Matchline
+        or StructuralElementKind.ViewReference);
 
     /// <summary>Whether the kind is drafted as a single line between its two points.</summary>
     [JsonIgnore] public bool IsDatumLine => Kind is StructuralElementKind.ReferencePlane
         or StructuralElementKind.RoomSeparator or StructuralElementKind.AreaBoundary
-        or StructuralElementKind.ModelLine or StructuralElementKind.DetailLine;
+        or StructuralElementKind.ModelLine or StructuralElementKind.DetailLine or StructuralElementKind.Matchline;
 
     /// <summary>Plan area in square meters of an area rectangle; zero for every other kind.</summary>
     [JsonIgnore] public double PlanArea => Kind == StructuralElementKind.Area
@@ -324,7 +331,8 @@ public static class StructuralElementStandards
         StructuralElementKind.ReferencePlane or StructuralElementKind.RoomSeparator
             or StructuralElementKind.AreaBoundary or StructuralElementKind.Area
             or StructuralElementKind.DetailLine or StructuralElementKind.FilledRegion
-            or StructuralElementKind.RevisionCloud or StructuralElementKind.ParkingSpace => (0, 0, 0),
+            or StructuralElementKind.RevisionCloud or StructuralElementKind.ParkingSpace or StructuralElementKind.Matchline
+            or StructuralElementKind.ViewReference => (0, 0, 0),
         // A mass of two storeys is the usual first sketch of a building.
         StructuralElementKind.Mass => (0, 6.0, 0),
         // Batting 10 cm thick, the usual insulation of a masonry wall.

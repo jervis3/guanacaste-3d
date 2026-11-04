@@ -541,6 +541,17 @@
   <sys:String x:Key="Context.Day.SeptemberEquinox">Equinoccio de septiembre</sys:String>
   <sys:String x:Key="Context.Day.DecemberSolstice">Solsticio de diciembre</sys:String>
   <sys:String x:Key="Context.Edit">Cambiar ubicación…</sys:String>
+  <sys:String x:Key="GuideGrid.Title">Cuadrícula guía</sys:String>
+  <sys:String x:Key="Prompt.GuideGrid">Separación de la cuadrícula guía de la hoja, en milímetros de papel (de 5 a 100; 0 la quita). No se imprime:</sys:String>
+  <sys:String x:Key="Status.GuideGridNoSheet">Cree o abra primero una hoja.</sys:String>
+  <sys:String x:Key="Status.GuideGridInvalid">Escriba un número de milímetros entre 5 y 100, o 0.</sys:String>
+  <sys:String x:Key="Status.GuideGridOn">Cuadrícula guía cada {0:0.##} mm en la hoja.</sys:String>
+  <sys:String x:Key="Status.GuideGridOff">Cuadrícula guía quitada de la hoja.</sys:String>
+  <sys:String x:Key="ViewReference.Title">Referencia de vista</sys:String>
+  <sys:String x:Key="Prompt.ViewReference">Nombre de la vista a la que apunta (puede escribir solo el principio). Vistas: {0}</sys:String>
+  <sys:String x:Key="Status.ViewReferenceNotFound">Ninguna vista del proyecto tiene ese nombre.</sys:String>
+  <sys:String x:Key="Status.ViewReferenceArmed">Haga clic en el plano para colocar la referencia a «{0}».</sys:String>
+  <sys:String x:Key="Status.ViewReferencePlaced">Referencia de vista colocada.</sys:String>
   <sys:String x:Key="Status.NoViewForCategories">Abra una planta, un alzado, una sección o la vista 3D para cambiar sus categorías.</sys:String>
   <sys:String x:Key="Status.ViewCategoriesChanged">Categorías ocultas en esta vista: {0}.</sys:String>
   <sys:String x:Key="Status.SelectWallFirst">Seleccione primero un muro.</sys:String>
