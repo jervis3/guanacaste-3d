@@ -194,6 +194,30 @@ static class RenderPeopleChecks
             var righting = Actors.At(leftCorner with { Route = [new ActorPoint(0, 0, 0), new ActorPoint(20, 0, 0), new ActorPoint(20, -20, 0)] }, 4).Turn;
             check(Actors.At(leftCorner, 1).Turn == 0 && turning > 0.15f && righting < -0.15f && Actors.At(leftCorner, 4).Speed == 5 && Actors.At(leftCorner, 100).Turn == 0,
                 $"A car on a straight does not turn, one rounding a left corner turns left ({turning:0.00} rad/m) and a right corner right, and one parked has stopped");
+            // Mass scatter: a crowd and a line of traffic spread over the ground, each its own, reproducible, and only where there is ground.
+            var squareCentre = new ActorPoint(10, 20, 0);
+            var crowd = ActorScatter.Scatter(squareCentre, 8, 30, ActorKind.Person, true, 7, (x, y) => 0.0);
+            double Gap(IReadOnlyList<Actor> group) => group.SelectMany((a, i) => group.Skip(i + 1).Select(b => Math.Sqrt(Math.Pow(a.Route[0].X - b.Route[0].X, 2) + Math.Pow(a.Route[0].Y - b.Route[0].Y, 2)))).Min();
+            check(crowd.Count == 30 && crowd.All(person => person.IsValid && Math.Sqrt(Math.Pow(person.Route[0].X - 10, 2) + Math.Pow(person.Route[0].Y - 20, 2)) <= 8.001) &&
+                  Gap(crowd) >= 0.8 && crowd.Select(person => person.Look).Distinct().Count() >= 4 && crowd.Select(person => person.Speed).Distinct().Count() > 20 && crowd.Any(person => person.Route.Count > 2) &&
+                  crowd.Select(person => person.Id).Distinct().Count() == 30 && crowd.Last().Name == "Persona 30",
+                $"A crowd of {crowd.Count} people is spread inside the circle, at least 0.8 m apart, each with its own look, speed and route");
+            var again = ActorScatter.Scatter(squareCentre, 8, 30, ActorKind.Person, true, 7, (x, y) => 0.0);
+            check(again.Select(person => (person.Route[0], person.Look, person.Speed)).SequenceEqual(crowd.Select(person => (person.Route[0], person.Look, person.Speed))) &&
+                  !ActorScatter.Scatter(squareCentre, 8, 30, ActorKind.Person, true, 8, (x, y) => 0.0).Select(person => person.Route[0]).SequenceEqual(crowd.Select(person => person.Route[0])),
+                "The same seed gives the same crowd and another seed another one");
+            var traffic = ActorScatter.Scatter(squareCentre, 40, 10, ActorKind.Car, true, 3, (x, y) => 0.0, 5);
+            var parked = ActorScatter.Scatter(squareCentre, 8, 5, ActorKind.Person, false, 1, (x, y) => 0.0);
+            check(traffic.Count == 10 && Gap(traffic) >= 4 && traffic.All(vehicle => vehicle.Kind == ActorKind.Car && vehicle.Speed >= 6 && vehicle.IsValid && vehicle.Route.Count > 2) &&
+                  traffic[0].Name == "Coche 5" && parked.All(person => person.Route.Count == 1),
+                "Cars keep four metres apart and drive routes of their own, and people who are not asked to walk stand still");
+            var onlyEast = ActorScatter.Scatter(squareCentre, 8, 30, ActorKind.Person, true, 7, (x, y) => x > 10 ? 0.0 : null);
+            var ledge = ActorScatter.Scatter(squareCentre, 8, 30, ActorKind.Person, true, 7, (x, y) => x > 12 ? 5.0 : 0.0);
+            check(onlyEast.Count > 0 && onlyEast.All(person => person.Route.All(point => point.X > 10)) && ActorScatter.Scatter(squareCentre, 8, 30, ActorKind.Person, true, 7, (x, y) => null).Count == 0 &&
+                  ledge.All(person => person.Route.All(point => Math.Abs(point.Z - person.Route[0].Z) < 1e-9)) &&
+                  ActorScatter.Scatter(squareCentre, 0.5, 5, ActorKind.Person, true, 1, (x, y) => 0.0).Count == 0 && ActorScatter.Scatter(squareCentre, 8, 0, ActorKind.Person, true, 1, (x, y) => 0.0).Count == 0 &&
+                  ActorScatter.Scatter(squareCentre, 500, 500, ActorKind.Person, true, 1, (x, y) => 0.0).Count <= ActorScatter.MaximumPerBatch,
+                "Nobody is put where there is no ground, a route stops at a step, and bad sizes or counts give nobody and the batch has a limit");
             var runOnce = Car(0, new ActorPoint(0, 0, 0), new ActorPoint(10, 0, 0)) with { Speed = 5 };
             check(Math.Abs(Actors.At(runOnce, 3).Distance - 10) < 1e-3f && Actors.At(runOnce, 30).Distance == Actors.At(runOnce, 3).Distance && !Actors.At(runOnce, 30).Walking &&
                   Actors.At(runOnce with { Loop = true }, 30).Distance > 100,

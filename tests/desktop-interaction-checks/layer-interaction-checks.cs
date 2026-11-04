@@ -236,6 +236,17 @@ internal static partial class InteractionChecks
                 "Saving fires keeps them in the project");
             Check(session.GetExtension(Actors.Key) is { Length: > 50 } && ((IReadOnlyList<Actor>)readPeople.Invoke(host, null)!).Count == 3,
                 "Saving people keeps them, with their routes, in the project");
+            // The people window can scatter a crowd round the point the view looks at.
+            var dialogType = typeof(MainWindow).Assembly.GetType("Guanacaste3D.Desktop.Controls.PeopleDialog")!;
+            IReadOnlyList<Actor>? applied = null;
+            var dialog = (Window)Activator.CreateInstance(dialogType, [people, new Func<ActorPoint?>(() => start), new Action<IReadOnlyList<Actor>>(list => applied = list),
+                new Func<ActorPoint, ActorScatter.GroundAt>(centre => (x, y) => centre.Z)])!;
+            IEnumerable<Button> Buttons(object parent) => LogicalTreeHelper.GetChildren((DependencyObject)parent).OfType<object>()
+                .SelectMany(child => (child is Button button ? new[] { button } : Array.Empty<Button>()).Concat(child is DependencyObject ? Buttons(child) : Enumerable.Empty<Button>()));
+            Buttons(dialog).First(button => button.Content as string == "Esparcir personas aquí").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            dialog.Close();
+            Check(applied is { Count: > 3 } && applied.Count(actor => actor.Kind == ActorKind.Person) >= 22 && applied.All(actor => actor.IsValid),
+                $"The people window scatters a crowd of twenty round the view's point and saves them with the others ({applied?.Count})");
 
             // ONE rebuild: the scene now has the sea, the decal and the people together.
             var after = Await(Scene())!;

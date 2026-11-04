@@ -41,7 +41,7 @@ public partial class RenderPanel
         {
             source.SetActors(actors);
             StatusText.Text = actors.Count == 0 ? "No hay personas ni coches en el proyecto." : $"{actors.Count} personas y coches en el proyecto; el render se actualiza.";
-        })
+        }, GroundNear)
         {
             Owner = Window.GetWindow(this)
         };
@@ -53,6 +53,19 @@ public partial class RenderPanel
         }
         _peopleWindow.Show();
     }
+
+    /// <summary>
+    /// The ground round a point, for scattering: from a point a metre and a half above the centre, the first surface below, kept only
+    /// if it is about as high as the centre (so nothing lands on a roof, in a tree or down a pit).
+    /// </summary>
+    private ActorScatter.GroundAt GroundNear(ActorPoint centre) => (x, y) =>
+    {
+        if (_source?.Query is not { } query) return null;
+        var from = new Vector3((float)x, (float)y, (float)centre.Z + 1.5f);
+        if (query.Pick(from, -Vector3.UnitZ) is not { } drop) return null;
+        var height = from.Z - drop;
+        return height >= centre.Z - 1.5 && height <= centre.Z + 0.4 ? height : null;
+    };
 
     /// <summary>
     /// The ground under the centre of the view: the point the view looks at, brought down to the first surface below it, so
