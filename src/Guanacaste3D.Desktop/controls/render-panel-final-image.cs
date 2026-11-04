@@ -153,7 +153,7 @@ public partial class RenderPanel
         };
         var camera = CurrentCamera();
         var job = new RenderJob(plan.OutputWidth, plan.OutputHeight, plan.TargetSamples, null, true,
-            CurrentFinish(), Buckets: true) { BucketSize = SelectedBucketSize() };
+            CurrentFinish(), Buckets: true) { BucketSize = SelectedBucketSize(), Actors = _actorRig, ActorSeconds = _playTime };
 
         // The preview stops and gives its memory back: the picture is frozen while the final render is made.
         _preview?.Suspend();

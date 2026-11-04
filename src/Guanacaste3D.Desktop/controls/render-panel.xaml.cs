@@ -262,7 +262,12 @@ public partial class RenderPanel : UserControl
         _sceneTriangles = scene.TriangleCount;
         _sceneBytes = scene.EstimatedBytes;
         UpdateMemoryEstimate();
-        if (PreviewToggle.IsChecked == true && !_showingFinal && !_rendering) _preview?.SetScene(scene);
+        RefreshActorRig();
+        if (PreviewToggle.IsChecked == true && !_showingFinal && !_rendering)
+        {
+            _preview?.SetScene(scene);
+            ApplyMotionPreview();
+        }
     }
 
     /// <summary>Coalesces worker frames into dispatcher updates to avoid accumulating UI work.</summary>

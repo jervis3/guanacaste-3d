@@ -24,6 +24,9 @@ public sealed class LivePreview : IDisposable
     private bool _settingsDirty;
     private bool _sizeDirty;
     private bool _finishDirty;
+    private ActorRig? _actors;
+    private double _motionSeconds;
+    private bool _motionDirty;
     private bool _suspended;
     private long _suspensionRevision;
 
@@ -92,6 +95,21 @@ public sealed class LivePreview : IDisposable
         _wake.Release();
     }
 
+    /// <summary>
+    /// Puts the people and cars of the scene where they are at a time of the movie (the playhead). Only their small hierarchy is
+    /// rebuilt, and the picture starts over, as it does when the camera moves; null leaves them where the scene has them.
+    /// </summary>
+    public void SetActors(ActorRig? actors, double seconds)
+    {
+        lock (_gate)
+        {
+            _actors = actors;
+            _motionSeconds = seconds;
+            _motionDirty = true;
+        }
+        _wake.Release();
+    }
+
     /// <summary>Queues a bounded preview resolution without rebuilding the geometry hierarchy.</summary>
     public void SetSize(int width, int height)
     {
@@ -139,7 +157,9 @@ public sealed class LivePreview : IDisposable
         {
             while (!token.IsCancellationRequested)
             {
-                bool needsTracer, cameraChanged, finishChanged, settingsChanged, sizeChanged;
+                bool needsTracer, cameraChanged, finishChanged, settingsChanged, sizeChanged, motionChanged;
+                ActorRig? actors;
+                double motionSeconds;
                 RenderScene? scene;
                 RenderCamera camera;
                 RenderSettings settings;
@@ -166,6 +186,10 @@ public sealed class LivePreview : IDisposable
                     sizeChanged = _sizeDirty;
                     cameraChanged = _cameraDirty;
                     finishChanged = _finishDirty;
+                    actors = _actors;
+                    motionSeconds = _motionSeconds;
+                    motionChanged = _motionDirty;
+                    _motionDirty = false;
                     if (needsTracer) _sceneDirty = false;
                     _settingsDirty = false;
                     _sizeDirty = false;
@@ -204,8 +228,23 @@ public sealed class LivePreview : IDisposable
                 }
                 if (tracer is null) continue;
 
+                // A new tracer starts with the people where the scene put them; bring them to the playhead.
+                if (actors is not null && tracer.HasActors && (motionChanged || needsTracer))
+                {
+                    try
+                    {
+                        var (positions, normals) = actors.Frame(motionSeconds);
+                        tracer.MoveActors(positions, normals);
+                        motionChanged = true;
+                    }
+                    catch (Exception ex) when (ex is ArgumentException or InvalidOperationException)
+                    {
+                        // The people changed after this scene was built; the next scene brings them in step.
+                    }
+                }
+
                 var wantsMore = tracer.SampleCount < MaximumSamples;
-                if (!wantsMore && !finishChanged && !needsTracer && !cameraChanged && !settingsChanged && !sizeChanged)
+                if (!wantsMore && !finishChanged && !needsTracer && !cameraChanged && !settingsChanged && !sizeChanged && !motionChanged)
                 {
                     // Converged and nothing changed: sleep until the next request instead of spinning.
                     _wake.Wait(token);
@@ -224,7 +263,7 @@ public sealed class LivePreview : IDisposable
                 if (tracer.SampleCount == 1 || finishChanged || DateTime.UtcNow - lastFrame >= interval || tracer.SampleCount >= MaximumSamples)
                 {
                     var bytes = ImageProcessor.ToBgra32(tracer.LinearImage(denoise: true), tracer.Width, tracer.Height,
-                        tracer.BaseExposure, finish, tracer.CaptureFeatures);
+                        tracer.BaseExposure, tracer.WithScreenEffects(finish), tracer.CaptureFeatures);
                     lastFrame = DateTime.UtcNow;
                     PublishFrame(new RenderFrame(bytes, tracer.Width, tracer.Height, tracer.SampleCount, MaximumSamples,
                         TimeSpan.Zero, null, 1, false), suspensionRevision);

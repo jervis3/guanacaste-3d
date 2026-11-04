@@ -245,6 +245,12 @@ internal static partial class InteractionChecks
                 $"The render scene holds the decal's two triangles and the two people and the car as a block of moving triangles ({after.DynamicTriangleCount}) after everything else ({before.TriangleCount} -> {after.TriangleCount})");
             Check(after.Lights.Length == before.Lights.Length + 1,
                 $"The campfire's flames light the render scene with one warm light, and a column of smoke adds none ({before.Lights.Length} -> {after.Lights.Length})");
+            // The panel keeps a rig of the same actors for the preview, and moving the playhead with it must not fail.
+            typeof(RenderPanel).GetMethod("RefreshActorRig", PrivateInstance)!.Invoke(panel, null);
+            var panelRig = (ActorRig?)typeof(RenderPanel).GetField("_actorRig", PrivateInstance)!.GetValue(panel);
+            typeof(RenderPanel).GetMethod("UpdatePlayhead", PrivateInstance)!.Invoke(panel, [1.0]);
+            Check(panelRig is { Count: 3 } && panelRig.VertexCount == after.DynamicVertexCount,
+                "The panel keeps a rig of the scene's people and car for the preview, and moving the playhead with it does not fail");
             var tracer = new PathTracer(after, 16, 16, new RenderCamera(new System.Numerics.Vector3(0, -8, 2), System.Numerics.Vector3.Zero, 45));
             // The window's own loader of car meshes, as the program reads them from its resources folder.
             FamilyMesh.Decoded? CarMesh(int model) => NativeDocumentStore.LoadFamily(Path.Combine(AppContext.BaseDirectory, "resources", "families",

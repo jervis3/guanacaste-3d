@@ -11,6 +11,10 @@ public sealed record RenderJob(int Width, int Height, int TargetSamples, TimeSpa
 {
     /// <summary>Square bucket edge in pixels (8–256, power of two). The image size is unchanged.</summary>
     public int BucketSize { get; init; } = 32;
+
+    /// <summary>The people and cars of the scene and the second of the movie to show them at; null leaves them where the scene has them.</summary>
+    public ActorRig? Actors { get; init; }
+    public double ActorSeconds { get; init; }
 }
 
 /// <summary>A displayable snapshot of a render in progress.</summary>
@@ -126,6 +130,18 @@ public sealed class RenderSession : IDisposable
                 MaxThreads = _settings.MaxThreads
             };
             var tracer = _tracer = new PathTracer(_scene, _job.Width, _job.Height, _camera, settings, cancellation);
+            if (_job.Actors is { } actors && tracer.HasActors)
+            {
+                try
+                {
+                    var (positions, normals) = actors.Frame(_job.ActorSeconds);
+                    tracer.MoveActors(positions, normals);
+                }
+                catch (Exception ex) when (ex is ArgumentException or InvalidOperationException)
+                {
+                    // The people do not match this scene; they stay where the scene has them.
+                }
+            }
             MemoryTrim.AfterHeavyBuild();
             PhaseChanged?.Invoke("Render.Rendering");
             clock.Restart();
@@ -229,7 +245,7 @@ public sealed class RenderSession : IDisposable
                 var frameStart = clock.Elapsed;
                 tracer.ReportBucketedSamples(1, false);
                 var bytes = ImageProcessor.ToBgra32(tracer.LinearImage(false), tracer.Width, tracer.Height,
-                    tracer.BaseExposure, finish, tracer.CaptureFeatures);
+                    tracer.BaseExposure, tracer.WithScreenEffects(finish), tracer.CaptureFeatures);
                 for (var i = 0; i < buckets.Count; i++)
                 {
                     if (state[i] == 2) continue;
@@ -321,7 +337,7 @@ public sealed class RenderSession : IDisposable
     private RenderFrame MakeFrame(PathTracer tracer, ImageFinish finish, TimeSpan elapsed, bool isFinal)
     {
         var bytes = ImageProcessor.ToBgra32(tracer.LinearImage(_job.Denoise), tracer.Width, tracer.Height,
-            tracer.BaseExposure, finish, tracer.CaptureFeatures);
+            tracer.BaseExposure, tracer.WithScreenEffects(finish), tracer.CaptureFeatures);
         TimeSpan? remaining = null;
         if (tracer.SampleCount > 0 && !isFinal)
         {

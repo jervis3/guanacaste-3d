@@ -8,6 +8,24 @@ namespace Guanacaste3D.Desktop.Controls;
 public partial class RenderPanel
 {
     private PeopleDialog? _peopleWindow;
+    private ActorRig? _actorRig;
+
+    /// <summary>
+    /// The people and cars of the project as a rig for the preview, rebuilt each time a scene is shown (the scene holds exactly
+    /// the actors the rig was made from). Null when there are none.
+    /// </summary>
+    private void RefreshActorRig() => _actorRig = _source is null ? null : ActorRig.From(_source.GetActors(), CarLibrary.Load);
+
+    /// <summary>
+    /// Puts the preview's people and cars where they are at the playhead and lets its fire burn at that second, so playing or
+    /// scrubbing the movie in the panel shows them moving. Costs nothing when the project has neither.
+    /// </summary>
+    private void ApplyMotionPreview()
+    {
+        if (_preview is null) return;
+        if (_actorRig is not null) _preview.SetActors(_actorRig, _playTime);
+        if (FiresForFinish() is not null) _preview.SetFinish(CurrentFinish());
+    }
 
     /// <summary>Opens the window of people beside the view (one at a time).</summary>
     private void ShowPeopleWindow()

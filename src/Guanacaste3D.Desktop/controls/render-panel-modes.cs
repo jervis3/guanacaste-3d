@@ -320,6 +320,7 @@ public partial class RenderPanel
         _playTime = Math.Clamp(seconds, 0, TimelineSpan());
         if (_playhead is not null) Canvas.SetLeft(_playhead, TimeToX(_playTime));
         ApplyLayerPreview(_playTime);
+        ApplyMotionPreview();
         if (_timeText is not null && _path.Marks.Count >= 2) _timeText.Text = $"{Clock(_playTime)} / {Clock(_path.Duration)} · {_path.Marks.Count} cámaras";
     }
 
@@ -337,6 +338,7 @@ public partial class RenderPanel
         ApplyCamera(mark.Position, mark.Target, mark.FieldOfViewDegrees);
         _playTime = MarkTimes()[index];
         ApplyLayerPreview(_playTime);
+        ApplyMotionPreview();
         _dragMark = index > 0 ? index : -1;
         RedrawTimeline();
         if (_dragMark >= 0 && _timeline is not null) _timeline.CaptureMouse();
