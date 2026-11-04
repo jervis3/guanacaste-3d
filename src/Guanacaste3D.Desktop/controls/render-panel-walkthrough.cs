@@ -165,7 +165,7 @@ public partial class RenderPanel
         try
         {
             result = await TourRenderer.RenderAsync(scene, _path, LightingFor(quality, ResourceUse()), fit.Width, fit.Height, fps, samples,
-                CurrentFinish(), folder, progress, _cancel.Token);
+                CurrentFinish(), folder, progress, _cancel.Token, LayersForRender());
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException)
         {

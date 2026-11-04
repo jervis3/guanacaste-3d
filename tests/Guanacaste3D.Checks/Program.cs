@@ -624,6 +624,7 @@ MeshFamilyChecks.Run(Check);
 MassPlacementChecks.Run(Check);
 RenderLookChecks.Run(Check);
 RenderHighlightChecks.Run(Check);
+RenderLayerChecks.Run(Check);
 RenderWeatherChecks.Run(Check);
 ImportedUvChecks.Run(Check);
 FinishTransactionChecks.Run(Check);

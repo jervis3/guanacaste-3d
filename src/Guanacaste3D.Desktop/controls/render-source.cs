@@ -29,6 +29,12 @@ internal interface IRenderSource
     /// <summary>The current scene, built in the background and cached; null when the project is empty.</summary>
     Task<RenderScene?> GetSceneAsync();
 
+    /// <summary>The scene with some levels left out (the movie's layer animation); the cached one when none is hidden.</summary>
+    Task<RenderScene?> GetSceneAsync(IReadOnlySet<Guid> hiddenLevels);
+
+    /// <summary>The levels of the project, the layers a movie can show and hide.</summary>
+    IReadOnlyList<Level> Levels { get; }
+
     /// <summary>Builds frozen, lightweight model geometry for interactive camera navigation.</summary>
     Task<ModelSceneSnapshot> GetInteractiveSceneAsync();
 

@@ -6,6 +6,12 @@ namespace Guanacaste3D.Core.Rendering;
 /// <summary>Progress of a video render.</summary>
 public readonly record struct TourProgress(int Frame, int Total, double Seconds);
 
+/// <summary>
+/// Layer animation for a video: the animation says which levels are hidden at each moment, and <see cref="SceneFor"/>
+/// builds the scene with those levels out (null when nothing would be left to draw).
+/// </summary>
+public sealed record LayerSource(LayerAnimation Animation, Func<IReadOnlySet<Guid>, RenderScene?> SceneFor);
+
 /// <summary>Outcome of a video render.</summary>
 public sealed record TourResult(int FramesWritten, int TotalFrames, bool Cancelled, bool StoppedForMemory, string Folder);
 
@@ -18,12 +24,12 @@ public static class TourRenderer
 {
     public static Task<TourResult> RenderAsync(RenderScene scene, CameraPath path, RenderSettings settings, int width, int height,
         int framesPerSecond, int samplesPerFrame, ImageFinish finish, string folder, IProgress<TourProgress>? progress,
-        CancellationToken cancellation) =>
-        Task.Run(() => Render(scene, path, settings, width, height, framesPerSecond, samplesPerFrame, finish, folder, progress, cancellation));
+        CancellationToken cancellation, LayerSource? layers = null) =>
+        Task.Run(() => Render(scene, path, settings, width, height, framesPerSecond, samplesPerFrame, finish, folder, progress, cancellation, layers));
 
     private static TourResult Render(RenderScene scene, CameraPath path, RenderSettings settings, int width, int height,
         int framesPerSecond, int samplesPerFrame, ImageFinish finish, string folder, IProgress<TourProgress>? progress,
-        CancellationToken cancellation)
+        CancellationToken cancellation, LayerSource? layers)
     {
         ArgumentNullException.ThrowIfNull(scene);
         ArgumentNullException.ThrowIfNull(path);
@@ -42,15 +48,33 @@ public static class TourRenderer
         try
         {
             var first = path.Frame(0, framesPerSecond);
-            var tracer = new PathTracer(scene, width, height, new RenderCamera(first.Position, first.Target, first.FieldOfView) with
-            {
-                CorrectVerticals = false
-            }, settings with { AdaptiveSampling = true }, safety.Token);
+            PathTracer Open(RenderScene opened, (Vector3 Position, Vector3 Target, float FieldOfView) view) =>
+                new(opened, width, height, new RenderCamera(view.Position, view.Target, view.FieldOfView) with { CorrectVerticals = false },
+                    settings with { AdaptiveSampling = true }, safety.Token);
+            // With layer animation the first scene is the one at time zero; each change of the hidden levels opens another,
+            // one at a time, so memory never holds two scenes. Frames that look alike share the tracer already built.
+            var animated = layers is { Animation.IsEmpty: false };
+            var state = animated ? LayerAnimation.StateKey(layers!.Animation.HiddenAt(0)) : null;
+            var startScene = animated ? layers!.SceneFor(layers.Animation.HiddenAt(0)) ?? scene : scene;
+            var tracer = Open(startScene, first);
             MemoryTrim.AfterHeavyBuild();
             for (var frame = 0; frame < total; frame++)
             {
                 safety.Token.ThrowIfCancellationRequested();
                 var (position, target, fieldOfView) = path.Frame(frame, framesPerSecond);
+                if (animated)
+                {
+                    var hidden = layers!.Animation.HiddenAt(total <= 1 ? 0 : path.Duration * frame / (total - 1));
+                    var key = LayerAnimation.StateKey(hidden);
+                    if (key != state && layers.SceneFor(hidden) is { } changed)
+                    {
+                        tracer = null!;
+                        MemoryTrim.AfterHeavyBuild();
+                        tracer = Open(changed, (position, target, fieldOfView));
+                        MemoryTrim.AfterHeavyBuild();
+                        state = key;
+                    }
+                }
                 tracer.SetCamera(new RenderCamera(position, target, fieldOfView));
                 for (var sample = 0; sample < samplesPerFrame; sample++)
                 {

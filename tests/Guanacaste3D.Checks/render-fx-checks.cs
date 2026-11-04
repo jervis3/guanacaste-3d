@@ -37,11 +37,11 @@ static class RenderFxChecks
             "A style file with the wrong shape, version or unknown effects is rejected");
 
         check(FxStyle.TryParse("""{"Version":1,"Name":"x","Effects":["fog","fog"],"Values":{"FogSlider":0.3}}""") is null &&
-              FxStyle.TryParse("""{"Version":1,"Name":"x","Effects":["layers"],"Values":{}}""") is null &&
+              FxStyle.TryParse("""{"Version":1,"Name":"x","Effects":["layers"],"Values":{"LayersAnimationCheck":1}}""") is not null &&
               FxStyle.TryParse("""{"Version":1,"Name":"x","Effects":["highlight"],"Values":{"HighlightPicker":2}}""") is null &&
               FxStyle.TryParse("""{"Version":1,"Name":"x","Effects":["highlight"],"Values":{"HighlightDimSlider":0.5}}""") is not null &&
               FxStyle.TryParse("""{"Version":1,"Name":"x","Effects":["sun"],"Values":{"HourSlider":12}}""") is null,
-            "An imported FX style rejects duplicate, unimplemented and scene-only effects");
+            "An imported FX style rejects duplicate and scene-only effects and accepts the animation effect");
         check(FxStyle.TryParse("""{"Version":1,"Name":"x","Effects":["fog"],"Values":{"GlareSlider":0.5}}""") is null &&
               FxStyle.TryParse("""{"Version":1,"Name":"x","Effects":["fog"],"Values":{"FogSlider":0.3,"FogSlider":0.8}}""") is null &&
               FxStyle.TryParse("""{"Version":1,"Name":"x","Effects":["fog"],"Values":{"FogSlider":"0.3"}}""") is null,

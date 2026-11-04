@@ -239,6 +239,12 @@ public partial class RenderPanel
         _fxOpen.Add(effect.Id);
         RefreshFxStack();
         SectionTabs.SelectedIndex = 1;
+        // Layers are placed on the movie's timeline, so adding the effect takes the person there.
+        if (effect.Id == "layers")
+        {
+            SetMode(RenderMode.Movie);
+            StatusText.Text = "Pulsa «Capas» en la barra de película y elige un nivel para que aparezca o se oculte en el momento marcado.";
+        }
     }
 
     // ---------------------------------------------------------------- the picker

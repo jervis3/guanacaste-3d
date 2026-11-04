@@ -531,6 +531,8 @@
                     <Slider x:Name="SnowSlider" Minimum="0" Maximum="1" Value="0" TickFrequency="0.05"
                             IsSnapToTickEnabled="True" ValueChanged="Finish_SliderChanged"/>
                   </DockPanel>
+                  <CheckBox x:Name="LayersAnimationCheck" Style="{StaticResource PanelCheck}" IsChecked="False" Margin="0,12,0,0"
+                            Content="{DynamicResource Render.Layers.Use}" Checked="Layers_Changed" Unchecked="Layers_Changed"/>
                   <TextBlock Style="{StaticResource PanelLabel}" Margin="0,12,0,0" Text="{DynamicResource RenderPanel.HighlightMaterial}"/>
                   <ComboBox x:Name="HighlightPicker" SelectedIndex="0" SelectionChanged="Highlight_Changed"/>
                   <TextBlock Style="{StaticResource PanelLabel}" Text="{DynamicResource RenderPanel.HighlightDim}"/>

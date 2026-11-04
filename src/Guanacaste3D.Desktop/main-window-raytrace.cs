@@ -79,6 +79,8 @@ public partial class MainWindow
         public string ProjectName => window._session.Document.Name;
         public (Vector3 Min, Vector3 Max) SceneBounds() => window.SceneBounds();
         public Task<RenderScene?> GetSceneAsync() => window.GetSceneAsync();
+        public Task<RenderScene?> GetSceneAsync(IReadOnlySet<Guid> hiddenLevels) => window.GetSceneAsync(hiddenLevels);
+        public IReadOnlyList<Level> Levels => window._session.Document.Levels;
         /// <summary>Copies document and material state before building WPF geometry off the UI thread.</summary>
         public Task<ModelSceneSnapshot> GetInteractiveSceneAsync()
         {
@@ -296,15 +298,30 @@ public partial class MainWindow
         // gets trees with branches and tens of thousands of leaves, which must not stall the interface. The 3D view
         // keeps the light modelling canopies.
         // The 3D view draws its own visibility: elements hidden or isolated in that view are left out of the copy.
-        var document = ModelDisplayDocument();
-        var links = _links.Visible().ToList();
         var version = _sceneVersion;
+        var task = BuildRenderSceneAsync(ModelDisplayDocument());
+        _sceneTask = task;
+        _ = task.ContinueWith(finished =>
+        {
+            if (finished.IsCompletedSuccessfully && finished.Result is { } scene && version == _sceneVersion)
+                Dispatcher.BeginInvoke(() => BuildQuery(scene, version));
+        }, TaskScheduler.Default);
+        return task;
+    }
+
+    /// <summary>
+    /// Builds a render scene from a copy of the document, with the project's links, materials and render options as they
+    /// are now. The copy is taken here, on the calling thread, and meshed on a worker.
+    /// </summary>
+    private Task<RenderScene?> BuildRenderSceneAsync(BuildingDocument document)
+    {
+        var links = _links.Visible().ToList();
         var materials = _session.Document.RenderMaterials.ToList();
         var projectFile = _filePath;
         var lightsOn = _artificialLights;
         var clay = _renderClay;
         var stoneDetail = _stoneMicrogeometry;
-        var task = Task.Run<RenderScene?>(() =>
+        return Task.Run<RenderScene?>(() =>
         {
             var mesh = BuildingMesher.Build(document, includeGround: true, plants: PlantDetail.Render);
             if (stoneDetail) RenderStoneDisplacement.Append(mesh);
@@ -317,13 +334,6 @@ public partial class MainWindow
             MemoryTrim.AfterHeavyBuild();
             return scene.TriangleCount == 0 ? null : scene;
         });
-        _sceneTask = task;
-        _ = task.ContinueWith(finished =>
-        {
-            if (finished.IsCompletedSuccessfully && finished.Result is { } scene && version == _sceneVersion)
-                Dispatcher.BeginInvoke(() => BuildQuery(scene, version));
-        }, TaskScheduler.Default);
-        return task;
     }
 
     /// <summary>Builds ray queries for navigation off-thread, then publishes them on the UI thread if the scene is still current.</summary>

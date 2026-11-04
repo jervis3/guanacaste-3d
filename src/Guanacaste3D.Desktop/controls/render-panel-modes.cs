@@ -173,11 +173,15 @@ public partial class RenderPanel
         var add = Small("", "Añadir cámara", "Agrega la vista actual como una marca al final del recorrido", AddMark_Click, out _);
         var fromPhotos = Small("", "Desde las fotos", "Crea el recorrido con las cámaras de las fotos, en orden", (_, _) => MarksFromPhotos(), out _);
         var clear = Small("", "Vaciar", "Quita todas las marcas", (_, _) => { _path.Clear(); RefreshMarks(); }, out _);
+        Button? layersButton = null;
+        layersButton = Small("", "Capas", "Hace aparecer o desaparecer niveles del edificio en un momento de la película",
+            (_, _) => ShowLayersMenu(layersButton!), out _);
         var left = new WrapPanel { Width = 300, Margin = new Thickness(14, 12, 6, 0) };
         left.Children.Add(play);
         left.Children.Add(add);
         left.Children.Add(fromPhotos);
         left.Children.Add(clear);
+        left.Children.Add(layersButton);
 
         _timeText = new TextBlock { Foreground = Frozen(Color.FromRgb(0x8F, 0xA6, 0xB9)), FontSize = 11.5, Margin = new Thickness(0, 10, 0, 4) };
         _timeline = new Canvas { Height = 74, Background = Brushes.Transparent, ClipToBounds = true };
@@ -232,7 +236,7 @@ public partial class RenderPanel
         return times;
     }
 
-    private double TimelineSpan() => Math.Max(10, _path.Duration + 2);
+    private double TimelineSpan() => Math.Max(10, Math.Max(_path.Duration, LastLayerSecond()) + 2);
 
     private double TimeToX(double seconds) =>
         TimelinePadding + seconds / TimelineSpan() * Math.Max(1, (_timeline?.ActualWidth ?? 0) - 2 * TimelinePadding);
@@ -295,6 +299,7 @@ public partial class RenderPanel
             Canvas.SetTop(chip, 32);
             _timeline.Children.Add(chip);
         }
+        DrawLayerKeys();
         _playhead = new Rectangle { Width = 2, Height = 70, Fill = Frozen(Color.FromRgb(0xFF, 0xB3, 0x47)), IsHitTestVisible = false };
         Canvas.SetTop(_playhead, 2);
         Canvas.SetLeft(_playhead, TimeToX(_playTime));
@@ -312,6 +317,7 @@ public partial class RenderPanel
     {
         _playTime = Math.Clamp(seconds, 0, TimelineSpan());
         if (_playhead is not null) Canvas.SetLeft(_playhead, TimeToX(_playTime));
+        ApplyLayerPreview(_playTime);
         if (_timeText is not null && _path.Marks.Count >= 2) _timeText.Text = $"{Clock(_playTime)} / {Clock(_path.Duration)} · {_path.Marks.Count} cámaras";
     }
 
@@ -328,6 +334,7 @@ public partial class RenderPanel
         var mark = _path.Marks[index];
         ApplyCamera(mark.Position, mark.Target, mark.FieldOfViewDegrees);
         _playTime = MarkTimes()[index];
+        ApplyLayerPreview(_playTime);
         _dragMark = index > 0 ? index : -1;
         RedrawTimeline();
         if (_dragMark >= 0 && _timeline is not null) _timeline.CaptureMouse();
@@ -357,6 +364,7 @@ public partial class RenderPanel
     {
         if (e.LeftButton != MouseButtonState.Pressed || _timeline is null) return;
         var time = XToTime(e.GetPosition(_timeline).X);
+        if (DragLayerKey(time)) return;
         if (_scrubbing && _path.Marks.Count >= 2)
         {
             ScrubTo(time);
@@ -372,6 +380,7 @@ public partial class RenderPanel
     private void Timeline_MouseUp(object sender, MouseButtonEventArgs e)
     {
         _timeline?.ReleaseMouseCapture();
+        if (EndLayerDrag()) return;
         var moved = _dragMark >= 0;
         _dragMark = -1;
         _scrubbing = false;
