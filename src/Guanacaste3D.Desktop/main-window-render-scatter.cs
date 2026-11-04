@@ -19,9 +19,9 @@ public partial class MainWindow
     {
         try
         {
-            var levels = _session.Document.Levels;
-            var level = levels.Where(item => item.Elevation <= groundHeight + 0.05).OrderByDescending(item => item.Elevation).FirstOrDefault() ??
-                        levels.OrderBy(item => item.Elevation).FirstOrDefault();
+            // On a toposolid they go on its level, so each stands on the slope; elsewhere on the level at or below the ground.
+            var first = placements.Count > 0 ? placements[0].At : new Point2(0, 0);
+            var level = new Core.Geometry.SiteTerrain(_session.Document).LevelFor(first.X, first.Y, groundHeight);
             if (level is null) return "El proyecto no tiene niveles donde poner nada.";
             using var group = _session.BeginGroup("Transaction.MassPlaceComponents");
             var familyId = family.LoadedId ?? _session.LoadComponentFamily(NativeDocumentStore.LoadFamily(family.LibraryPath!));

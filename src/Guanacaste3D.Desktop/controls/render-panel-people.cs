@@ -58,14 +58,21 @@ public partial class RenderPanel
     /// The ground round a point, for scattering: from a point a metre and a half above the centre, the first surface below, kept only
     /// if it is about as high as the centre (so nothing lands on a roof, in a tree or down a pit).
     /// </summary>
-    private ActorScatter.GroundAt GroundNear(ActorPoint centre) => (x, y) =>
+    private ActorScatter.GroundAt GroundNear(ActorPoint centre)
+    {
+        // A toposolid gives the slope exactly; elsewhere the ground is found with a ray.
+        var terrain = _source?.Terrain();
+        return (x, y) => terrain?.HeightAt(x, y) ?? GroundByRay(centre, x, y);
+    }
+
+    private double? GroundByRay(ActorPoint centre, double x, double y)
     {
         if (_source?.Query is not { } query) return null;
         var from = new Vector3((float)x, (float)y, (float)centre.Z + 1.5f);
         if (query.Pick(from, -Vector3.UnitZ) is not { } drop) return null;
         var height = from.Z - drop;
         return height >= centre.Z - 1.5 && height <= centre.Z + 0.4 ? height : null;
-    };
+    }
 
     /// <summary>
     /// The ground under the centre of the view: the point the view looks at, brought down to the first surface below it, so

@@ -50,6 +50,9 @@ internal interface IRenderSource
     /// <summary>Saves the people as one undoable step; the render scene is rebuilt, because it holds them.</summary>
     void SetActors(IReadOnlyList<Actor> actors);
 
+    /// <summary>The project's terrain as one surface, for standing scattered things on the slope.</summary>
+    Guanacaste3D.Core.Geometry.SiteTerrain Terrain();
+
     /// <summary>The trees, plants, rocks and cars that can be scattered: those loaded in the project and the shipped ones.</summary>
     IReadOnlyList<MassPlacementFamily> ScatterFamilies();
 

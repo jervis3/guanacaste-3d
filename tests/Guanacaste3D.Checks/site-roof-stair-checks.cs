@@ -67,6 +67,36 @@ static class SiteRoofStairChecks
         check(BuildingMesher.TerrainUnder(session.Document, level, new Point2(20, 15)) > 3.9,
             "A planting on the terrain stands on its surface");
 
+        // The site as one surface: absolute heights, nothing outside the toposolid, and the toposolid's own level for what stands on it.
+        var datum = session.Document.Levels[0].Elevation;
+        var upper = session.AddLevel();
+        var terrain = new SiteTerrain(session.Document);
+        var upperLevel = session.Document.Levels.Single(item => item.Id == upper);
+        var onHill = terrain.LevelFor(20, 15, datum + 4);
+        var offHill = terrain.LevelFor(100, 100, upperLevel.Elevation + 0.5);
+        check(terrain.Any && terrain.HeightAt(20, 15) is { } peak && Math.Abs(peak - (datum + 4)) < 1e-6 && terrain.HeightAt(100, 100) is null &&
+              onHill?.Id == level && offHill?.Id == upper && new SiteTerrain(BuildingDocument.Create("Flat")).HeightAt(0, 0) is null,
+            "The site terrain gives heights in project metres, none off the toposolid, and a hill's things go on the hill's level, not a higher one");
+
+        // A shipped rock is a planting, so it stands on the slope it is put on, not at the level's floor.
+        string? repository = null;
+        for (var directory = new DirectoryInfo(AppContext.BaseDirectory); directory is not null; directory = directory.Parent)
+            if (File.Exists(Path.Combine(directory.FullName, "Guanacaste3D.slnx"))) { repository = directory.FullName; break; }
+        if (repository is not null)
+        {
+            var rock = NativeDocumentStore.LoadFamily(Path.Combine(repository, "src", "Guanacaste3D.Desktop", "resources", "families", "rock-medium.g3df"));
+            var rocks = new DocumentSession(BuildingDocument.Create("Rocks"));
+            var rocksLevel = rocks.Document.Levels[0].Id;
+            var rocksSite = rocks.AddSlabFromPreset(rocksLevel, [new(0, 0), new(40, 0), new(40, 30), new(0, 30)], preset, rocks.SlabElevation(rocksLevel, preset));
+            rocks.AddTopoPoint(rocksSite, new TopoPoint(20, 15, 4));
+            var before = BuildingMesher.Build(rocks.Document).Bounds().Max.Z;
+            var family = rocks.LoadComponentFamily(rock);
+            rocks.PlaceComponentFamilies(rocksLevel, family, [new ComponentPlacement(new Point2(20, 15), 0, 1)]);
+            var after = BuildingMesher.Build(rocks.Document).Bounds().Max.Z;
+            check(rock.Category == FamilyCategory.Planting && after - before > 0.3f,
+                $"A rock put on the top of a hill stands on the hill, its crown {after - before:0.00} m above the terrain's highest point");
+        }
+
         var rejected = false;
         try { session.AddTopoPoint(site, new TopoPoint(60, 60, 2)); } catch (InvalidDataException) { rejected = true; }
         check(rejected, "An elevation point outside the toposolid is rejected");

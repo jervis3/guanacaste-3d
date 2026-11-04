@@ -87,6 +87,7 @@ public partial class MainWindow
         public IReadOnlyList<Actor> GetActors() => Actors.Of(window._session.Document);
         public void SetActors(IReadOnlyList<Actor> actors) => window._session.SetExtension(Actors.Key, Actors.Serialize(actors));
         public IReadOnlyList<MassPlacementFamily> ScatterFamilies() => window.ScatterFamilies();
+        public Guanacaste3D.Core.Geometry.SiteTerrain Terrain() => new(window._session.Document);
         public string PlaceScattered(MassPlacementFamily family, IReadOnlyList<ComponentPlacement> placements, double groundHeight) =>
             window.PlaceScattered(family, placements, groundHeight);
         public OceanSettings GetOcean() => Ocean.Of(window._session.Document);
