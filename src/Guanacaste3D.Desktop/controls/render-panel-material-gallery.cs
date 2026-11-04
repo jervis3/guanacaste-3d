@@ -40,6 +40,8 @@ public partial class RenderPanel
             .FirstOrDefault(item => item.Tag is SurfaceKind kind && kind == SurfaceKind.Bark)
             ?? GalleryTargetPicker.Items.OfType<ComboBoxItem>().FirstOrDefault();
         _galleryReady = true;
+        // The library opens expanded; thumbnails can only be decoded once the control is on screen.
+        Loaded += (_, _) => RefreshMaterialGallery();
     }
 
     /// <summary>When editing the picked element, the gallery must target its own surface kind.</summary>
@@ -101,6 +103,7 @@ public partial class RenderPanel
         "bark" => key.StartsWith("tree-bark-", StringComparison.Ordinal),
         "foliage" => key.StartsWith("tree-leaves-", StringComparison.Ordinal),
         "other" => !key.StartsWith("tree-", StringComparison.Ordinal),
+        "presets" => false,
         "pbr" => false,
         _ => true
     };
@@ -126,7 +129,15 @@ public partial class RenderPanel
                 .Select(item => new GalleryEntry(item.Key, item.Name, item.Size, item.Relief, true,
                     item.Roughness, item.Metallic))
             : Enumerable.Empty<GalleryEntry>();
-        var matches = included.Concat(packages).ToArray();
+        // The ready-made materials (steel, concrete, glass…), each shown as a ball like Lumion's library.
+        var presets = group is "presets" or "all"
+            ? MaterialPresets.All
+                .Where(preset => MaterialCatalogSearch.Matches(search, preset.Id, preset.Name,
+                    Text($"MaterialFamily.{preset.Group}")))
+                .Select(preset => new GalleryEntry(MaterialPresets.Prefix + preset.Id, preset.Name,
+                    preset.TextureSize, preset.Relief, false, preset.Material.Roughness, preset.Material.Metallic))
+            : Enumerable.Empty<GalleryEntry>();
+        var matches = presets.Concat(included).Concat(packages).ToArray();
         var pageCount = (matches.Length + GalleryPageSize - 1) / GalleryPageSize;
         _galleryPage = Math.Clamp(_galleryPage, 0, Math.Max(0, pageCount - 1));
         GalleryTiles.Children.Clear();
@@ -285,7 +296,9 @@ public partial class RenderPanel
                     token.ThrowIfCancellationRequested();
                     var file = RenderTextureLibrary.Resolve(key, null);
                     token.ThrowIfCancellationRequested();
-                    if (file is null || !File.Exists(file)) return null;
+                    if (file is null || !File.Exists(file))
+                        return MaterialPresets.FromPath(key) is { } flat
+                            ? SolidMaterialBall(flat.Material, roughness, metallic, relief, null) : null;
                     var image = DecodeGalleryImage(file, sphere ? 192 : 132);
                     return sphere ? MaterialSpherePreview.Create(image, roughness, metallic, relief) : image;
                 }, token);

@@ -175,6 +175,11 @@ internal static partial class InteractionChecks
             var filter = (ComboBox)panel.FindName("GalleryGroupPicker");
             var target = (ComboBox)panel.FindName("GalleryTargetPicker");
             var search = (TextBox)panel.FindName("GallerySearch");
+            ComboBoxItem GroupItem(string tag) => filter.Items.OfType<ComboBoxItem>().First(item => item.Tag as string == tag);
+            Check(filter.SelectedItem == GroupItem("presets") && tiles.Children.OfType<Button>().Any(),
+                "The material library opens expanded on the ready-made materials, each shown as a ball");
+            filter.SelectedItem = GroupItem("trees");
+            Pump();
             Check(tiles.Children.OfType<Button>().Count() == 8 &&
                   ((TextBlock)panel.FindName("GalleryPageText")).Text == "1 / 3",
                 "The optional nature gallery shows only eight thumbnail cards per page");
@@ -190,7 +195,7 @@ internal static partial class InteractionChecks
             Pump();
             Check(tiles.Children.OfType<Button>().Count() == 2,
                 "Accent-insensitive gallery search filters tree bark and foliage simultaneously");
-            filter.SelectedIndex = 1;
+            filter.SelectedItem = GroupItem("bark");
             Pump();
             Check(tiles.Children.OfType<Button>().Count() == 1,
                 "Bark filter narrows the gallery without decoding all image previews");
@@ -216,7 +221,7 @@ internal static partial class InteractionChecks
                 { TextureSize = 1.5, Relief = 0.3 });
             Invoke("RefreshAll");
             Pump();
-            filter.SelectedIndex = 4;
+            filter.SelectedItem = GroupItem("pbr");
             search.Text = "Piedra Galeria PBR";
             Pump();
             Check(tiles.Children.OfType<Button>().Count() == 1 &&

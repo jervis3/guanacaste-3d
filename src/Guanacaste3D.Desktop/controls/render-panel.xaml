@@ -27,6 +27,38 @@
       <Setter Property="Foreground" Value="#EAF0F5"/>
       <Setter Property="Margin" Value="0,9,0,0"/><Setter Property="FontSize" Value="13"/>
     </Style>
+    <!-- The panel is dark: every plain control inside it needs light text and a dark face, or its caption vanishes. -->
+    <Style TargetType="CheckBox"><Setter Property="Foreground" Value="#EAF0F5"/></Style>
+    <Style TargetType="RadioButton"><Setter Property="Foreground" Value="#EAF0F5"/></Style>
+    <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+      <Setter Property="Background" Value="#2A3D51"/><Setter Property="Foreground" Value="#F2F6FA"/>
+      <Setter Property="BorderBrush" Value="#4A6882"/>
+      <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="Button">
+        <Grid SnapsToDevicePixels="True">
+          <Border x:Name="ButtonSurface" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                  BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="5" Padding="{TemplateBinding Padding}">
+            <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}" RecognizesAccessKey="True"/>
+          </Border>
+          <!-- A translucent veil lightens any face colour on hover, so custom backgrounds keep their identity. -->
+          <Border x:Name="Veil" CornerRadius="5" Background="White" Opacity="0" IsHitTestVisible="False"/>
+        </Grid>
+        <ControlTemplate.Triggers>
+          <Trigger Property="IsMouseOver" Value="True">
+            <Setter TargetName="Veil" Property="Opacity" Value="0.14"/>
+            <Setter TargetName="ButtonSurface" Property="BorderBrush" Value="#7FB4D6"/>
+          </Trigger>
+          <Trigger Property="IsKeyboardFocused" Value="True">
+            <Setter TargetName="ButtonSurface" Property="BorderBrush" Value="#6BD7C5"/>
+          </Trigger>
+          <Trigger Property="IsPressed" Value="True"><Setter TargetName="Veil" Property="Opacity" Value="0.24"/></Trigger>
+          <Trigger Property="IsEnabled" Value="False">
+            <Setter TargetName="ButtonSurface" Property="Opacity" Value="0.5"/>
+            <Setter Property="Foreground" Value="#9FB2C3"/>
+          </Trigger>
+        </ControlTemplate.Triggers>
+      </ControlTemplate></Setter.Value></Setter>
+    </Style>
     <Style x:Key="PanelButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
       <Setter Property="Padding" Value="12,7"/><Setter Property="Margin" Value="0,0,8,8"/>
       <Setter Property="MinHeight" Value="34"/>
@@ -45,6 +77,23 @@
       <Setter Property="BorderBrush" Value="#3E5365"/>
       <Setter Property="MinHeight" Value="30"/><Setter Property="Padding" Value="6,4"/>
       <Setter Property="VerticalContentAlignment" Value="Center"/>
+      <Setter Property="CaretBrush" Value="White"/><Setter Property="SelectionBrush" Value="#2E7D9A"/>
+      <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="TextBox">
+        <Border x:Name="Frame" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="4" SnapsToDevicePixels="True">
+          <ScrollViewer x:Name="PART_ContentHost" Focusable="False" Padding="{TemplateBinding Padding}"
+                        VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+        </Border>
+        <ControlTemplate.Triggers>
+          <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Frame" Property="BorderBrush" Value="#6C97B8"/></Trigger>
+          <Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="Frame" Property="BorderBrush" Value="#6BD7C5"/></Trigger>
+          <!-- A disabled field stays dark with readable grey-blue text instead of turning pale. -->
+          <Trigger Property="IsEnabled" Value="False">
+            <Setter TargetName="Frame" Property="Background" Value="#1A2633"/>
+            <Setter Property="Foreground" Value="#8FA4B7"/>
+          </Trigger>
+        </ControlTemplate.Triggers>
+      </ControlTemplate></Setter.Value></Setter>
     </Style>
     <Style x:Key="SettingsCard" TargetType="Border">
       <Setter Property="Background" Value="#1D2A38"/>
@@ -722,7 +771,7 @@
                   <Button x:Name="MaterialScopeReset" Visibility="Collapsed" Content="Volver a materiales generales"
                           HorizontalAlignment="Left" Margin="0,6,0,3" Padding="8,4" Click="MaterialScopeReset_Click"/>
                   <!-- Eight thumbnails per page, generated off the UI thread only when expanded. -->
-                  <Expander x:Name="GalleryExpander" IsExpanded="False" Margin="0,12,0,12"
+                  <Expander x:Name="GalleryExpander" IsExpanded="True" Margin="0,12,0,12"
                             Expanded="GalleryExpanded" Collapsed="GalleryCollapsed"
                             Foreground="#F0F6FB" Background="#1B2A3A">
                     <Expander.Header>
@@ -737,6 +786,7 @@
                                 ToolTip="{DynamicResource RenderGallery.TargetHint}"/>
                       <TextBlock Text="{DynamicResource RenderGallery.Filter}" Style="{StaticResource PanelLabel}" Margin="0,10,0,4"/>
                       <ComboBox x:Name="GalleryGroupPicker" SelectedIndex="0" SelectionChanged="GalleryFilter_Changed">
+                        <ComboBoxItem Content="{DynamicResource RenderGallery.Presets}" Tag="presets"/>
                         <ComboBoxItem Content="{DynamicResource RenderGallery.Trees}" Tag="trees"/>
                         <ComboBoxItem Content="{DynamicResource RenderGallery.Bark}" Tag="bark"/>
                         <ComboBoxItem Content="{DynamicResource RenderGallery.Foliage}" Tag="foliage"/>

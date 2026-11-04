@@ -377,6 +377,7 @@
   <sys:String x:Key="CloudStyle.Cumulonimbus">Cumulonimbos (tormenta)</sys:String>
   <sys:String x:Key="CloudStyle.Lenticular">Nubes lenticulares</sys:String>
   <sys:String x:Key="RenderGallery.Pbr">Materiales PBR .g3dm</sys:String>
+  <sys:String x:Key="RenderGallery.Presets">Materiales (bolas de ejemplo)</sys:String>
   <sys:String x:Key="RenderGallery.AddPbr">Añadir material .g3dm a la biblioteca…</sys:String>
   <sys:String x:Key="RenderGallery.Appearance">Propiedades físicas de la superficie</sys:String>
   <sys:String x:Key="RenderGallery.NoMaterial">Material predeterminado de esta superficie</sys:String>

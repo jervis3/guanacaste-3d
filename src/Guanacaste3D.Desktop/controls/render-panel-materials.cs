@@ -47,6 +47,7 @@ public partial class RenderPanel
     {
         if (_source is null || MaterialRows is null) return;
         _refreshingMaterials = true;
+        var ballRevision = ++_materialBallRevision;
         MaterialRows.Children.Clear();
         MaterialScopeInfo.Text = _focusedElement is Guid
             ? "Material propio del elemento seleccionado (solo esta categoría de caras)"
@@ -143,6 +144,7 @@ public partial class RenderPanel
             var details = new WrapPanel { Margin = new Thickness(0, 6, 0, 0) };
             details.Children.Add(new TextBlock
             {
+                Style = (Style)FindResource("PanelLabel"), Margin = new Thickness(0),
                 Text = "Escala (m)", VerticalAlignment = VerticalAlignment.Center
             });
             details.Children.Add(size);
@@ -161,7 +163,7 @@ public partial class RenderPanel
             };
             details.Children.Add(new TextBlock
             {
-                Text = "Relieve", Margin = new Thickness(8, 0, 0, 0),
+                Style = (Style)FindResource("PanelLabel"), Text = "Relieve", Margin = new Thickness(8, 0, 0, 0),
                 VerticalAlignment = VerticalAlignment.Center
             });
             details.Children.Add(relief);
@@ -175,7 +177,14 @@ public partial class RenderPanel
             AddPbrMapButton(maps, "Rugosidad", assignment?.RoughnessPath, category, scope, 1);
             AddPbrMapButton(maps, "Metálico", assignment?.MetallicPath, category, scope, 2);
             row.Children.Add(maps);
-            MaterialRows.Children.Add(row);
+            // Ball on the left, controls on the right: still one child per category, as the focus code expects.
+            var layout = new Grid { Margin = new Thickness(0, 2, 0, 0) };
+            layout.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            layout.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            layout.Children.Add(BuildMaterialBall(assignment, category, ballRevision));
+            Grid.SetColumn(row, 1);
+            layout.Children.Add(row);
+            MaterialRows.Children.Add(layout);
         }
         _refreshingMaterials = false;
         UpdateMaterialGallerySelection();
