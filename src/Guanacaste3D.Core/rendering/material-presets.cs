@@ -235,6 +235,12 @@ public static class MaterialPresets
         // Living surfaces.
         yield return Patterned("bark-pine", "Corteza de pino", MaterialFamily.Outdoor, .16f, .10f, .065f, .92f, 0, SurfacePattern.Bark, 2);
         yield return Patterned("moss", "Musgo", MaterialFamily.Outdoor, .10f, .22f, .05f, .97f, 0, SurfacePattern.Grass, .4f);
+        // Lawns and grasses: the pattern's scale is the size of a blade, so a fine bermuda and a broad St. Augustine differ close up.
+        yield return Patterned("grass-bermuda", "Grama bermuda", MaterialFamily.Outdoor, .17f, .30f, .08f, .97f, 0, SurfacePattern.Grass, .6f);
+        yield return Patterned("grass-st-augustine", "Grama San Agustín", MaterialFamily.Outdoor, .10f, .24f, .07f, .97f, 0, SurfacePattern.Grass, 1.6f);
+        yield return Patterned("grass-meadow", "Hierba de prado", MaterialFamily.Outdoor, .22f, .30f, .09f, .97f, 0, SurfacePattern.Grass, 1.1f);
+        yield return Patterned("grass-dry", "Pasto seco de verano", MaterialFamily.Outdoor, .46f, .38f, .17f, .97f, 0, SurfacePattern.Grass, 1.2f);
+        yield return Patterned("grass-clover", "Trébol y hierba baja", MaterialFamily.Outdoor, .14f, .33f, .12f, .97f, 0, SurfacePattern.Grass, .9f);
         yield return Patterned("snow", "Nieve", MaterialFamily.Outdoor, .85f, .88f, .92f, .6f, 0, SurfacePattern.Concrete, .06f);
     }
 

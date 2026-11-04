@@ -17,7 +17,7 @@ public static class RenderPhotoEffects
         Sharpen = source.Sharpen, ChromaticAberration = source.ChromaticAberration,
         FilmGrain = source.FilmGrain, Monochrome = source.Monochrome,
         HighlightMaterial = source.HighlightMaterial, HighlightDim = source.HighlightDim,
-        Rain = source.Rain, Snow = source.Snow, Wetness = source.Wetness,
+        Rain = source.Rain, Snow = source.Snow, Wetness = source.Wetness, Grass = source.Grass,
         LensFlare = source.LensFlare, LightRays = source.LightRays, TiltShift = source.TiltShift, TiltShiftPosition = source.TiltShiftPosition,
         LutPresetId = source.LutPresetId, LutPath = source.LutPath, LutStrength = source.LutStrength
     };

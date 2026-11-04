@@ -129,6 +129,8 @@ public sealed record RenderSetup
     public double Rain { get; init; }
     /// <summary>Wet ground, 0–1: a lighting setting (the ground is darker, glossier and has puddles), so it is rendered, not painted over the picture.</summary>
     public double Wetness { get; init; }
+    /// <summary>Grass, 0–1 (0 is off): how tall the blades of every lawn grow, from a mown lawn to a meadow; a lighting setting, so it is rendered.</summary>
+    public double Grass { get; init; }
     public double Snow { get; init; }
     /// <summary>Camera effects laid over the picture: lens flare, light rays and tilt-shift (0–1), and the band's place (−1 to 1).</summary>
     public double LensFlare { get; init; }
@@ -171,7 +173,7 @@ public sealed record RenderSetup
             SunStrength is < 0 or > 2 || SkyStrength is < 0 or > 2 ||
             (SkyPresetId is not null && RenderLooks.Skies.All(sky => sky.Id != SkyPresetId)) ||
             LutStrength is < 0 or > 1 || HighlightDim is < 0 or > 1 || !double.IsFinite(HighlightDim) ||
-            Rain is < 0 or > 1 || Snow is < 0 or > 1 || Wetness is < 0 or > 1 || !double.IsFinite(Wetness) || !double.IsFinite(Rain) || !double.IsFinite(Snow) ||
+            Rain is < 0 or > 1 || Snow is < 0 or > 1 || Wetness is < 0 or > 1 || !double.IsFinite(Wetness) || Grass is < 0 or > 1 || !double.IsFinite(Grass) || !double.IsFinite(Rain) || !double.IsFinite(Snow) ||
             LensFlare is < 0 or > 1 || LightRays is < 0 or > 1 || TiltShift is < 0 or > 1 || TiltShiftPosition is < -1 or > 1 ||
             !double.IsFinite(LensFlare) || !double.IsFinite(LightRays) || !double.IsFinite(TiltShift) || !double.IsFinite(TiltShiftPosition) ||
             (HighlightMaterial is { Length: > 120 }) ||

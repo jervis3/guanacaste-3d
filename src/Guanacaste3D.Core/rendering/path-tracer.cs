@@ -176,6 +176,7 @@ public sealed partial class PathTracer
             _portalCandidates = SkyPortals.TryCreate(scene, glassTriangles, _opaque, _rayEpsilon);
         ApplySettings(_settings);
         RebuildWetness();
+        RebuildGrass();
         _buildMilliseconds = buildClock.Elapsed.TotalMilliseconds;
         AllocateImageBuffers(width, height);
     }
@@ -277,6 +278,7 @@ public sealed partial class PathTracer
         ArgumentNullException.ThrowIfNull(settings);
         ApplySettings(settings);
         RebuildWetness();
+        RebuildGrass();
         _radianceCache?.Clear();   // light changed, so what was cached no longer describes the scene
         Reset();
     }
@@ -1198,6 +1200,9 @@ public sealed partial class PathTracer
                 // turn away from the viewer is dropped, so grazing views never show black facets.
                 var bent = SurfacePatterns.Relief(surface.Pattern, surface.PatternScale, position, normal, hit.Distance);
                 if (Vector3.Dot(bent, direction) < -0.05f) normal = bent;
+                // Lawn: blades of grass (when the grass is on) replace the flat colour of the pattern.
+                if (_grassy is not null && _grassy[material] && geometric.Z > 0.5f)
+                    ApplyGrass(surface.PatternScale, position, geometric, direction, hit.Distance, ref diffuse, ref normal);
             }
             else
             {
