@@ -26,6 +26,7 @@ public static class MeshExporter
         SurfaceKind.Foliage => ("G3D_Foliage", new Vector3(0.12f, 0.24f, 0.07f), 1, 0.65f),
         SurfaceKind.Bark => ("G3D_Bark", new Vector3(0.24f, 0.19f, 0.14f), 1, 0.95f),
         SurfaceKind.Earth => ("G3D_Earth", new Vector3(0.30f, 0.22f, 0.15f), 1, 0.97f),
+        SurfaceKind.Rock => ("G3D_Rock", new Vector3(0.34f, 0.32f, 0.29f), 1, 0.93f),
         SurfaceKind.Roof => ("G3D_Roof", new Vector3(0.50f, 0.22f, 0.12f), 1, 0.72f),
         SurfaceKind.Leaf => ("G3D_Leaf", new Vector3(0.10f, 0.20f, 0.05f), 1, 0.45f),
         SurfaceKind.InteriorWall => ("G3D_InteriorWall", new Vector3(0.80f, 0.78f, 0.73f), 1, 0.9f),

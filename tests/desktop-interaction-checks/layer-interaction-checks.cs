@@ -285,6 +285,30 @@ internal static partial class InteractionChecks
             saveOcean.Invoke(panel, null);
             Check(session.GetExtension(Decals.Key) is null && session.GetExtension(Actors.Key) is null && session.GetExtension(Fires.Key) is null && session.GetExtension(Ocean.Key) is null,
                 "Removing the decals, people and fires, and an ocean back at its defaults, keep nothing in the project");
+
+            // Trees and rocks: the window spreads a family in a circle round the view's point, as one undoable step.
+            var scatterFamilies = (System.Collections.IList)host.GetType().GetMethod("ScatterFamilies")!.Invoke(host, null)!;
+            var rockIndex = scatterFamilies.Cast<object>().ToList().FindIndex(family => family.ToString()!.Contains("Roca mediana"));
+            Check(rockIndex >= 0 && scatterFamilies.Cast<object>().Any(family => family.ToString()!.Contains("Jacaranda")),
+                "The shipped rocks are in the list of things to scatter, next to the trees");
+            var place = host.GetType().GetMethod("PlaceScattered")!;
+            var scatterType = typeof(MainWindow).Assembly.GetType("Guanacaste3D.Desktop.Controls.ScatterDialog")!;
+            var placeCalls = 0;
+            var scatterWindow = (Window)Activator.CreateInstance(scatterType, [scatterFamilies, new Func<ActorPoint?>(() => start), new Func<object, IReadOnlyList<ComponentPlacement>, double, string>(
+                (family, placements, height) => { placeCalls++; return (string)place.Invoke(host, [family, placements, height])!; })])!;
+            IEnumerable<T> Find<T>(object parent) where T : class => LogicalTreeHelper.GetChildren((DependencyObject)parent).OfType<object>()
+                .SelectMany(child => (child is T match ? new[] { match } : Array.Empty<T>()).Concat(child is DependencyObject ? Find<T>(child) : Enumerable.Empty<T>()));
+            Find<ComboBox>(scatterWindow).First().SelectedIndex = rockIndex;
+            var elementsBefore = session.Document.StructuralElements.Count;
+            Find<Button>(scatterWindow).First(button => button.Content as string == "Esparcir aquí").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            var rocks = session.Document.StructuralElements.Count - elementsBefore;
+            var nearest = session.Document.StructuralElements.Skip(elementsBefore).Max(element => Math.Sqrt(Math.Pow(element.Start.X - start.X, 2) + Math.Pow(element.Start.Y - start.Y, 2)));
+            Check(placeCalls == 1 && rocks >= 8 && nearest <= 12.01 && session.Document.StructuralElements.Skip(elementsBefore).All(element => element.FamilyId is not null),
+                $"One click of the window puts {rocks} rocks of one family inside its 12 m circle");
+            session.Undo();
+            Check(session.Document.StructuralElements.Count == elementsBefore,
+                "One undo takes all the scattered rocks away together with the family that was loaded for them");
+            scatterWindow.Close();
         }
         finally
         {

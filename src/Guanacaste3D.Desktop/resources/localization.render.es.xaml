@@ -106,6 +106,7 @@
   <sys:String x:Key="Material.Wood">Puertas y muebles</sys:String>
   <sys:String x:Key="Material.Upholstery">Tapicería y alfombras</sys:String>
   <sys:String x:Key="Material.Earth">Tierra del terreno</sys:String>
+  <sys:String x:Key="Material.Rock">Rocas</sys:String>
   <sys:String x:Key="Texture.Brick">Ladrillo rojo</sys:String>
   <sys:String x:Key="Texture.AmbientWood096">Madera natural 096</sys:String>
   <sys:String x:Key="Texture.AmbientWood092">Madera natural 092</sys:String>

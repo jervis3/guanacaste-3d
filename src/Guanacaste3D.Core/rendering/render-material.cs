@@ -326,6 +326,10 @@ public static class MaterialLibrary
             Name = "Tierra", BaseColor = new(0.30f, 0.22f, 0.15f), Roughness = 0.97f,
             Pattern = SurfacePattern.Concrete, PatternScale = 0.6f
         },
+        SurfaceKind.Rock => new RenderMaterial
+        {
+            Name = "Roca", BaseColor = new(0.34f, 0.32f, 0.29f), Roughness = 0.93f, Pattern = SurfacePattern.Concrete, PatternScale = 0.35f
+        },
         SurfaceKind.Structure => new RenderMaterial
         {
             Name = "Estructura", BaseColor = new(0.45f, 0.42f, 0.38f), Roughness = 0.85f,

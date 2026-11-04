@@ -184,6 +184,8 @@ public partial class RenderPanel
         left.Children.Add(layersButton);
         left.Children.Add(Small("", "Personas y coches", "Coloca personas que caminan y coches que circulan por rutas: se ven en el render y en la película",
             (_, _) => ShowPeopleWindow(), out _));
+        left.Children.Add(Small("", "Árboles y rocas", "Esparce árboles, plantas y rocas en un círculo alrededor del punto que mira la vista",
+            (_, _) => ShowScatterWindow(), out _));
 
         _timeText = new TextBlock { Foreground = Frozen(Color.FromRgb(0x8F, 0xA6, 0xB9)), FontSize = 11.5, Margin = new Thickness(0, 10, 0, 4) };
         _timeline = new Canvas { Height = 74, Background = Brushes.Transparent, ClipToBounds = true };

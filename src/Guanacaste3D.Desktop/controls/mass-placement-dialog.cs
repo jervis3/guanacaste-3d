@@ -26,6 +26,7 @@ internal sealed class MassPlacementDialog : Window
         ["searsia"] = ("Searsia", 3.5), ["pachira"] = ("Pachira", 2), ["shrub-dense-a"] = ("Arbusto denso A", 1.6),
         ["shrub-dense-b"] = ("Arbusto denso B", 1.6), ["fern"] = ("Helecho", 1), ["calathea"] = ("Calathea", 0.8),
         ["anthurium"] = ("Anturio", 0.7), ["grass-tuft"] = ("Mata de zacate", 0.45),
+        ["rock-small"] = ("Piedra pequeña", 0.8), ["rock-medium"] = ("Roca mediana", 1.6), ["rock-large"] = ("Roca grande", 2.6), ["rock-flat"] = ("Roca plana", 2.2),
         ["sedan-car"] = ("Sedán", 5.6), ["coupe-car-silver"] = ("Auto coupé plateado", 5.4)
     };
 

@@ -66,6 +66,17 @@ static class RenderFireChecks
             $"Live flames throw small bright sparks ({sparks.Count}) and drifting dark flecks of ash ({ash.Count}); a fire with no flames throws none");
 
 
+        // Rocks: a surface of their own, and four shipped families made of it that sit on the ground.
+        var rockMaterial = MaterialLibrary.ForKind(SurfaceKind.Rock);
+        string? repository = null;
+        for (var directory = new DirectoryInfo(AppContext.BaseDirectory); directory is not null; directory = directory.Parent)
+            if (File.Exists(Path.Combine(directory.FullName, "Guanacaste3D.slnx"))) { repository = directory.FullName; break; }
+        var families = repository is null ? new List<FamilyMesh.Decoded>() : new[] { "rock-small", "rock-medium", "rock-large", "rock-flat" }.Select(name =>
+            NativeDocumentStore.LoadFamily(Path.Combine(repository, "src", "Guanacaste3D.Desktop", "resources", "families", name + ".g3df")).Mesh!.Decode()).ToList();
+        check(rockMaterial.Name == "Roca" && rockMaterial.Roughness > 0.85f && families.Count == 4 && families.All(rock => rock.Kinds.All(kind => kind == SurfaceKind.Rock) &&
+              rock.TriangleCount >= 500 && Math.Abs(rock.Min.Z) < 0.1f && rock.Size.Z > 0.2f && rock.Size.Z < rock.Size.X) && families[0].Size.X < families[2].Size.X / 2,
+            "Rocks have a grey, rough surface of their own, and the four shipped ones are faceted stones that sit on the ground, from a pebble to a boulder");
+
         // The picture: flames show, and what stands in front of them hides them.
         tracer.RenderPass();
         var plain = ImageProcessor.Plain;

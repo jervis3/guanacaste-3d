@@ -50,6 +50,12 @@ internal interface IRenderSource
     /// <summary>Saves the people as one undoable step; the render scene is rebuilt, because it holds them.</summary>
     void SetActors(IReadOnlyList<Actor> actors);
 
+    /// <summary>The trees, plants, rocks and cars that can be scattered: those loaded in the project and the shipped ones.</summary>
+    IReadOnlyList<MassPlacementFamily> ScatterFamilies();
+
+    /// <summary>Places the instances of a family near a ground height in one undoable step; returns the sentence to show.</summary>
+    string PlaceScattered(MassPlacementFamily family, IReadOnlyList<ComponentPlacement> placements, double groundHeight);
+
     /// <summary>The fires and columns of smoke of the project.</summary>
     IReadOnlyList<FireEmitter> GetFires();
 

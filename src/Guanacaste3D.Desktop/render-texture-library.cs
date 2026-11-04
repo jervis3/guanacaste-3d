@@ -59,6 +59,7 @@ internal static class RenderTextureLibrary
         (SurfaceKind.DoorLeaf, "Material.Wood"),
         (SurfaceKind.Upholstery, "Material.Upholstery"),
         (SurfaceKind.Earth, "Material.Earth"),
+        (SurfaceKind.Rock, "Material.Rock"),
         (SurfaceKind.WallConcrete, "Material.WallConcrete"),
         (SurfaceKind.WallWood, "Material.WallWood"),
         (SurfaceKind.WallBrick, "Material.WallBrick"),

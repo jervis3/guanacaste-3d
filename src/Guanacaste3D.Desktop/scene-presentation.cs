@@ -55,7 +55,7 @@ internal static class ScenePresentation
                 mesh.TextureCoordinates.Add(new System.Windows.Point(u / textured, -v / textured));
             }
         }
-        foreach (var kind in new[] { SurfaceKind.Ground, SurfaceKind.Floor, SurfaceKind.Wall, SurfaceKind.DoorLeaf, SurfaceKind.OpeningFrame, SurfaceKind.Structure, SurfaceKind.Bark, SurfaceKind.Foliage, SurfaceKind.Earth, SurfaceKind.Roof, SurfaceKind.Leaf, SurfaceKind.InteriorWall, SurfaceKind.Metal, SurfaceKind.LightEmitter, SurfaceKind.Upholstery, SurfaceKind.Bedding, SurfaceKind.Ceramic, SurfaceKind.LightOff, SurfaceKind.SpotEmitter, SurfaceKind.WallBrick, SurfaceKind.WallBlock,
+        foreach (var kind in new[] { SurfaceKind.Ground, SurfaceKind.Floor, SurfaceKind.Wall, SurfaceKind.DoorLeaf, SurfaceKind.OpeningFrame, SurfaceKind.Structure, SurfaceKind.Bark, SurfaceKind.Foliage, SurfaceKind.Earth, SurfaceKind.Rock, SurfaceKind.Roof, SurfaceKind.Leaf, SurfaceKind.InteriorWall, SurfaceKind.Metal, SurfaceKind.LightEmitter, SurfaceKind.Upholstery, SurfaceKind.Bedding, SurfaceKind.Ceramic, SurfaceKind.LightOff, SurfaceKind.SpotEmitter, SurfaceKind.WallBrick, SurfaceKind.WallBlock,
             SurfaceKind.WallConcrete, SurfaceKind.WallStone, SurfaceKind.WallWood, SurfaceKind.WallMetal, SurfaceKind.Mirror, SurfaceKind.Water, SurfaceKind.CarPaint, SurfaceKind.CarPaintSilver, SurfaceKind.Rubber, SurfaceKind.Asphalt, SurfaceKind.TintedGlass, SurfaceKind.PipeCold, SurfaceKind.PipeHot, SurfaceKind.PipeDrain,
             SurfaceKind.PipeStorm, SurfaceKind.SolarCell, SurfaceKind.FireRed, SurfaceKind.Glass })
         {
@@ -379,6 +379,7 @@ internal static class ScenePresentation
         SurfaceKind.Foliage => Diffuse(Color.FromRgb(78, 116, 58)),
         SurfaceKind.Bark => Diffuse(Color.FromRgb(104, 86, 68)),
         SurfaceKind.Earth => Diffuse(Color.FromRgb(126, 98, 72)),
+        SurfaceKind.Rock => Diffuse(Color.FromRgb(112, 106, 98)),
         SurfaceKind.Roof => Diffuse(Color.FromRgb(168, 86, 58)),
         SurfaceKind.Leaf => Diffuse(Color.FromRgb(70, 108, 50)),
         SurfaceKind.InteriorWall => Diffuse(Color.FromRgb(226, 222, 212)),

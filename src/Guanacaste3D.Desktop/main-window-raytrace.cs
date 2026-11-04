@@ -86,6 +86,9 @@ public partial class MainWindow
         public void SetFires(IReadOnlyList<FireEmitter> fires) => window._session.SetExtension(Fires.Key, Fires.Serialize(fires));
         public IReadOnlyList<Actor> GetActors() => Actors.Of(window._session.Document);
         public void SetActors(IReadOnlyList<Actor> actors) => window._session.SetExtension(Actors.Key, Actors.Serialize(actors));
+        public IReadOnlyList<MassPlacementFamily> ScatterFamilies() => window.ScatterFamilies();
+        public string PlaceScattered(MassPlacementFamily family, IReadOnlyList<ComponentPlacement> placements, double groundHeight) =>
+            window.PlaceScattered(family, placements, groundHeight);
         public OceanSettings GetOcean() => Ocean.Of(window._session.Document);
         public void SetOcean(OceanSettings settings) => window._session.SetExtension(Ocean.Key, Ocean.Serialize(settings));
         public string? GetExtension(string key) => window._session.GetExtension(key);
