@@ -101,7 +101,16 @@ public enum StructuralElementKind
     /// Batting drawn along a line in the plan, as in a detail of an insulated wall. <see cref="StructuralElement.Width"/>
     /// is the thickness of the insulation. It has no solid.
     /// </summary>
-    Insulation
+    Insulation,
+
+    /// <summary>
+    /// A conceptual volume, drawn between two corners and rising by its height from its level: the massing of a building
+    /// before it has walls. Walls and a roof can be built from its sides and top.
+    /// </summary>
+    Mass,
+
+    /// <summary>A parking space drawn between two corners in the plan. It has no solid.</summary>
+    ParkingSpace
 }
 
 /// <summary>Variant of an element's geometry. Which values apply depends on the element kind.</summary>
@@ -233,7 +242,7 @@ public sealed record StructuralElement(
         or StructuralElementKind.Shaft or StructuralElementKind.ModelText or StructuralElementKind.ReferencePlane
         or StructuralElementKind.RoomSeparator or StructuralElementKind.AreaBoundary or StructuralElementKind.Area
         or StructuralElementKind.DetailLine or StructuralElementKind.FilledRegion or StructuralElementKind.RevisionCloud
-        or StructuralElementKind.Insulation);
+        or StructuralElementKind.Insulation or StructuralElementKind.ParkingSpace);
 
     /// <summary>Whether the kind is drafted as a single line between its two points.</summary>
     [JsonIgnore] public bool IsDatumLine => Kind is StructuralElementKind.ReferencePlane
@@ -255,7 +264,8 @@ public sealed record StructuralElement(
             var length = Start.DistanceTo(End);
             if (Kind is StructuralElementKind.Opening or StructuralElementKind.Shaft or StructuralElementKind.Dormer
                     or StructuralElementKind.Skylight or StructuralElementKind.Area or StructuralElementKind.Elevator
-                    or StructuralElementKind.FilledRegion or StructuralElementKind.RevisionCloud && length >= 1e-9)
+                    or StructuralElementKind.FilledRegion or StructuralElementKind.RevisionCloud or StructuralElementKind.Mass
+                    or StructuralElementKind.ParkingSpace && length >= 1e-9)
                 return Geometry.SlabOpenings.Corners(PlanExtent);
             if (length < 1e-9)
             {
@@ -314,7 +324,9 @@ public static class StructuralElementStandards
         StructuralElementKind.ReferencePlane or StructuralElementKind.RoomSeparator
             or StructuralElementKind.AreaBoundary or StructuralElementKind.Area
             or StructuralElementKind.DetailLine or StructuralElementKind.FilledRegion
-            or StructuralElementKind.RevisionCloud => (0, 0, 0),
+            or StructuralElementKind.RevisionCloud or StructuralElementKind.ParkingSpace => (0, 0, 0),
+        // A mass of two storeys is the usual first sketch of a building.
+        StructuralElementKind.Mass => (0, 6.0, 0),
         // Batting 10 cm thick, the usual insulation of a masonry wall.
         StructuralElementKind.Insulation => (0.10, 0, 0),
         // A sweep's width is the host wall's thickness; a reveal is a 2 cm groove at 1 m.

@@ -113,7 +113,7 @@ public static class ArchitecturalShapes
                     (element.Depth != 0 || element.ComponentShape != ResidentialComponentShape.Box ||
                      element.ComponentCategory != ResidentialComponentCategory.None)))
                 throw new InvalidDataException("Invalid component family geometry.");
-            if (element.HasSolid && element.Kind is not (StructuralElementKind.Dormer or StructuralElementKind.Skylight) &&
+            if (element.HasSolid && element.Kind is not (StructuralElementKind.Dormer or StructuralElementKind.Skylight or StructuralElementKind.Mass) &&
                 (!double.IsFinite(element.Width) || !double.IsFinite(element.Height) || !double.IsFinite(element.Offset) ||
                  element.Width is < 0.005 or > 50 || element.Height is <= 0 or > 100 || element.Offset is < -100 or > 1000))
                 throw new InvalidDataException("Invalid ramp, gutter, downspout, curtain wall or skylight geometry.");

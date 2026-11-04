@@ -537,6 +537,48 @@ internal static partial class InteractionChecks
                 Check(session.Document.ElementGroups.Count(item => item.Kind == ElementGroupKind.Group) == 2 && session.Document.Walls.Count == wallsWithGroup + 4,
                     "Dissolving a group leaves its walls where they are");
                 Click("_groupsWindow", "GroupClose");
+                // Masses and site: the buttons arm their tools, and walls and a roof are built from a selected mass.
+                Invoke("ExecuteApplicationCommand", "PlaceMass");
+                Check(Field<object>("_structuralTool").ToString() == "(Mass, Rectangle)", "Place Mass arms the mass tool");
+                Answer("12");
+                Invoke("ExecuteApplicationCommand", "InPlaceMass");
+                Check(Field<object>("_structuralTool").ToString() == "(Mass, Rectangle)", "In-Place Mass asks for a height and arms the same tool");
+                var massesBefore = session.Document.StructuralElements.Count(element => element.Kind == StructuralElementKind.Mass);
+                Invoke("CreateStructuralFromTool", StructuralElementKind.Mass, new Point2(600, 600), new Point2(608, 606));
+                var mass = session.Document.StructuralElements.Last();
+                Check(mass.Kind == StructuralElementKind.Mass && session.Document.StructuralElements.Count(element => element.Kind == StructuralElementKind.Mass) == massesBefore + 1,
+                    "Two corners make a mass");
+                Invoke("CancelStructuralTool");
+                Invoke("ExecuteApplicationCommand", "ParkingComponent");
+                Check(Field<object>("_structuralTool").ToString() == "(ParkingSpace, Rectangle)", "The parking button arms the parking space tool");
+                Invoke("CancelStructuralTool");
+
+                var wallsBeforeMass = session.Document.Walls.Count;
+                SetField("_selectedStructuralId", (Guid?)mass.Id);
+                Invoke("ExecuteApplicationCommand", "WallByFace");
+                Check(session.Document.Walls.Count > wallsBeforeMass && (session.Document.Walls.Count - wallsBeforeMass) % 4 == 0,
+                    $"Walls by face builds {session.Document.Walls.Count - wallsBeforeMass} walls on the selected mass");
+                var floorsBeforeMass = session.Document.Floors.Count;
+                SetField("_selectedStructuralId", (Guid?)mass.Id);
+                Invoke("ExecuteApplicationCommand", "RoofByFace");
+                Check(session.Document.Floors.Count == floorsBeforeMass + 1 && session.Document.Floors.Last().Kind == FloorKind.Roof, "Roof by face puts a roof over the mass");
+                SetField("_selectedStructuralId", null);
+                Invoke("ExecuteApplicationCommand", "RoofByFace");
+                Check(session.Document.Floors.Count == floorsBeforeMass + 1, "Without a selected mass nothing is built");
+
+                tabs.SelectedIndex = 0;
+                Pump();
+                Invoke("ExecuteApplicationCommand", "ShowMass");
+                var planOfView = (ProjectView)Invoke("ActiveProjectView")!;
+                Check(planOfView.HiddenCategories.Contains(ViewCategory.Masses), "Show Mass hides the masses in the active view");
+                Invoke("ExecuteApplicationCommand", "ShowMass");
+                Check(!((ProjectView)Invoke("ActiveProjectView")!).HiddenCategories.Contains(ViewCategory.Masses), "Pressing it again shows them");
+
+                Invoke("ExecuteApplicationCommand", "ContextualData");
+                Pump();
+                Check(InWindow<System.Windows.Controls.TextBlock>("_contextWindow", "ContextText").Text.Contains("Solsticio de junio"), "Site Data lists the sun's day for the key dates of the year");
+                ClickIn("_contextWindow", "ContextClose");
+
                 SetField("_viewSelection", null);
                 Pump();
                 tabs.SelectedIndex = 0;

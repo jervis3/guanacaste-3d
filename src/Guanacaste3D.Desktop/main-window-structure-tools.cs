@@ -58,7 +58,7 @@ public partial class MainWindow
                 StructuralElementKind.Dormer => "Status.DormerFirstCorner",
                 StructuralElementKind.Skylight => "Status.SkylightFirstCorner",
                 StructuralElementKind.Area => "Status.AreaFirstCorner",
-                StructuralElementKind.FilledRegion or StructuralElementKind.RevisionCloud => "Status.RegionFirstCorner",
+                StructuralElementKind.FilledRegion or StructuralElementKind.RevisionCloud or StructuralElementKind.Mass or StructuralElementKind.ParkingSpace => "Status.RegionFirstCorner",
                 _ => "Status.OpeningFirstCorner"
             }),
             _ => FormatText("Status.StructuralFirstPoint", GetStructuralName(kind))
@@ -124,7 +124,7 @@ public partial class MainWindow
                     GetText("Status.SkylightSecondCorner"),
                 StructuralPlacementMode.Rectangle when tool.Kind == StructuralElementKind.Area =>
                     GetText("Status.AreaSecondCorner"),
-                StructuralPlacementMode.Rectangle when tool.Kind is StructuralElementKind.FilledRegion or StructuralElementKind.RevisionCloud =>
+                StructuralPlacementMode.Rectangle when tool.Kind is StructuralElementKind.FilledRegion or StructuralElementKind.RevisionCloud or StructuralElementKind.Mass or StructuralElementKind.ParkingSpace =>
                     GetText("Status.RegionSecondCorner"),
                 StructuralPlacementMode.Rectangle => GetText("Status.OpeningSecondCorner"),
                 _ => FormatText("Status.StructuralSecondPoint", GetStructuralName(tool.Kind))

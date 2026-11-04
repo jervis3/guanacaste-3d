@@ -28,6 +28,8 @@
   <sys:String x:Key="Entity.Skylight">Tragaluz</sys:String>
   <sys:String x:Key="Entity.ReferencePlane">Plano de referencia</sys:String>
   <sys:String x:Key="Entity.RoomSeparator">Separador de ambientes</sys:String>
+  <sys:String x:Key="Entity.Mass">Masa</sys:String>
+  <sys:String x:Key="Entity.ParkingSpace">Plaza de aparcamiento</sys:String>
   <sys:String x:Key="Entity.DetailLine">Línea de detalle</sys:String>
   <sys:String x:Key="Entity.FilledRegion">Región rellena</sys:String>
   <sys:String x:Key="Entity.RevisionCloud">Nube de revisión</sys:String>

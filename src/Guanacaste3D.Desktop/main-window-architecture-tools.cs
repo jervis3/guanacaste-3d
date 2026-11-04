@@ -27,7 +27,7 @@ public partial class MainWindow
             StructuralElementKind.ModelText or StructuralElementKind.Planting => StructuralPlacementMode.Point,
         StructuralElementKind.Skylight or StructuralElementKind.Area or StructuralElementKind.Dormer or
             StructuralElementKind.Opening or StructuralElementKind.Shaft or StructuralElementKind.FilledRegion or
-            StructuralElementKind.RevisionCloud => StructuralPlacementMode.Rectangle,
+            StructuralElementKind.RevisionCloud or StructuralElementKind.Mass or StructuralElementKind.ParkingSpace => StructuralPlacementMode.Rectangle,
         _ => StructuralPlacementMode.Line
     };
 
@@ -305,6 +305,8 @@ public partial class MainWindow
         StructuralElementKind.FilledRegion => "Entity.FilledRegion",
         StructuralElementKind.RevisionCloud => "Entity.RevisionCloud",
         StructuralElementKind.Insulation => "Entity.Insulation",
+        StructuralElementKind.Mass => "Entity.Mass",
+        StructuralElementKind.ParkingSpace => "Entity.ParkingSpace",
         _ => null
     };
 }

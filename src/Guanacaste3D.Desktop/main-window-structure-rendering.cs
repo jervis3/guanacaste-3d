@@ -24,7 +24,7 @@ public partial class MainWindow
                 AddAreaOutline(element, selected);
                 continue;
             }
-            if (element.Kind is StructuralElementKind.FilledRegion or StructuralElementKind.RevisionCloud or StructuralElementKind.Insulation)
+            if (element.Kind is StructuralElementKind.FilledRegion or StructuralElementKind.RevisionCloud or StructuralElementKind.Insulation or StructuralElementKind.ParkingSpace)
             {
                 AddDetailSymbol(element, selected);
                 continue;
@@ -180,6 +180,21 @@ public partial class MainWindow
     {
         var stroke = selected ? Brushes.DarkOrange : element.Kind == StructuralElementKind.RevisionCloud ? Brushes.Firebrick : Brushes.Black;
         var thickness = selected ? 2.5 : 1.2;
+        if (element.Kind == StructuralElementKind.ParkingSpace)
+        {
+            var corners = element.Footprint.Select(WorldToCanvas).ToArray();
+            PlanCanvas.Children.Add(new Polygon
+            {
+                Points = new PointCollection(corners), Fill = new SolidColorBrush(Color.FromArgb(40, 70, 110, 190)), Stroke = selected ? Brushes.DarkOrange : Brushes.SteelBlue,
+                StrokeThickness = selected ? 2.5 : 1.4, Tag = element.Id
+            });
+            var middle = new Point(corners.Average(point => point.X), corners.Average(point => point.Y));
+            var mark = new TextBlock { Text = "P", FontWeight = FontWeights.Bold, FontSize = 16, Foreground = Brushes.SteelBlue, IsHitTestVisible = false };
+            Canvas.SetLeft(mark, middle.X - 6);
+            Canvas.SetTop(mark, middle.Y - 11);
+            PlanCanvas.Children.Add(mark);
+            return;
+        }
         if (element.Kind == StructuralElementKind.FilledRegion)
         {
             PlanCanvas.Children.Add(new Polygon

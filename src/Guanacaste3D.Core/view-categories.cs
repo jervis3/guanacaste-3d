@@ -21,7 +21,8 @@ public enum ViewCategory
     Ramps,
     CurtainWalls,
     Planting,
-    Rooms
+    Rooms,
+    Masses
 }
 
 /// <summary>Maps model elements to the view category that controls their visibility.</summary>
@@ -47,6 +48,7 @@ public static class ViewCategories
         StructuralElementKind.Ramp => ViewCategory.Ramps,
         StructuralElementKind.CurtainWall => ViewCategory.CurtainWalls,
         StructuralElementKind.Planting => ViewCategory.Planting,
+        StructuralElementKind.Mass => ViewCategory.Masses,
         _ => null
     };
 }

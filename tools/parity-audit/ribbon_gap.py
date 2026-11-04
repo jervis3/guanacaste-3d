@@ -34,6 +34,7 @@ DISPATCH_FILES = [
     "main-window-units.cs",
     "main-window-groups.cs",
     "main-window-site.cs",
+    "main-window-masses.cs",
 ]
 # The structure dispatcher renames these catalog ids before its switch.
 ALIASES = {"StructColumn": "Column", "WallByFace": "WallFoundation", "ConnectionAuto": "ConnectionAutomation"}

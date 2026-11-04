@@ -46,6 +46,9 @@
   <sys:String x:Key="Error.The group has nothing left to copy.">Al grupo no le queda nada que copiar.</sys:String>
   <sys:String x:Key="Error.The file is not a saved group.">El archivo no es un grupo guardado.</sys:String>
   <sys:String x:Key="Error.The project site is invalid.">La ubicación del proyecto no es válida.</sys:String>
+  <sys:String x:Key="Error.The mass does not exist.">La masa no existe.</sys:String>
+  <sys:String x:Key="Error.The mass is too small for walls.">La masa es demasiado pequeña para construir muros.</sys:String>
+  <sys:String x:Key="Error.The mass is too low for a roof.">La masa es demasiado baja para una cubierta.</sys:String>
   <sys:String x:Key="Error.The render scene does not exist.">La escena seleccionada ya no existe.</sys:String>
   <sys:String x:Key="Error.The render scene preview is too large.">La miniatura de la foto es demasiado grande.</sys:String>
   <sys:String x:Key="Error.The render scene collection is invalid.">La colección de escenas del proyecto no es válida.</sys:String>
