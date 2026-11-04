@@ -239,6 +239,40 @@ internal static partial class InteractionChecks
         Check(session.GetExtension(Ocean.Key) is null, "An ocean back at its defaults keeps nothing in the project");
     }
 
+    /// <summary>
+    /// People in the real window: saving them keeps them in the project and puts their moving block in the render scene
+    /// (a few hundred triangles each, at the place they start); removing them takes the text out of the project again.
+    /// </summary>
+    private static void PeopleChecks(MainWindow opened, RenderPanel panel)
+    {
+        var session = (DocumentSession)typeof(MainWindow).GetField("_session", PrivateInstance)!.GetValue(opened)!;
+        var host = typeof(RenderPanel).GetField("_source", PrivateInstance)!.GetValue(panel)!;
+        var save = host.GetType().GetMethod("SetActors")!;
+        var read = host.GetType().GetMethod("GetActors")!;
+        Task<RenderScene?> Scene() => (Task<RenderScene?>)typeof(MainWindow).GetMethod("GetSceneAsync", PrivateInstance, Type.EmptyTypes)!.Invoke(opened, null)!;
+        var wall = session.Document.Walls.First();
+        var ground = new ActorPoint(wall.Start.X, wall.Start.Y - 2, 0);
+        var people = new List<Actor>
+        {
+            new(Guid.NewGuid(), "Ana", 0, 1.2, true, 0, [ground, ground with { X = ground.X + 5 }]),
+            new(Guid.NewGuid(), "Luis", 3, 1.0, false, 2, [ground with { Y = ground.Y - 1 }])
+        };
+        var before = Await(Scene())!;
+        Check(before.DynamicTriangleCount == 0 && ((IReadOnlyList<Actor>)read.Invoke(host, null)!).Count == 0, "The house starts without people");
+        save.Invoke(host, [people]);
+        Check(session.GetExtension(Actors.Key) is { Length: > 50 } && ((IReadOnlyList<Actor>)read.Invoke(host, null)!).Count == 2,
+            "Saving people keeps them, with their routes, in the project");
+        var after = Await(Scene())!;
+        Check(after.DynamicTriangleCount > 400 && after.DynamicTriangleCount % 2 == 0 && after.TriangleCount == before.TriangleCount + after.DynamicTriangleCount,
+            $"The render scene holds the two people as a block of moving triangles ({after.DynamicTriangleCount}) after everything else");
+        var tracer = new PathTracer(after, 16, 16, new RenderCamera(new System.Numerics.Vector3(0, -8, 2), System.Numerics.Vector3.Zero, 45));
+        var rig = ActorRig.From(people)!;
+        tracer.MoveActors(rig.Positions(3));
+        Check(tracer.HasActors && rig.VertexCount == after.DynamicVertexCount, "A tracer of the house's scene can move the people frame by frame");
+        save.Invoke(host, [new List<Actor>()]);
+        Check(session.GetExtension(Actors.Key) is null, "Removing the people takes them out of the project");
+    }
+
     private static T Await<T>(Task<T> task)
     {
         var deadline = DateTime.UtcNow.AddSeconds(120);

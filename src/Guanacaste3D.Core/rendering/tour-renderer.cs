@@ -24,12 +24,12 @@ public static class TourRenderer
 {
     public static Task<TourResult> RenderAsync(RenderScene scene, CameraPath path, RenderSettings settings, int width, int height,
         int framesPerSecond, int samplesPerFrame, ImageFinish finish, string folder, IProgress<TourProgress>? progress,
-        CancellationToken cancellation, LayerSource? layers = null) =>
-        Task.Run(() => Render(scene, path, settings, width, height, framesPerSecond, samplesPerFrame, finish, folder, progress, cancellation, layers));
+        CancellationToken cancellation, LayerSource? layers = null, ActorRig? actors = null) =>
+        Task.Run(() => Render(scene, path, settings, width, height, framesPerSecond, samplesPerFrame, finish, folder, progress, cancellation, layers, actors));
 
     private static TourResult Render(RenderScene scene, CameraPath path, RenderSettings settings, int width, int height,
         int framesPerSecond, int samplesPerFrame, ImageFinish finish, string folder, IProgress<TourProgress>? progress,
-        CancellationToken cancellation, LayerSource? layers)
+        CancellationToken cancellation, LayerSource? layers, ActorRig? actors)
     {
         ArgumentNullException.ThrowIfNull(scene);
         ArgumentNullException.ThrowIfNull(path);
@@ -75,6 +75,9 @@ public static class TourRenderer
                         state = key;
                     }
                 }
+                // People walk with the movie: the same instant of the movie that places the camera places them.
+                if (actors is not null && tracer.HasActors)
+                    tracer.MoveActors(actors.Positions(total <= 1 ? 0 : path.Duration * frame / (total - 1)));
                 tracer.SetCamera(new RenderCamera(position, target, fieldOfView));
                 for (var sample = 0; sample < samplesPerFrame; sample++)
                 {

@@ -29,6 +29,12 @@ public sealed partial class PathTracer
     private readonly RenderScene _scene;
     private readonly Bvh _opaque;
     private readonly Bvh? _transmissive;
+    // People who walk: their triangles are in no other hierarchy, and their vertices live in a copy of this tracer's own, so a
+    // scene shared with other tracers is never moved. Hits in it are numbered from zero and shifted to the scene's numbering.
+    private Bvh? _dynamic;
+    private Vector3[]? _dynamicPositions;
+    private int[]? _dynamicIndices;
+    private readonly int _dynamicTriangleStart;
     private readonly SurfaceData[] _surfaces;
     private readonly float _rayEpsilon;
     private RenderSettings _settings;
@@ -130,12 +136,26 @@ public sealed partial class PathTracer
         _surfaces = scene.Materials.Select(SurfaceData.From).ToArray();
         var opaqueTriangles = new List<int>(scene.TriangleCount);
         var glassTriangles = new List<int>();
+        _dynamicTriangleStart = scene.DynamicTriangleStart;
+        var dynamicEnd = scene.DynamicTriangleCount == 0 ? 0 : scene.DynamicTriangleStart + scene.DynamicTriangleCount;
         for (var triangle = 0; triangle < scene.TriangleCount; triangle++)
+        {
+            if (triangle >= scene.DynamicTriangleStart && triangle < dynamicEnd) continue;
             (_surfaces[scene.TriangleMaterial[triangle]].Transmission > 0 ? glassTriangles : opaqueTriangles).Add(triangle);
+        }
         _opaque = new Bvh(scene.Positions, scene.Indices, opaqueTriangles.ToArray(), cancellationToken) { Cutout = AlphaCutout.For(scene) };
         _transmissive = glassTriangles.Count == 0
             ? null
             : new Bvh(scene.Positions, scene.Indices, glassTriangles.ToArray(), cancellationToken);
+
+        if (scene.DynamicTriangleCount > 0)
+        {
+            _dynamicPositions = scene.Positions.AsSpan(scene.DynamicVertexStart, scene.DynamicVertexCount).ToArray();
+            _dynamicIndices = new int[scene.DynamicTriangleCount * 3];
+            for (var index = 0; index < _dynamicIndices.Length; index++)
+                _dynamicIndices[index] = scene.Indices[scene.DynamicTriangleStart * 3 + index] - scene.DynamicVertexStart;
+            _dynamic = new Bvh(_dynamicPositions, _dynamicIndices, null);
+        }
 
         var (min, max) = scene.Bounds();
         var reach = MathF.Max(MathF.Max(MathF.Abs(min.X), MathF.Abs(max.X)),
@@ -276,6 +296,26 @@ public sealed partial class PathTracer
         _camera = camera;
         Reset();
     }
+
+    /// <summary>
+    /// Moves the walking people of the scene: <paramref name="positions"/> are all their vertices (as
+    /// <see cref="ActorRig.Positions"/> gives them) and replace the ones the tracer holds. Only their small hierarchy is
+    /// rebuilt, and the picture starts over, as it does when the camera moves.
+    /// </summary>
+    public void MoveActors(ReadOnlySpan<Vector3> positions)
+    {
+        if (_dynamicPositions is null || _dynamicIndices is null)
+            throw new InvalidOperationException("The scene has no moving geometry.");
+        if (positions.Length != _dynamicPositions.Length)
+            throw new ArgumentException("The positions do not match the scene's moving geometry.", nameof(positions));
+        positions.CopyTo(_dynamicPositions);
+        _dynamic = new Bvh(_dynamicPositions, _dynamicIndices, null);
+        _primary = null;
+        Reset();
+    }
+
+    /// <summary>Whether the scene has people who can be moved with <see cref="MoveActors"/>.</summary>
+    public bool HasActors => _dynamicPositions is not null;
 
     /// <summary>Discards accumulated samples and the cached denoising features.</summary>
     public void Reset()
@@ -960,6 +1000,12 @@ public sealed partial class PathTracer
         hit = new RayHit { Distance = maxDistance };
         bvh = _opaque;
         var found = _opaque.Intersect(origin, direction, _rayEpsilon * 0.1f, ref hit);
+        if (_dynamic is not null && _dynamic.Intersect(origin, direction, _rayEpsilon * 0.1f, ref hit))
+        {
+            hit.Triangle += _dynamicTriangleStart;
+            bvh = _dynamic;
+            found = true;
+        }
         if (_transmissive is not null && _transmissive.Intersect(origin, direction, _rayEpsilon * 0.1f, ref hit))
         {
             bvh = _transmissive;

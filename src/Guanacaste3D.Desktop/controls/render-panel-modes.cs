@@ -176,12 +176,14 @@ public partial class RenderPanel
         Button? layersButton = null;
         layersButton = Small("", "Capas", "Hace aparecer o desaparecer niveles del edificio en un momento de la película",
             (_, _) => ShowLayersMenu(layersButton!), out _);
-        var left = new WrapPanel { Width = 300, Margin = new Thickness(14, 12, 6, 0) };
+        var left = new WrapPanel { Width = 420, Margin = new Thickness(14, 12, 6, 0) };
         left.Children.Add(play);
         left.Children.Add(add);
         left.Children.Add(fromPhotos);
         left.Children.Add(clear);
         left.Children.Add(layersButton);
+        left.Children.Add(Small("", "Personas", "Coloca personas que caminan por rutas: se ven en el render y en la película",
+            (_, _) => ShowPeopleWindow(), out _));
 
         _timeText = new TextBlock { Foreground = Frozen(Color.FromRgb(0x8F, 0xA6, 0xB9)), FontSize = 11.5, Margin = new Thickness(0, 10, 0, 4) };
         _timeline = new Canvas { Height = 74, Background = Brushes.Transparent, ClipToBounds = true };

@@ -10,6 +10,7 @@ public sealed partial class PathTracer
         if (!_settings.CastShadows) return Vector3.One;
         _threadRays++;
         if (_opaque.Occluded(origin, direction, _rayEpsilon * 0.1f, maxDistance)) return Vector3.Zero;
+        if (_dynamic is not null && _dynamic.Occluded(origin, direction, _rayEpsilon * 0.1f, maxDistance)) return Vector3.Zero;
         if (_transmissive is null) return Vector3.One;
         var transmittance = Vector3.One;
         var remaining = maxDistance;

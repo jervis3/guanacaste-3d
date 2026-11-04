@@ -44,6 +44,12 @@ internal interface IRenderSource
     /// <summary>Where the project is and how it is turned from true north, which decide where the sun stands.</summary>
     ProjectSite Site { get; }
 
+    /// <summary>The people of the project and the routes they walk.</summary>
+    IReadOnlyList<Actor> GetActors();
+
+    /// <summary>Saves the people as one undoable step; the render scene is rebuilt, because it holds them.</summary>
+    void SetActors(IReadOnlyList<Actor> actors);
+
     /// <summary>The ocean of the project (off when it has none).</summary>
     OceanSettings GetOcean();
 

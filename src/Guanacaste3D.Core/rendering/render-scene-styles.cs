@@ -16,6 +16,7 @@ public static class RenderSceneStyles
             TransmissionTint = new Vector3(0.94f)
         }).ToArray();
         return new RenderScene(scene.Positions, scene.Indices, scene.TriangleMaterial, scene.Normals,
-            materials, scene.Lights, scene.DroppedTriangles);
+            materials, scene.Lights, scene.DroppedTriangles, null, scene.DynamicTriangleStart, scene.DynamicTriangleCount,
+            scene.DynamicVertexStart, scene.DynamicVertexCount);
     }
 }

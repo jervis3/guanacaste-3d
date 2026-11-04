@@ -24,9 +24,14 @@ public sealed record RenderLight(Vector3 Position, Vector3 Intensity, float Radi
 public sealed class RenderScene
 {
     internal RenderScene(Vector3[] positions, int[] indices, int[] triangleMaterial, Vector3[]? normals,
-        RenderMaterial[] materials, RenderLight[] lights, int droppedTriangles, Vector2[]? triangleUvs = null)
+        RenderMaterial[] materials, RenderLight[] lights, int droppedTriangles, Vector2[]? triangleUvs = null,
+        int dynamicTriangleStart = 0, int dynamicTriangleCount = 0, int dynamicVertexStart = 0, int dynamicVertexCount = 0)
     {
         TriangleUvs = triangleUvs;
+        DynamicTriangleStart = dynamicTriangleStart;
+        DynamicTriangleCount = dynamicTriangleCount;
+        DynamicVertexStart = dynamicVertexStart;
+        DynamicVertexCount = dynamicVertexCount;
         Positions = positions;
         Indices = indices;
         TriangleMaterial = triangleMaterial;
@@ -37,6 +42,14 @@ public sealed class RenderScene
     }
 
     public Vector3[] Positions { get; }
+    /// <summary>
+    /// The last triangles and vertices of the scene (people who walk) may move from frame to frame; a tracer keeps its own copy
+    /// of them and rebuilds only their small hierarchy. Zero when nothing in the scene moves.
+    /// </summary>
+    public int DynamicTriangleStart { get; }
+    public int DynamicTriangleCount { get; }
+    public int DynamicVertexStart { get; }
+    public int DynamicVertexCount { get; }
     public int[] Indices { get; }
     public int[] TriangleMaterial { get; }
     public Vector3[]? Normals { get; }
@@ -84,6 +97,7 @@ public sealed class RenderSceneBuilder
     private readonly List<(int Triangle, TexturedTriangle Corners)> _uvs = [];
     private bool _anyNormals;
     private int _dropped;
+    private int _dynamicTriangleStart, _dynamicTriangleCount, _dynamicVertexStart, _dynamicVertexCount;
 
     /// <summary>Adds the BIM scene mesh, mapping each surface category to its stock material.</summary>
     public RenderSceneBuilder AddBuilding(SceneMesh mesh,
@@ -91,6 +105,7 @@ public sealed class RenderSceneBuilder
         Func<Guid, SurfaceKind, RenderMaterial>? materialForElement = null)
     {
         ArgumentNullException.ThrowIfNull(mesh);
+        if (_dynamicTriangleCount > 0) throw new InvalidOperationException("Moving geometry must be added last.");
         materialFor ??= MaterialLibrary.ForKind;
         var kinds = new Dictionary<(SurfaceKind, Guid?), int>();
         var dimmed = new Dictionary<(SurfaceKind, int, Guid?), int>();
@@ -166,6 +181,7 @@ public sealed class RenderSceneBuilder
     public RenderSceneBuilder AddModel(ImportedModel model, ModelPlacement? placement = null)
     {
         ArgumentNullException.ThrowIfNull(model);
+        if (_dynamicTriangleCount > 0) throw new InvalidOperationException("Moving geometry must be added last.");
         var matrix = (placement ?? ModelPlacement.Identity).ToMatrix();
         var start = _positions.Count;
         foreach (var position in model.Positions) _positions.Add(Vector3.Transform(position, matrix));
@@ -211,6 +227,40 @@ public sealed class RenderSceneBuilder
         return this;
     }
 
+    /// <summary>
+    /// Adds geometry whose vertices a tracer can move between frames (people walking), at their starting places. It must be
+    /// the last geometry added, and can be added once: the scene remembers where it is, and a tracer is given new vertex
+    /// positions for it with <see cref="PathTracer.MoveActors"/>. Triangle numbers are relative to the block's own vertices.
+    /// </summary>
+    public RenderSceneBuilder AddDynamic(Vector3[] positions, int[] indices, int[] triangleMaterial, RenderMaterial[] materials)
+    {
+        ArgumentNullException.ThrowIfNull(positions);
+        ArgumentNullException.ThrowIfNull(indices);
+        ArgumentNullException.ThrowIfNull(triangleMaterial);
+        ArgumentNullException.ThrowIfNull(materials);
+        if (_dynamicTriangleCount > 0) throw new InvalidOperationException("Moving geometry can be added only once.");
+        if (indices.Length % 3 != 0 || triangleMaterial.Length != indices.Length / 3 || indices.Any(index => (uint)index >= (uint)positions.Length) ||
+            triangleMaterial.Any(material => (uint)material >= (uint)materials.Length))
+            throw new ArgumentException("The moving geometry is not consistent.");
+        PadNormals();
+        var start = _positions.Count;
+        _dynamicVertexStart = start;
+        _dynamicTriangleStart = _triangleMaterial.Count;
+        _positions.AddRange(positions);
+        var remap = materials.Select(MaterialIndex).ToArray();
+        for (var triangle = 0; triangle < triangleMaterial.Length; triangle++)
+        {
+            _indices.Add(start + indices[triangle * 3]);
+            _indices.Add(start + indices[triangle * 3 + 1]);
+            _indices.Add(start + indices[triangle * 3 + 2]);
+            _triangleMaterial.Add(remap[triangleMaterial[triangle]]);
+        }
+        _dynamicVertexCount = positions.Length;
+        _dynamicTriangleCount = triangleMaterial.Length;
+        PadNormals();
+        return this;
+    }
+
     /// <summary>Adds an explicit light.</summary>
     public RenderSceneBuilder AddLight(RenderLight light)
     {
@@ -238,7 +288,8 @@ public sealed class RenderSceneBuilder
             }
         }
         return new RenderScene(_positions.ToArray(), _indices.ToArray(), _triangleMaterial.ToArray(),
-            _anyNormals ? _normals.ToArray() : null, materials, _lights.ToArray(), _dropped, uvs);
+            _anyNormals ? _normals.ToArray() : null, materials, _lights.ToArray(), _dropped, uvs,
+            _dynamicTriangleStart, _dynamicTriangleCount, _dynamicVertexStart, _dynamicVertexCount);
     }
 
     private int MaterialIndex(RenderMaterial material)

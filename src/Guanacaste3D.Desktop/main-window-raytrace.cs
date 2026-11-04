@@ -82,6 +82,8 @@ public partial class MainWindow
         public Task<RenderScene?> GetSceneAsync(IReadOnlySet<Guid> hiddenLevels) => window.GetSceneAsync(hiddenLevels);
         public IReadOnlyList<Level> Levels => window._session.Document.Levels;
         public ProjectSite Site => window._session.Document.Site;
+        public IReadOnlyList<Actor> GetActors() => Actors.Of(window._session.Document);
+        public void SetActors(IReadOnlyList<Actor> actors) => window._session.SetExtension(Actors.Key, Actors.Serialize(actors));
         public OceanSettings GetOcean() => Ocean.Of(window._session.Document);
         public void SetOcean(OceanSettings settings) => window._session.SetExtension(Ocean.Key, Ocean.Serialize(settings));
         public string? GetExtension(string key) => window._session.GetExtension(key);
@@ -348,6 +350,8 @@ public partial class MainWindow
                 kind => kind == SurfaceKind.Ocean ? Ocean.Material(sea) : stock(kind),
                 (id, kind) => kind == SurfaceKind.Ocean ? Ocean.Material(sea) : perElement(id, kind));
             foreach (var (link, loaded) in links) builder.AddModel(loaded.Model, link.Placement);
+            // The people go in last: they are the one block the movie moves, from the place they start at.
+            if (ActorRig.Of(document) is { } people) builder.AddDynamic(people.Positions(0), people.Indices, people.TriangleMaterial, people.Materials);
             var scene = builder.Build();
             if (clay) scene = RenderSceneStyles.Clay(scene);
             MemoryTrim.AfterHeavyBuild();
