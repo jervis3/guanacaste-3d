@@ -173,7 +173,13 @@ public enum StructuralElementKind
     Bolt,
 
     /// <summary>A weld bead along a line.</summary>
-    Weld
+    Weld,
+
+    /// <summary>A reinforcing bar along a line; its width is its diameter.</summary>
+    Rebar,
+
+    /// <summary>A sheet of welded wire fabric, drawn along its length; its width is the sheet's width.</summary>
+    FabricSheet
 }
 
 /// <summary>Variant of an element's geometry. Which values apply depends on the element kind.</summary>
@@ -303,6 +309,9 @@ public sealed record StructuralElement(
     /// <summary>Rectangles cut out of the member, from its top down; null when it has none. The list is never changed after it is set.</summary>
     public List<MemberCut>? Cuts { get; init; }
 
+    /// <summary>Fabric sheets only: the wires and their spacing; null takes 5.5 mm wires every 15 cm.</summary>
+    public WireSpec? Wires { get; init; }
+
     /// <summary>Drafting marks and openings have no solid of their own; openings only cut floor slabs.</summary>
     [JsonIgnore] public bool HasSolid => Kind is not (StructuralElementKind.ModelLine or StructuralElementKind.Opening
         or StructuralElementKind.Shaft or StructuralElementKind.ModelText or StructuralElementKind.ReferencePlane
@@ -411,6 +420,8 @@ public static class StructuralElementStandards
         StructuralElementKind.Plate => (0, 0.012, 1.0),
         StructuralElementKind.Bolt => (0.02, 0.08, 1.0),
         StructuralElementKind.Weld => (0.008, 0.008, 1.0),
+        StructuralElementKind.Rebar => (0.012, 0.012, 0.05),
+        StructuralElementKind.FabricSheet => (2.4, 0.006, 0.03),
         // A mass of two storeys is the usual first sketch of a building.
         StructuralElementKind.Mass => (0, 6.0, 0),
         // Batting 10 cm thick, the usual insulation of a masonry wall.

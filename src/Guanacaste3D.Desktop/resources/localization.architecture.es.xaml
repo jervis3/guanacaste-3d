@@ -51,6 +51,8 @@
   <sys:String x:Key="Entity.Plate">Placa</sys:String>
   <sys:String x:Key="Entity.Bolt">Perno</sys:String>
   <sys:String x:Key="Entity.Weld">Soldadura</sys:String>
+  <sys:String x:Key="Entity.Rebar">Barra de refuerzo</sys:String>
+  <sys:String x:Key="Entity.FabricSheet">Malla electrosoldada</sys:String>
   <sys:String x:Key="Entity.DetailLine">Línea de detalle</sys:String>
   <sys:String x:Key="Entity.FilledRegion">Región rellena</sys:String>
   <sys:String x:Key="Entity.RevisionCloud">Nube de revisión</sys:String>

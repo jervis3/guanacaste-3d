@@ -117,6 +117,8 @@ public static class ArchitecturalShapes
                 (!double.IsFinite(element.Width) || !double.IsFinite(element.Height) || !double.IsFinite(element.Offset) ||
                  element.Width is < 0.005 or > 50 || element.Height is <= 0 or > 100 || element.Offset is < -100 or > 1000))
                 throw new InvalidDataException("Invalid ramp, gutter, downspout, curtain wall or skylight geometry.");
+            if (element.Wires is { IsValid: false })
+                throw new InvalidDataException("The fabric sheet is invalid.");
             if (element.Cuts is { } cuts && (cuts.Count > MemberCuts.MaximumCuts || cuts.Any(cut => cut is null || !cut.IsValid)))
                 throw new InvalidDataException("The cut is invalid.");
             if (!double.IsFinite(element.GridWidth) || !double.IsFinite(element.GridHeight) ||

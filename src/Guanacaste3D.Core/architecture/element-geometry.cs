@@ -40,7 +40,7 @@ public static class ElementGeometry
             StructuralElementKind.CurtainWall => CurtainWallParts(element),
             StructuralElementKind.Skylight => SkylightParts(element),
             StructuralElementKind.Elevator => ElevatorGeometry.Parts(element),
-            var kind when MepElements.IsRound(kind) && element.Length >= 0.05 => RoundRunParts(element),
+            var kind when (MepElements.IsRound(kind) || kind == StructuralElementKind.Rebar) && element.Length >= 0.05 => RoundRunParts(element),
             StructuralElementKind.Planting => PlantGeometry.ProxyParts(element),
             StructuralElementKind.Component when element.ComponentShape != ResidentialComponentShape.Box =>
                 ResidentialComponentGeometry.Parts(element),

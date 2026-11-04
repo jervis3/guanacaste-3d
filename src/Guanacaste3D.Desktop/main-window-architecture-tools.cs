@@ -329,6 +329,8 @@ public partial class MainWindow
         StructuralElementKind.Plate => "Entity.Plate",
         StructuralElementKind.Bolt => "Entity.Bolt",
         StructuralElementKind.Weld => "Entity.Weld",
+        StructuralElementKind.Rebar => "Entity.Rebar",
+        StructuralElementKind.FabricSheet => "Entity.FabricSheet",
         StructuralElementKind.ParkingSpace => "Entity.ParkingSpace",
         _ => null
     };

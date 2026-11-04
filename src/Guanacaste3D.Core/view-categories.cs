@@ -23,7 +23,8 @@ public enum ViewCategory
     Planting,
     Rooms,
     Masses,
-    Mep
+    Mep,
+    Reinforcement
 }
 
 /// <summary>Maps model elements to the view category that controls their visibility.</summary>
@@ -51,6 +52,7 @@ public static class ViewCategories
         StructuralElementKind.Planting => ViewCategory.Planting,
         StructuralElementKind.Mass => ViewCategory.Masses,
         var service when MepElements.IsMep(service) => ViewCategory.Mep,
+        StructuralElementKind.Rebar or StructuralElementKind.FabricSheet => ViewCategory.Reinforcement,
         _ => null
     };
 }

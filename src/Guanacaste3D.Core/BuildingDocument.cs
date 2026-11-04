@@ -128,6 +128,14 @@ public sealed class BuildingDocument
     public CollaborationSettings Collaboration { get; set; } = CollaborationSettings.Off;
     /// <summary>Which sheets and formats the project publishes, and where.</summary>
     public PublishSettings Publish { get; set; } = PublishSettings.Default;
+    /// <summary>Cover, bars and steel of the reinforcement.</summary>
+    public ReinforcementSettings Reinforcement { get; set; } = ReinforcementSettings.Default;
+    /// <summary>How walls are divided into precast panels.</summary>
+    public PrecastSettings Precast { get; set; } = PrecastSettings.Default;
+    /// <summary>The concrete: its grade and weight.</summary>
+    public ConcreteSettings Concrete { get; set; } = ConcreteSettings.Default;
+    /// <summary>Elements whose cover is not the project's.</summary>
+    public List<CoverOverride> CoverOverrides { get; set; } = [];
     /// <summary>Images laid in the plan of a level as drawings to trace over.</summary>
     public List<ImageUnderlay> Underlays { get; set; } = [];
     /// <summary>Scanned or surveyed points kept as a reference in the plan.</summary>
@@ -212,6 +220,10 @@ public sealed class BuildingDocument
         WorksetAssignments = [.. WorksetAssignments],
         Collaboration = Collaboration,
         Publish = Publish with { SheetIds = [.. Publish.SheetIds] },
+        Reinforcement = Reinforcement,
+        Precast = Precast,
+        Concrete = Concrete,
+        CoverOverrides = [.. CoverOverrides],
         Underlays = [.. Underlays],
         PointClouds = [.. PointClouds],
         ElementGroups = ElementGroups.Select(group => group with { MemberIds = [.. group.MemberIds] }).ToList(),
@@ -253,6 +265,11 @@ public sealed class BuildingDocument
             Worksets.Select(item => item.Id).Distinct().Count() != Worksets.Count || WorksetAssignments.Select(item => item.Id).Distinct().Count() != WorksetAssignments.Count)
             throw new InvalidDataException("Invalid worksets.");
         if (Publish is null || !Publish.IsValid) throw new InvalidDataException("The publish settings are invalid.");
+        if (Reinforcement is null || !Reinforcement.IsValid) throw new InvalidDataException("The reinforcement settings are invalid.");
+        if (Precast is null || !Precast.IsValid) throw new InvalidDataException("The precast settings are invalid.");
+        if (Concrete is null || !Concrete.IsValid) throw new InvalidDataException("The concrete settings are invalid.");
+        if (CoverOverrides is null || CoverOverrides.Count > 100000 || CoverOverrides.Any(item => item is null || item.Cover is < 0.01 or > 0.15) || CoverOverrides.Select(item => item.Id).Distinct().Count() != CoverOverrides.Count)
+            throw new InvalidDataException("The cover is invalid.");
         if (Units is null || !Units.IsValid) throw new InvalidDataException("The project units are invalid.");
         if (Site is null || !Site.IsValid) throw new InvalidDataException("The project site is invalid.");
         if (Views.Any(view => view.ModelCrop is { } crop && (!double.IsFinite(crop.MinX + crop.MinY + crop.MaxX + crop.MaxY) ||

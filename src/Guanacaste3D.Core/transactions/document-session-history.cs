@@ -61,6 +61,7 @@ public sealed partial class DocumentSession
     {
         document.Dimensions.RemoveAll(item => PlanDimensions.Resolve(document, item) is null);
         ElementGroups.Prune(document);
+        document.CoverOverrides.RemoveAll(item => !ElementGroups.Exists(document, item.Id) && document.Columns.All(column => column.Id != item.Id));
         document.WorksetAssignments.RemoveAll(item => !ElementGroups.Exists(document, item.Id) || document.Worksets.All(workset => workset.Id != item.WorksetId));
         LevelConstraints.Apply(document);
         OpeningTypeRules.SynchronizeInstances(document);
