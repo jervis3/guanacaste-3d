@@ -82,6 +82,8 @@ public partial class MainWindow
         public Task<RenderScene?> GetSceneAsync(IReadOnlySet<Guid> hiddenLevels) => window.GetSceneAsync(hiddenLevels);
         public IReadOnlyList<Level> Levels => window._session.Document.Levels;
         public ProjectSite Site => window._session.Document.Site;
+        public OceanSettings GetOcean() => Ocean.Of(window._session.Document);
+        public void SetOcean(OceanSettings settings) => window._session.SetExtension(Ocean.Key, Ocean.Serialize(settings));
         public string? GetExtension(string key) => window._session.GetExtension(key);
         public void SetExtension(string key, string? value)
         {
@@ -334,12 +336,17 @@ public partial class MainWindow
         return Task.Run<RenderScene?>(() =>
         {
             var mesh = BuildingMesher.Build(document, includeGround: true, plants: PlantDetail.Render);
+            // The ocean takes the endless ground's place; it must be put in before anything else is appended to the mesh.
+            var sea = Ocean.Of(document);
+            Ocean.Apply(mesh, sea);
             if (stoneDetail) RenderStoneDisplacement.Append(mesh);
             // Images stuck on walls (Insert > Decal) are part of what the render shows.
             Decals.AppendTo(mesh, document, image => RenderTextureLibrary.Load(DecalImagePath(image, projectFile)));
+            var stock = RenderTextureLibrary.Resolver(materials, projectFile, lightsOn);
+            var perElement = RenderTextureLibrary.ElementResolver(materials, projectFile, lightsOn);
             var builder = new RenderSceneBuilder().AddBuilding(mesh,
-                RenderTextureLibrary.Resolver(materials, projectFile, lightsOn),
-                RenderTextureLibrary.ElementResolver(materials, projectFile, lightsOn));
+                kind => kind == SurfaceKind.Ocean ? Ocean.Material(sea) : stock(kind),
+                (id, kind) => kind == SurfaceKind.Ocean ? Ocean.Material(sea) : perElement(id, kind));
             foreach (var (link, loaded) in links) builder.AddModel(loaded.Model, link.Placement);
             var scene = builder.Build();
             if (clay) scene = RenderSceneStyles.Clay(scene);

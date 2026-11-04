@@ -125,6 +125,9 @@ internal static partial class SurfacePatterns
                 var color = Vector3.Lerp(new Vector3(0.92f, 1.0f, 1.02f), new Vector3(1.25f, 1.18f, 0.7f), young) * tone;
                 return Vector3.Lerp(color, new Vector3(2.2f, 1.5f, 0.6f), dry);
             }
+            case SurfacePattern.Ripples:
+            case SurfacePattern.Waves:
+                return WaterTone(pattern, scale, u, v);
             case SurfacePattern.Bark:
             {
                 var furrows = ValueNoise(u * 18f, v * 1.6f);
@@ -145,6 +148,7 @@ internal static partial class SurfacePatterns
     public static Vector3 Relief(SurfacePattern pattern, float scale, Vector3 position, Vector3 normal, float distance)
     {
         if (pattern is SurfacePattern.None or SurfacePattern.Checker) return normal;
+        if (pattern is SurfacePattern.Ripples or SurfacePattern.Waves) return WaterRelief(pattern, scale, position, normal, distance);
         if (pattern == SurfacePattern.RoofTiles) return RoofTileRelief(scale, position, normal);
         var fade = 1 / (1 + distance * distance * (1f / 900f));   // half strength at 30 m
         var (u, v) = PlaneCoordinates(position, normal);

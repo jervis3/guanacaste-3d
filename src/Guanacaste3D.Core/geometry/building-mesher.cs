@@ -75,7 +75,9 @@ public enum SurfaceKind : byte
     /// <summary>Asphalt road surfacing.</summary>
     Asphalt,
     /// <summary>Dark tinted glass, glossy and opaque: car windows of models without an interior.</summary>
-    TintedGlass
+    TintedGlass,
+    /// <summary>The sea of the render: it takes the place of the endless ground, with waves and white caps.</summary>
+    Ocean
 }
 
 /// <summary>A texture a mesh maps by coordinates, and the coverage below which its surface is cut away.</summary>

@@ -34,7 +34,11 @@ public enum SurfacePattern : byte
     /// <summary>Subtle mineral variation and pores on exposed cast concrete.</summary>
     PouredConcrete,
     /// <summary>Irregular coursed natural-stone masonry with individually toned stones, recessed mortar and mineral relief.</summary>
-    StoneMasonry
+    StoneMasonry,
+    /// <summary>Small, calm ripples for a pool or a basin.</summary>
+    Ripples,
+    /// <summary>Open-sea waves of several lengths, with white caps on the crests.</summary>
+    Waves
 }
 
 /// <summary>
@@ -154,7 +158,13 @@ public static class MaterialLibrary
         },
         SurfaceKind.Water => new RenderMaterial
         {
-            Name = "Agua", BaseColor = new(0.015f, 0.05f, 0.06f), Roughness = 0.01f, Ior = 1.33f
+            Name = "Agua", BaseColor = new(0.015f, 0.05f, 0.06f), Roughness = 0.01f, Ior = 1.33f,
+            Pattern = SurfacePattern.Ripples, PatternScale = 0.12f
+        },
+        SurfaceKind.Ocean => new RenderMaterial
+        {
+            Name = "Océano", BaseColor = new(0.010f, 0.125f, 0.150f), Roughness = 0.02f, Ior = 1.33f,
+            Pattern = SurfacePattern.Waves, PatternScale = 1f
         },
         // A clear coat over the pigment: the low roughness gives cars their sharp sky and tree reflections.
         SurfaceKind.CarPaint => new RenderMaterial

@@ -555,6 +555,22 @@
                     <Slider x:Name="TiltShiftPositionSlider" Minimum="-1" Maximum="1" Value="0" TickFrequency="0.05"
                             IsSnapToTickEnabled="True" ValueChanged="Finish_SliderChanged"/>
                   </DockPanel>
+                  <CheckBox x:Name="OceanCheck" Style="{StaticResource PanelCheck}" IsChecked="False" Margin="0,12,0,0"
+                            Content="{DynamicResource Render.Ocean.Use}" Checked="Ocean_Changed" Unchecked="Ocean_Changed"/>
+                  <TextBlock Style="{StaticResource PanelLabel}" Text="{DynamicResource Render.Ocean.Level}"/>
+                  <DockPanel>
+                    <TextBlock Style="{StaticResource SliderValue}" Text="{Binding Value, ElementName=OceanLevelSlider, StringFormat={}{0:0.0} m}"/>
+                    <Slider x:Name="OceanLevelSlider" Minimum="-5" Maximum="5" Value="-0.5" TickFrequency="0.1"
+                            IsSnapToTickEnabled="True" ValueChanged="Ocean_SliderChanged"/>
+                  </DockPanel>
+                  <TextBlock Style="{StaticResource PanelLabel}" Text="{DynamicResource Render.Ocean.Waves}"/>
+                  <DockPanel>
+                    <TextBlock Style="{StaticResource SliderValue}" Text="{Binding Value, ElementName=OceanWavesSlider, StringFormat={}{0:0.0}×}"/>
+                    <Slider x:Name="OceanWavesSlider" Minimum="0.3" Maximum="3" Value="1" TickFrequency="0.1"
+                            IsSnapToTickEnabled="True" ValueChanged="Ocean_SliderChanged"/>
+                  </DockPanel>
+                  <TextBlock Style="{StaticResource PanelLabel}" Text="{DynamicResource Render.Ocean.Tint}"/>
+                  <ComboBox x:Name="OceanTintPicker" SelectionChanged="Ocean_SelectionChanged"/>
                   <CheckBox x:Name="LayersAnimationCheck" Style="{StaticResource PanelCheck}" IsChecked="False" Margin="0,12,0,0"
                             Content="{DynamicResource Render.Layers.Use}" Checked="Layers_Changed" Unchecked="Layers_Changed"/>
                   <TextBlock Style="{StaticResource PanelLabel}" Margin="0,12,0,0" Text="{DynamicResource RenderPanel.HighlightMaterial}"/>

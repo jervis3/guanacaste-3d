@@ -33,6 +33,10 @@
   <sys:String x:Key="Render.Camera.LightRays">Rayos de luz</sys:String>
   <sys:String x:Key="Render.Camera.TiltShift">Tilt-shift (miniatura)</sys:String>
   <sys:String x:Key="Render.Camera.TiltShiftPosition">Posición de la franja nítida</sys:String>
+  <sys:String x:Key="Render.Ocean.Use">Océano en lugar del suelo infinito</sys:String>
+  <sys:String x:Key="Render.Ocean.Level">Nivel del agua respecto al suelo</sys:String>
+  <sys:String x:Key="Render.Ocean.Waves">Tamaño de las olas</sys:String>
+  <sys:String x:Key="Render.Ocean.Tint">Color del agua</sys:String>
   <sys:String x:Key="Render.Layers.Use">Usar la animación de capas en la película</sys:String>
   <sys:String x:Key="RenderPanel.Rain">Lluvia</sys:String>
   <sys:String x:Key="RenderPanel.Snow">Nieve</sys:String>

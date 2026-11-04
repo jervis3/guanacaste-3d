@@ -44,6 +44,12 @@ internal interface IRenderSource
     /// <summary>Where the project is and how it is turned from true north, which decide where the sun stands.</summary>
     ProjectSite Site { get; }
 
+    /// <summary>The ocean of the project (off when it has none).</summary>
+    OceanSettings GetOcean();
+
+    /// <summary>Saves the ocean as one undoable step; the render scene is rebuilt, because the sea replaces the ground.</summary>
+    void SetOcean(OceanSettings settings);
+
     /// <summary>The levels of the project, the layers a movie can show and hide.</summary>
     IReadOnlyList<Level> Levels { get; }
 

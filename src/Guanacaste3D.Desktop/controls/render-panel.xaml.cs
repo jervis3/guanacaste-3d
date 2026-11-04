@@ -53,6 +53,7 @@ public partial class RenderPanel : UserControl
     public RenderPanel()
     {
         InitializeComponent();
+        FillOceanPicker();
         InitializeRenderModeRail();
         InitializeLooks();
         InitializeMaterialGallery();

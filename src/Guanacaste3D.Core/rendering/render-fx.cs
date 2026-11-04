@@ -91,6 +91,9 @@ public static class RenderFx
 
         new("highlight", "Resaltar material", "Destaca un material con un contorno y atenúa el resto de la imagen", FxCategory.Objects, "",
             [Choice("HighlightPicker", "Material", start: 1), Slider("HighlightDimSlider", "Atenuar el resto", start: 0.6)], Featured: true),
+        new("ocean", "Océano", "Un mar con olas que sustituye al suelo infinito y llega hasta el horizonte", FxCategory.Objects, "",
+            [Toggle("OceanCheck", "Activado", neutral: false), Slider("OceanLevelSlider", "Nivel del agua (m)", -0.5, -0.5),
+             Slider("OceanWavesSlider", "Tamaño de las olas", 1, 1), Choice("OceanTintPicker", "Color del agua")], Featured: true),
         new("layers", "Animación de capas", "Hace aparecer o desaparecer niveles del edificio a lo largo de la película", FxCategory.Animation, "",
             [Toggle("LayersAnimationCheck", "Usar en la película", neutral: false)], Featured: true)
     ];

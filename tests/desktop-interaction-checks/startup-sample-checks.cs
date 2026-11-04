@@ -133,6 +133,7 @@ internal static partial class InteractionChecks
             MovieStorageChecks(opened, panel);
             DecalChecks(opened);
             EffectControlChecks(panel);
+            OceanChecks(opened, panel);
 
             // A recent list in a scratch folder: it keeps the newest first and forgets on request.
             var folder = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"g3d-recents-{Guid.NewGuid():N}");

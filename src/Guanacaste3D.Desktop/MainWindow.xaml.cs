@@ -213,6 +213,7 @@ public partial class MainWindow : Window
     private bool SaveProject(bool choosePath)
     {
         RenderPanelControl.SaveMovieNow();
+        RenderPanelControl.SaveOceanNow();
         var path = _filePath;
         if (choosePath || path is null)
         {
@@ -298,6 +299,7 @@ public partial class MainWindow : Window
         FrameCameraToScene();
         if (document.RenderSetup is { } setup) ApplyRenderSetup(setup);
         RenderPanelControl.RestoreMovie();
+        RenderPanelControl.RestoreOcean();
     }
 
     /// <summary>Restores a project's saved render view: the shared camera and the Render panel's settings.</summary>

@@ -192,6 +192,53 @@ internal static partial class InteractionChecks
                                                                 (problems.Count == 0 ? "" : ": " + string.Join(", ", problems)));
     }
 
+    /// <summary>
+    /// The ocean in the real window: switching it on from the panel keeps it in the project and puts the sea in the render
+    /// scene in place of the ground; switching it off takes it out; opening a project shows its ocean in the controls.
+    /// </summary>
+    private static void OceanChecks(MainWindow opened, RenderPanel panel)
+    {
+        var session = (DocumentSession)typeof(MainWindow).GetField("_session", PrivateInstance)!.GetValue(opened)!;
+        Task<RenderScene?> Scene() => (Task<RenderScene?>)typeof(MainWindow).GetMethod("GetSceneAsync", PrivateInstance, Type.EmptyTypes)!.Invoke(opened, null)!;
+        var save = typeof(RenderPanel).GetMethod("SaveOceanNow", PrivateInstance)!;
+        var restore = typeof(RenderPanel).GetMethod("RestoreOcean", PrivateInstance)!;
+        var on = (CheckBox)panel.FindName("OceanCheck");
+        var level = (Slider)panel.FindName("OceanLevelSlider");
+        var waves = (Slider)panel.FindName("OceanWavesSlider");
+        var tint = (ComboBox)panel.FindName("OceanTintPicker");
+        bool HasSea(RenderScene scene) => scene.Materials.Any(material => material.Pattern == SurfacePattern.Waves);
+
+        Check(tint.Items.Count == 3 && !HasSea(Await(Scene())!), "The house starts without an ocean, and the colour list has its three waters");
+        level.Value = -1.5;
+        waves.Value = 2;
+        tint.SelectedIndex = 1;
+        on.IsChecked = true;
+        save.Invoke(panel, null);
+        Check(session.GetExtension(Ocean.Key) is { Length: > 10 } && HasSea(Await(Scene())!),
+            "Switching the ocean on keeps it in the project and puts the sea in the render scene");
+        var saved = Ocean.Of(session.Document);
+        Check(saved == new OceanSettings(true, -1.5, 2, OceanTint.Pacific), "The saved ocean has the level, wave size and colour chosen in the panel");
+
+        level.Value = -0.5;
+        waves.Value = 1;
+        tint.SelectedIndex = 0;
+        on.IsChecked = false;
+        restore.Invoke(panel, null);
+        Check(on.IsChecked == true && Math.Abs(level.Value + 1.5) < 1e-9 && Math.Abs(waves.Value - 2) < 1e-9 && tint.SelectedIndex == 1,
+            "Opening a project shows its ocean in the panel's controls");
+
+        on.IsChecked = false;
+        save.Invoke(panel, null);
+        // Each scene rebuild of the house is ten seconds or more, so the off state is checked in the project, not in a third scene.
+        Check(!Ocean.Of(session.Document).Enabled && session.GetExtension(Ocean.Key) is not null,
+            "Switching the ocean off keeps its level and colour in the project for next time");
+        level.Value = -0.5;
+        waves.Value = 1;
+        tint.SelectedIndex = 0;
+        save.Invoke(panel, null);
+        Check(session.GetExtension(Ocean.Key) is null, "An ocean back at its defaults keeps nothing in the project");
+    }
+
     private static T Await<T>(Task<T> task)
     {
         var deadline = DateTime.UtcNow.AddSeconds(120);
