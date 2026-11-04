@@ -29,6 +29,7 @@ internal static class ModelViewIntegrationChecks
         SheetAidChecks.Run(check);
         AnnotationMarkChecks.Run(check);
         SiteImportChecks.Run(check);
+        CollaborationChecks.Run(check);
         PlanDimensionChecks.Run(check);
         DoorPlanSymbolChecks.Run(check);
         StructuralChecks.Run(check);

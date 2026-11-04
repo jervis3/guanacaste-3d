@@ -121,6 +121,11 @@ public sealed class BuildingDocument
     public ProjectSite Site { get; set; } = ProjectSite.Default;
     /// <summary>Images and PDFs kept inside the project.</summary>
     public List<ReferenceFile> References { get; set; } = [];
+    /// <summary>Parts of the building that one person can take for editing; empty until the project is shared.</summary>
+    public List<Workset> Worksets { get; set; } = [];
+    public List<WorksetAssignment> WorksetAssignments { get; set; } = [];
+    /// <summary>Whether the project is shared through a central model, and by whom this copy is edited.</summary>
+    public CollaborationSettings Collaboration { get; set; } = CollaborationSettings.Off;
     /// <summary>Images laid in the plan of a level as drawings to trace over.</summary>
     public List<ImageUnderlay> Underlays { get; set; } = [];
     /// <summary>Scanned or surveyed points kept as a reference in the plan.</summary>
@@ -201,6 +206,9 @@ public sealed class BuildingDocument
         Units = Units,
         Site = Site,
         References = [.. References],
+        Worksets = [.. Worksets],
+        WorksetAssignments = [.. WorksetAssignments],
+        Collaboration = Collaboration,
         Underlays = [.. Underlays],
         PointClouds = [.. PointClouds],
         ElementGroups = ElementGroups.Select(group => group with { MemberIds = [.. group.MemberIds] }).ToList(),
@@ -237,6 +245,10 @@ public sealed class BuildingDocument
         ProjectStages.Validate(this);
         ElementGroups_Validate();
         ReferenceFiles.Validate(this);
+        if (Collaboration is null || !Collaboration.IsValid || Worksets is null || WorksetAssignments is null || Worksets.Count > 200 ||
+            Worksets.Any(item => item is null || item.Id == Guid.Empty || string.IsNullOrWhiteSpace(item.Name) || item.Name.Length > 120 || (item.Owner is not null && item.Owner.Length > 60)) ||
+            Worksets.Select(item => item.Id).Distinct().Count() != Worksets.Count || WorksetAssignments.Select(item => item.Id).Distinct().Count() != WorksetAssignments.Count)
+            throw new InvalidDataException("Invalid worksets.");
         if (Units is null || !Units.IsValid) throw new InvalidDataException("The project units are invalid.");
         if (Site is null || !Site.IsValid) throw new InvalidDataException("The project site is invalid.");
         if (Views.Any(view => view.ModelCrop is { } crop && (!double.IsFinite(crop.MinX + crop.MinY + crop.MaxX + crop.MaxY) ||

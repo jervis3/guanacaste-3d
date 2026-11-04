@@ -717,6 +717,68 @@ internal static partial class InteractionChecks
                 Check(session.Document.References.Count == 1 && session.Document.Underlays.Count == 0, "Removing the image from the window takes its placement away too");
                 ClickIn("_referencesWindow", "ReferenceClose");
 
+                // Collaboration: a central model shared with a second copy, worksets, the monitor and the edit requests.
+                var centralFolder = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"central-ui-{Guid.NewGuid():N}");
+                System.IO.Directory.CreateDirectory(centralFolder);
+                Environment.SetEnvironmentVariable("G3D_CENTRAL_DIR", System.IO.Path.Combine(centralFolder, "bases"));
+                var centralPath = System.IO.Path.Combine(centralFolder, "central.g3d");
+                Check(!(bool)Invoke("SynchronizeNow", true)!, "Synchronizing before collaboration is activated is refused");
+                Invoke("ExecuteApplicationCommand", "Collaborate");
+                Pump();
+                InWindow<System.Windows.Controls.TextBox>("_collaborationWindow", "CollabUser").Text = "Ana";
+                InWindow<System.Windows.Controls.TextBox>("_collaborationWindow", "CollabCentral").Text = centralPath;
+                ClickIn("_collaborationWindow", "CollabEnable");
+                Check(session.Document.Collaboration is { Enabled: true, User: "Ana" }, "The Collaborate window turns on sharing with the name and the central file typed");
+                ClickIn("_collaborationWindow", "CollabSync");
+                Check(System.IO.File.Exists(centralPath), "Synchronizing creates the central model");
+                ClickIn("_collaborationWindow", "CollabClose");
+
+                var other = new DocumentSession(ProjectFile.Load(centralPath));
+                other.EnableCollaboration("Beto", centralPath);
+                other.SynchronizeWithCentral();
+                var farWall = other.Document.Walls.Last().Id;
+                var farBefore = session.Document.Walls.Single(wall => wall.Id == farWall).Start;
+                other.MoveWall(farWall, 2, 3);
+                other.SynchronizeWithCentral();
+                Invoke("ExecuteApplicationCommand", "ReloadLatest");
+                var farAfter = session.Document.Walls.Single(wall => wall.Id == farWall).Start;
+                Check(Math.Abs(farAfter.X - (farBefore.X + 2)) < 1e-9 && Math.Abs(farAfter.Y - (farBefore.Y + 3)) < 1e-9, "Reload Latest brings in what the other person moved");
+
+                Invoke("ExecuteApplicationCommand", "Worksets");
+                Pump();
+                Answer("Fachada");
+                ClickIn("_worksetsWindow", "WorksetNew");
+                SetField("_selectedWallId", (Guid?)session.Document.Walls[0].Id);
+                SetField("_viewSelection", new HashSet<Guid> { session.Document.Walls[0].Id, session.Document.Walls[1].Id });
+                InWindow<System.Windows.Controls.ListBox>("_worksetsWindow", "WorksetList").SelectedIndex = 0;
+                ClickIn("_worksetsWindow", "WorksetAssign");
+                Check(session.Document.Worksets.Count == 1 && session.Document.WorksetAssignments.Count == 2, "The Worksets window makes a workset and puts the selected walls in it");
+                ClickIn("_worksetsWindow", "WorksetBorrow");
+                Check(session.Document.Worksets[0].Owner == "Ana", "Taking the workset makes it Ana's");
+                ClickIn("_worksetsWindow", "WorksetToggle");
+                Check(!session.Document.Worksets[0].Visible && ViewVisibility.Apply(session.Document, session.Document.Views.First(view => view.Kind == ProjectViewKind.Model3D)).Walls.Count == session.Document.Walls.Count - 2,
+                    "Hiding the workset takes its walls out of the views");
+                ClickIn("_worksetsWindow", "WorksetToggle");
+                ClickIn("_worksetsWindow", "WorksetClose");
+                SetField("_viewSelection", null);
+
+                Invoke("ExecuteApplicationCommand", "SynchronizeCentral");
+                other.SynchronizeWithCentral(writeCentral: false);
+                Check(other.Document.Worksets.Single().Owner == "Ana", "Synchronizing sends the taken workset to the other copy");
+                Invoke("ExecuteApplicationCommand", "WorksharingMonitor");
+                Pump();
+                Check(InWindow<System.Windows.Controls.TextBlock>("_monitorWindow", "MonitorText").Text.Contains("Ana"), "The monitor names the user and the state of the shared model");
+                ClickIn("_monitorWindow", "MonitorClose");
+                Invoke("ExecuteApplicationCommand", "EditRequests");
+                Pump();
+                Check(Field<Window?>("_requestsWindow")?.IsVisible == true, "Edit Requests opens with what the last synchronization left in dispute");
+                ClickIn("_requestsWindow", "RequestClose");
+                Invoke("ExecuteApplicationCommand", "Relinquish");
+                Check(session.Document.Worksets[0].Owner is null, "Relinquish lets go of the workset");
+                session.DisableCollaboration();
+                Environment.SetEnvironmentVariable("G3D_CENTRAL_DIR", null);
+                try { System.IO.Directory.Delete(centralFolder, true); } catch (System.IO.IOException) { }
+
                 SetField("_viewSelection", null);
                 Pump();
                 tabs.SelectedIndex = 0;

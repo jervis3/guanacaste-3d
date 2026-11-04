@@ -141,6 +141,15 @@
   <sys:String x:Key="Transaction.PlaceImageUnderlay">Colocar imagen en el plano</sys:String>
   <sys:String x:Key="Transaction.SetImageUnderlay">Cambiar imagen del plano</sys:String>
   <sys:String x:Key="Transaction.RemoveImageUnderlay">Quitar imagen del plano</sys:String>
+  <sys:String x:Key="Transaction.EnableCollaboration">Activar la colaboración</sys:String>
+  <sys:String x:Key="Transaction.DisableCollaboration">Desactivar la colaboración</sys:String>
+  <sys:String x:Key="Transaction.AddWorkset">Añadir subconjunto de trabajo</sys:String>
+  <sys:String x:Key="Transaction.RemoveWorkset">Quitar subconjunto de trabajo</sys:String>
+  <sys:String x:Key="Transaction.AssignToWorkset">Asignar elementos a un subconjunto</sys:String>
+  <sys:String x:Key="Transaction.SetWorksetVisible">Mostrar u ocultar un subconjunto</sys:String>
+  <sys:String x:Key="Transaction.BorrowWorkset">Tomar un subconjunto de trabajo</sys:String>
+  <sys:String x:Key="Transaction.RelinquishWorksets">Soltar subconjuntos de trabajo</sys:String>
+  <sys:String x:Key="Transaction.Synchronize">Sincronizar con el modelo central</sys:String>
   <sys:String x:Key="Transaction.SetViewCategories">Cambiar categorías visibles de la vista</sys:String>
   <sys:String x:Key="Transaction.PasteWalls">Pegar muros</sys:String>
   <sys:String x:Key="Transaction.AddArcWall">Crear muro curvo</sys:String>

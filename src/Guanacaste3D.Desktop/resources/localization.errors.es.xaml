@@ -68,6 +68,14 @@
   <sys:String x:Key="Error.The image placement is invalid.">La colocación de la imagen no es válida.</sys:String>
   <sys:String x:Key="Error.The image does not exist.">La imagen no existe.</sys:String>
   <sys:String x:Key="Error.Invalid reference files.">Los archivos de referencia del proyecto no son válidos.</sys:String>
+  <sys:String x:Key="Error.Invalid worksets.">Los subconjuntos de trabajo del proyecto no son válidos.</sys:String>
+  <sys:String x:Key="Error.The collaboration settings are invalid.">Escriba su nombre y la ruta del modelo central.</sys:String>
+  <sys:String x:Key="Error.A workset with that name already exists.">Ya existe un subconjunto con ese nombre.</sys:String>
+  <sys:String x:Key="Error.The workset does not exist.">El subconjunto no existe.</sys:String>
+  <sys:String x:Key="Error.The workset has been taken by another person.">Otra persona tomó ese subconjunto de trabajo.</sys:String>
+  <sys:String x:Key="Error.Collaboration is not enabled.">La colaboración no está activada.</sys:String>
+  <sys:String x:Key="Error.The central model does not exist yet.">El modelo central todavía no existe: sincronice primero.</sys:String>
+  <sys:String x:Key="Error.The element belongs to a workset that another person has taken.">El elemento pertenece a un subconjunto de trabajo que otra persona tomó.</sys:String>
   <sys:String x:Key="Error.The render scene does not exist.">La escena seleccionada ya no existe.</sys:String>
   <sys:String x:Key="Error.The render scene preview is too large.">La miniatura de la foto es demasiado grande.</sys:String>
   <sys:String x:Key="Error.The render scene collection is invalid.">La colección de escenas del proyecto no es válida.</sys:String>

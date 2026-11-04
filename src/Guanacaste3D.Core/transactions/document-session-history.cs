@@ -45,6 +45,7 @@ public sealed partial class DocumentSession
         action(copy);
         Regenerate(copy);
         copy.Validate();
+        EnforceWorksetOwnership(Document, copy);
         PushSnapshot(_undo, new HistoryEntry(name, Document));
         _redo.Clear();
         Document = copy;
@@ -60,6 +61,7 @@ public sealed partial class DocumentSession
     {
         document.Dimensions.RemoveAll(item => PlanDimensions.Resolve(document, item) is null);
         ElementGroups.Prune(document);
+        document.WorksetAssignments.RemoveAll(item => !ElementGroups.Exists(document, item.Id) || document.Worksets.All(workset => workset.Id != item.WorksetId));
         LevelConstraints.Apply(document);
         OpeningTypeRules.SynchronizeInstances(document);
         ParameterRules.RemoveOrphanedValues(document);

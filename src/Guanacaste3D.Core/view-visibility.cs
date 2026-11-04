@@ -25,7 +25,8 @@ public static class ViewVisibility
         var copy = document.Clone();
         if (view is null || (view.HiddenElementIds.Count == 0 && view.IsolatedElementIds.Count == 0 &&
                              view.HiddenCategories.Count == 0 && view.Filters.Count == 0 &&
-                             document.OptionAssignments.Count == 0 && !ProjectStages.PhasingActive(document, view))) return copy;
+                             document.OptionAssignments.Count == 0 && !ProjectStages.PhasingActive(document, view) &&
+                             document.Worksets.All(workset => workset.Visible))) return copy;
 
         // Phases and design options hide elements of any kind, so they are worked out once, for every element at once.
         var staged = document.Walls.Select(item => item.Id).Concat(document.Openings.Select(item => item.Id))
@@ -33,6 +34,10 @@ public static class ViewVisibility
             .Concat(document.StructuralElements.Select(item => item.Id)).ToArray();
         var stageHidden = ProjectStages.HiddenByPhase(document, view, staged);
         stageHidden.UnionWith(ProjectStages.HiddenByOption(document, view));
+        // A workset that is switched off takes its elements out of every view.
+        var hiddenWorksets = document.Worksets.Where(workset => !workset.Visible).Select(workset => workset.Id).ToHashSet();
+        if (hiddenWorksets.Count > 0)
+            stageHidden.UnionWith(document.WorksetAssignments.Where(item => hiddenWorksets.Contains(item.WorksetId)).Select(item => item.Id));
 
         bool CategoryShown(ViewCategory category) => !view.HiddenCategories.Contains(category);
 
