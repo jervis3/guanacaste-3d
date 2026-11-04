@@ -38,6 +38,16 @@
   <sys:String x:Key="Entity.Keynote">Nota clave</sys:String>
   <sys:String x:Key="Entity.Symbol">Símbolo</sys:String>
   <sys:String x:Key="Entity.ColorLegend">Leyenda de colores</sys:String>
+  <sys:String x:Key="Entity.Duct">Ducto</sys:String>
+  <sys:String x:Key="Entity.DuctPlaceholder">Ducto reservado</sys:String>
+  <sys:String x:Key="Entity.FlexDuct">Ducto flexible</sys:String>
+  <sys:String x:Key="Entity.CableTray">Bandeja portacables</sys:String>
+  <sys:String x:Key="Entity.Conduit">Conduit</sys:String>
+  <sys:String x:Key="Entity.FlexPipe">Tubería flexible</sys:String>
+  <sys:String x:Key="Entity.FabricationPart">Pieza fabricada</sys:String>
+  <sys:String x:Key="Entity.AirTerminal">Difusor de aire</sys:String>
+  <sys:String x:Key="Entity.MechanicalControlDevice">Control mecánico</sys:String>
+  <sys:String x:Key="Entity.DuctStiffener">Rigidizador</sys:String>
   <sys:String x:Key="Entity.DetailLine">Línea de detalle</sys:String>
   <sys:String x:Key="Entity.FilledRegion">Región rellena</sys:String>
   <sys:String x:Key="Entity.RevisionCloud">Nube de revisión</sys:String>

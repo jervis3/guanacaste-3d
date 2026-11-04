@@ -25,7 +25,8 @@ public partial class MainWindow
         StructuralElementKind.Downspout or StructuralElementKind.IsolatedFoundation or
             StructuralElementKind.Component or StructuralElementKind.Connection or
             StructuralElementKind.ModelText or StructuralElementKind.Planting or StructuralElementKind.ViewReference or StructuralElementKind.SpotElevation or
-            StructuralElementKind.SpotCoordinate or StructuralElementKind.Keynote or StructuralElementKind.Symbol or StructuralElementKind.ColorLegend => StructuralPlacementMode.Point,
+            StructuralElementKind.SpotCoordinate or StructuralElementKind.Keynote or StructuralElementKind.Symbol or StructuralElementKind.ColorLegend or StructuralElementKind.AirTerminal or
+            StructuralElementKind.MechanicalControlDevice => StructuralPlacementMode.Point,
         StructuralElementKind.Skylight or StructuralElementKind.Area or StructuralElementKind.Dormer or
             StructuralElementKind.Opening or StructuralElementKind.Shaft or StructuralElementKind.FilledRegion or
             StructuralElementKind.RevisionCloud or StructuralElementKind.Mass or StructuralElementKind.ParkingSpace => StructuralPlacementMode.Rectangle,
@@ -315,6 +316,16 @@ public partial class MainWindow
         StructuralElementKind.Keynote => "Entity.Keynote",
         StructuralElementKind.Symbol => "Entity.Symbol",
         StructuralElementKind.ColorLegend => "Entity.ColorLegend",
+        StructuralElementKind.Duct => "Entity.Duct",
+        StructuralElementKind.DuctPlaceholder => "Entity.DuctPlaceholder",
+        StructuralElementKind.FlexDuct => "Entity.FlexDuct",
+        StructuralElementKind.CableTray => "Entity.CableTray",
+        StructuralElementKind.Conduit => "Entity.Conduit",
+        StructuralElementKind.FlexPipe => "Entity.FlexPipe",
+        StructuralElementKind.FabricationPart => "Entity.FabricationPart",
+        StructuralElementKind.AirTerminal => "Entity.AirTerminal",
+        StructuralElementKind.MechanicalControlDevice => "Entity.MechanicalControlDevice",
+        StructuralElementKind.DuctStiffener => "Entity.DuctStiffener",
         StructuralElementKind.ParkingSpace => "Entity.ParkingSpace",
         _ => null
     };

@@ -134,7 +134,37 @@ public enum StructuralElementKind
     Symbol,
 
     /// <summary>A legend that colours the rooms of its level by name and lists the names. It has no solid.</summary>
-    ColorLegend
+    ColorLegend,
+
+    /// <summary>A rectangular air duct drawn between two points, at a height above its level.</summary>
+    Duct,
+
+    /// <summary>A duct that is only reserved in the model, to be given its size later.</summary>
+    DuctPlaceholder,
+
+    /// <summary>A flexible round duct.</summary>
+    FlexDuct,
+
+    /// <summary>A cable tray.</summary>
+    CableTray,
+
+    /// <summary>A round electrical conduit.</summary>
+    Conduit,
+
+    /// <summary>A flexible pipe.</summary>
+    FlexPipe,
+
+    /// <summary>A part made to order for a duct, pipe or tray run.</summary>
+    FabricationPart,
+
+    /// <summary>A diffuser or grille that air enters or leaves a room through, at a point on the ceiling.</summary>
+    AirTerminal,
+
+    /// <summary>A thermostat, sensor or other control of the mechanical system, at a point on the wall.</summary>
+    MechanicalControlDevice,
+
+    /// <summary>A band that stiffens a duct; made by the duct stiffener command.</summary>
+    DuctStiffener
 }
 
 /// <summary>Variant of an element's geometry. Which values apply depends on the element kind.</summary>
@@ -355,6 +385,16 @@ public static class StructuralElementStandards
             or StructuralElementKind.ViewReference or StructuralElementKind.SpotElevation or StructuralElementKind.SpotCoordinate
             or StructuralElementKind.SpotSlope or StructuralElementKind.Keynote or StructuralElementKind.ColorLegend => (0, 0, 0),
         StructuralElementKind.Symbol => (1.0, 0, 0),
+        // Services: a 400 x 300 duct, a 200 mm flexible duct, a 300 mm tray, a 25 mm conduit and a 32 mm flexible pipe, at their usual heights.
+        StructuralElementKind.Duct => (0.40, 0.30, 2.60),
+        StructuralElementKind.DuctPlaceholder or StructuralElementKind.FlexDuct => (0.20, 0.20, 2.60),
+        StructuralElementKind.CableTray => (0.30, 0.08, 2.50),
+        StructuralElementKind.Conduit => (0.025, 0.025, 2.40),
+        StructuralElementKind.FlexPipe => (0.032, 0.032, 0.50),
+        StructuralElementKind.FabricationPart => (0.30, 0.30, 2.50),
+        StructuralElementKind.AirTerminal => (0.60, 0.12, 2.70),
+        StructuralElementKind.MechanicalControlDevice => (0.12, 0.12, 1.50),
+        StructuralElementKind.DuctStiffener => (0.48, 0.38, 2.56),
         // A mass of two storeys is the usual first sketch of a building.
         StructuralElementKind.Mass => (0, 6.0, 0),
         // Batting 10 cm thick, the usual insulation of a masonry wall.

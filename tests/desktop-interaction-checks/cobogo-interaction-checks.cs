@@ -832,6 +832,49 @@ internal static partial class InteractionChecks
                     "Markups brings a review mark into the active level, as a note with a cloud");
                 System.IO.File.Delete(tableFile);
 
+                // Building services: the Systems tab's tools, stiffeners on a duct, a route through several points, a fixture and the schematic.
+                foreach (var (command, kind, mode) in new[]
+                         {
+                             ("Duct", StructuralElementKind.Duct, "Line"), ("DuctPlaceholder", StructuralElementKind.DuctPlaceholder, "Line"), ("FlexDuct", StructuralElementKind.FlexDuct, "Line"),
+                             ("CableTray", StructuralElementKind.CableTray, "Line"), ("Conduit", StructuralElementKind.Conduit, "Line"), ("FlexPipe", StructuralElementKind.FlexPipe, "Line"),
+                             ("FabricationPart", StructuralElementKind.FabricationPart, "Line"), ("AirTerminal", StructuralElementKind.AirTerminal, "Point"),
+                             ("MechanicalControlDevice", StructuralElementKind.MechanicalControlDevice, "Point")
+                         })
+                {
+                    Invoke("ExecuteApplicationCommand", command);
+                    Check(Field<object>("_structuralTool").ToString() == $"({kind}, {mode})", $"{command} arms the {kind} tool");
+                    Invoke("CancelStructuralTool");
+                }
+                Invoke("CreateStructuralFromTool", StructuralElementKind.Duct, new Point2(640, 640), new Point2(646, 640));
+                Answer("1.5");
+                Invoke("ExecuteApplicationCommand", "DuctStiffener");
+                Check(session.Document.StructuralElements.Count(item => item.Kind == StructuralElementKind.DuctStiffener) == 4, "Duct Stiffener puts bands along the duct that was just drawn");
+                SetField("_selectedStructuralId", null);
+                Invoke("ExecuteApplicationCommand", "DuctStiffener");
+                Check(session.Document.StructuralElements.Count(item => item.Kind == StructuralElementKind.DuctStiffener) == 4, "Without a selected duct nothing is added");
+                Answer("660 660; 670 660; 670 668");
+                var piecesBefore = session.Document.StructuralElements.Count(item => item.Kind == StructuralElementKind.FabricationPart);
+                Invoke("ExecuteApplicationCommand", "MultipointRouting");
+                Check(session.Document.StructuralElements.Count(item => item.Kind == StructuralElementKind.FabricationPart) == piecesBefore + 2, "Multipoint Routing draws a piece between each pair of the points typed");
+                Answer("2 3");
+                var piecesAfter = session.Document.StructuralElements.Count;
+                Invoke("ExecuteApplicationCommand", "MultipointRouting");
+                Check(session.Document.StructuralElements.Count == piecesAfter, "Fewer than three points draw nothing");
+                Answer("inodoro");
+                Invoke("ExecuteApplicationCommand", "PlumbingFixture");
+                Check(Field<object?>("_structuralTool") is { } tool && tool.ToString()!.Contains("Component"), "Plumbing Fixture arms the component tool with the fixture chosen by name");
+                Invoke("CancelStructuralTool");
+                Invoke("RenderPlan");
+                Pump();
+                Invoke("ExecuteApplicationCommand", "PidModeler");
+                Pump();
+                var schematicCanvas = InWindow<System.Windows.Controls.Canvas>("_schematicWindow", "SchematicCanvas");
+                Check(schematicCanvas.Children.Count > 5, $"The schematic draws the services of the house ({schematicCanvas.Children.Count} shapes)");
+                var schematicFile = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"esquema-{Guid.NewGuid():N}.png");
+                Check((bool)Invoke("SaveSchematicImage", schematicCanvas, schematicFile)! && new System.IO.FileInfo(schematicFile).Length > 500, "The schematic can be saved as an image");
+                System.IO.File.Delete(schematicFile);
+                ClickIn("_schematicWindow", "SchematicClose");
+
                 SetField("_viewSelection", null);
                 Pump();
                 tabs.SelectedIndex = 0;

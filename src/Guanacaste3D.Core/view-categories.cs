@@ -22,7 +22,8 @@ public enum ViewCategory
     CurtainWalls,
     Planting,
     Rooms,
-    Masses
+    Masses,
+    Mep
 }
 
 /// <summary>Maps model elements to the view category that controls their visibility.</summary>
@@ -49,6 +50,7 @@ public static class ViewCategories
         StructuralElementKind.CurtainWall => ViewCategory.CurtainWalls,
         StructuralElementKind.Planting => ViewCategory.Planting,
         StructuralElementKind.Mass => ViewCategory.Masses,
+        var service when MepElements.IsMep(service) => ViewCategory.Mep,
         _ => null
     };
 }

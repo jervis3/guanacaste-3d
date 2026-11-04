@@ -85,6 +85,14 @@
   <sys:String x:Key="Error.None of the columns is a project parameter.">Ninguna columna de la tabla es un parámetro del proyecto.</sys:String>
   <sys:String x:Key="Error.The table has no review marks.">La tabla no tiene marcas de revisión (formato: x;y;comentario).</sys:String>
   <sys:String x:Key="Error.The table has too many review marks.">La tabla tiene demasiadas marcas de revisión (máximo 2000).</sys:String>
+  <sys:String x:Key="Error.The duct does not exist.">El ducto no existe.</sys:String>
+  <sys:String x:Key="Error.The stiffener spacing is invalid.">La separación de los rigidizadores no es válida.</sys:String>
+  <sys:String x:Key="Error.The duct is too short for stiffeners at that spacing.">El ducto es demasiado corto para rigidizadores con esa separación.</sys:String>
+  <sys:String x:Key="Error.The duct would get too many stiffeners.">El ducto recibiría demasiados rigidizadores.</sys:String>
+  <sys:String x:Key="Error.A route is made of ducts, trays, conduits or pipes.">Una ruta se hace de ductos, bandejas, conduits o tuberías.</sys:String>
+  <sys:String x:Key="Error.A route needs at least three points.">Una ruta necesita al menos tres puntos.</sys:String>
+  <sys:String x:Key="Error.A route can have at most 200 points.">Una ruta puede tener como máximo 200 puntos.</sys:String>
+  <sys:String x:Key="Error.Two points of the route are too close together.">Dos puntos de la ruta están demasiado juntos.</sys:String>
   <sys:String x:Key="Error.The render scene does not exist.">La escena seleccionada ya no existe.</sys:String>
   <sys:String x:Key="Error.The render scene preview is too large.">La miniatura de la foto es demasiado grande.</sys:String>
   <sys:String x:Key="Error.The render scene collection is invalid.">La colección de escenas del proyecto no es válida.</sys:String>

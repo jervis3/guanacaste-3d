@@ -34,6 +34,7 @@ public static class ElementGeometry
             StructuralElementKind.CurtainWall => CurtainWallParts(element),
             StructuralElementKind.Skylight => SkylightParts(element),
             StructuralElementKind.Elevator => ElevatorGeometry.Parts(element),
+            var kind when MepElements.IsRound(kind) && element.Length >= 0.05 => RoundRunParts(element),
             StructuralElementKind.Planting => PlantGeometry.ProxyParts(element),
             StructuralElementKind.Component when element.ComponentShape != ResidentialComponentShape.Box =>
                 ResidentialComponentGeometry.Parts(element),
@@ -44,6 +45,18 @@ public static class ElementGeometry
                 SectionedMemberParts(element),
             _ => [Block(element, element.Footprint, element.Offset, element.Offset + element.Height)]
         };
+    }
+
+    /// <summary>
+    /// A round pipe, conduit or flexible duct as two boxes crossed over each other: one full width and 70 % high, the other
+    /// 70 % wide and full height, which together read as an octagon.
+    /// </summary>
+    private static IEnumerable<ElementPart> RoundRunParts(StructuralElement element)
+    {
+        yield return Block(element, ArchitecturalShapes.Strip(element.Start, element.End, 0, element.Width),
+            element.Offset + element.Height * 0.15, element.Offset + element.Height * 0.85);
+        yield return Block(element, ArchitecturalShapes.Strip(element.Start, element.End, 0, element.Width * 0.7),
+            element.Offset, element.Offset + element.Height);
     }
 
     private static ElementPart Block(StructuralElement element, IReadOnlyList<Point2> footprint, double bottom,

@@ -33,6 +33,7 @@ internal static class ModelViewIntegrationChecks
         CoordinationChecks.Run(check);
         NativeLinkChecks.Run(check);
         TableImportChecks.Run(check);
+        MepChecks.Run(check);
         PlanDimensionChecks.Run(check);
         DoorPlanSymbolChecks.Run(check);
         StructuralChecks.Run(check);

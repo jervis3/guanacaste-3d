@@ -153,6 +153,8 @@
   <sys:String x:Key="Transaction.SetPublishSettings">Cambiar la configuración de publicación</sys:String>
   <sys:String x:Key="Transaction.ImportParameterValues">Importar valores de parámetros</sys:String>
   <sys:String x:Key="Transaction.ImportReviewMarks">Importar marcas de revisión</sys:String>
+  <sys:String x:Key="Transaction.AddDuctStiffeners">Colocar rigidizadores en un ducto</sys:String>
+  <sys:String x:Key="Transaction.AddRoute">Dibujar una ruta de varios puntos</sys:String>
   <sys:String x:Key="Transaction.SetViewCategories">Cambiar categorías visibles de la vista</sys:String>
   <sys:String x:Key="Transaction.PasteWalls">Pegar muros</sys:String>
   <sys:String x:Key="Transaction.AddArcWall">Crear muro curvo</sys:String>

@@ -22,7 +22,8 @@ public static class InterferenceCheck
     private static readonly HashSet<StructuralElementKind> Considered =
     [
         StructuralElementKind.Beam, StructuralElementKind.Brace, StructuralElementKind.Truss, StructuralElementKind.Stair, StructuralElementKind.Ramp,
-        StructuralElementKind.Elevator, StructuralElementKind.CurtainWall
+        StructuralElementKind.Elevator, StructuralElementKind.CurtainWall, StructuralElementKind.Duct, StructuralElementKind.CableTray,
+        StructuralElementKind.FabricationPart, StructuralElementKind.FlexDuct, StructuralElementKind.Conduit
     ];
 
     private static bool Framing(string kind) => kind is "Beam" or "Brace" or "Truss";
