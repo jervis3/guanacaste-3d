@@ -81,6 +81,7 @@ public partial class MainWindow
         public Task<RenderScene?> GetSceneAsync() => window.GetSceneAsync();
         public Task<RenderScene?> GetSceneAsync(IReadOnlySet<Guid> hiddenLevels) => window.GetSceneAsync(hiddenLevels);
         public IReadOnlyList<Level> Levels => window._session.Document.Levels;
+        public ProjectSite Site => window._session.Document.Site;
         /// <summary>Copies document and material state before building WPF geometry off the UI thread.</summary>
         public Task<ModelSceneSnapshot> GetInteractiveSceneAsync()
         {

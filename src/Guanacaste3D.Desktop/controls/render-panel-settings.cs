@@ -201,7 +201,7 @@ public partial class RenderPanel
     private RenderSettings LightingFor(RenderQuality quality, ResourceMode resources)
     {
         var lighting = RenderPresets.Lighting(Scenario(), Latitude(), (SunDatePicker.SelectedDate ?? DateTime.Today).DayOfYear,
-            HourSlider.Value, quality, resources);
+            HourSlider.Value, quality, resources, trueNorthDegrees: _source?.Site.TrueNorthDegrees ?? 0);
         // Under a storm front the sun breaks through dimmer and the whole sky darkens.
         var storm = SelectedClouds() == CloudStyle.Storm;
         return lighting with

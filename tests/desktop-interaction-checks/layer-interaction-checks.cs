@@ -47,6 +47,45 @@ internal static partial class InteractionChecks
         layers.Clear();
     }
 
+    /// <summary>
+    /// The project's site in the real window: its latitude fills the Render panel's latitude box, and its turn from true
+    /// north turns the sun the render is lit with.
+    /// </summary>
+    private static void SiteSunChecks(MainWindow opened, RenderPanel panel)
+    {
+        var session = (DocumentSession)typeof(MainWindow).GetField("_session", PrivateInstance)!.GetValue(opened)!;
+        var original = session.Document.Site;
+        var latitude = (TextBox)panel.FindName("LatitudeInput");
+        var picker = (DatePicker)panel.FindName("SunDatePicker");
+        var hour = (Slider)panel.FindName("HourSlider");
+        RenderSettings Lit() => (RenderSettings)typeof(RenderPanel).GetMethod("LightingFor", PrivateInstance)!
+            .Invoke(panel, [RenderQuality.Draft, ResourceMode.Eco])!;
+        var scenario = (LightingScenario)typeof(RenderPanel).GetMethod("Scenario", PrivateInstance)!.Invoke(panel, null)!;
+        var day = (picker.SelectedDate ?? DateTime.Today).DayOfYear;
+        try
+        {
+            session.SetProjectSite(original with { Latitude = 40, TrueNorthDegrees = 0 });
+            typeof(RenderPanel).GetMethod("SyncProjectSite", PrivateInstance)!.Invoke(panel, null);
+            Check(latitude.Text == "40", "A change of the project's latitude fills the Render panel's latitude box");
+            var facingNorth = Lit().SunDirection;
+            Check(facingNorth == RenderPresets.Lighting(scenario, 40, day, hour.Value).SunDirection,
+                "A project facing true north is lit by the plain solar position");
+
+            session.SetProjectSite(original with { Latitude = 40, TrueNorthDegrees = 90 });
+            typeof(RenderPanel).GetMethod("SyncProjectSite", PrivateInstance)!.Invoke(panel, null);
+            var turned = Lit().SunDirection;
+            var expected = SolarPosition.ToProject(facingNorth, 90);
+            Check(Math.Abs(turned.X - expected.X) < 1e-4 && Math.Abs(turned.Y - expected.Y) < 1e-4 && Math.Abs(turned.Z - expected.Z) < 1e-4 &&
+                  (Math.Abs(turned.X - facingNorth.X) > 0.05f || Math.Abs(turned.Y - facingNorth.Y) > 0.05f),
+                "Turning the project from true north turns the render's sun with it");
+        }
+        finally
+        {
+            session.SetProjectSite(original);
+            typeof(RenderPanel).GetMethod("SyncProjectSite", PrivateInstance)!.Invoke(panel, null);
+        }
+    }
+
     private static T Await<T>(Task<T> task)
     {
         var deadline = DateTime.UtcNow.AddSeconds(120);

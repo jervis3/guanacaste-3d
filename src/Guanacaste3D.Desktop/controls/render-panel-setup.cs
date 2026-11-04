@@ -81,6 +81,8 @@ public partial class RenderPanel
         _fxMuted.Clear();
         _fxOpen.Clear();
         SyncFxFromControls();
+        // A saved setup keeps its own latitude: the site only moves it when the site itself changes afterwards.
+        RememberProjectSite();
         OnCameraChanged();
     }
 

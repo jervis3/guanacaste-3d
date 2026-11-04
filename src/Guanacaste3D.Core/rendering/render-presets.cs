@@ -74,8 +74,10 @@ public static class RenderPresets
     /// <param name="latitude">Site latitude in degrees, north positive.</param>
     /// <param name="dayOfYear">1–365.</param>
     /// <param name="solarHour">Local solar time; used for <see cref="LightingScenario.Sunny"/> only.</param>
+    /// <param name="trueNorthDegrees">How far the project's +Y axis is from true north (counter-clockwise), so the sun
+    /// lights the side of the building it really would; 0 for a project that faces north.</param>
     public static RenderSettings Lighting(LightingScenario scenario, double latitude, int dayOfYear, double solarHour,
-        RenderQuality quality = RenderQuality.Standard, ResourceMode resources = ResourceMode.Balanced)
+        RenderQuality quality = RenderQuality.Standard, ResourceMode resources = ResourceMode.Balanced, double trueNorthDegrees = 0)
     {
         var hour = scenario switch
         {
@@ -94,7 +96,7 @@ public static class RenderPresets
         {
             Sky = scenario == LightingScenario.Overcast ? SkyKind.Overcast : SkyKind.Clear,
             // Below the horizon only the twilight sky lights the scene; the sun direction stays valid for the sky model.
-            SunDirection = daylit ? sun : Vector3.Normalize(new Vector3(sun.X, sun.Y, sun.Z)),
+            SunDirection = SolarPosition.ToProject(daylit ? sun : Vector3.Normalize(new Vector3(sun.X, sun.Y, sun.Z)), trueNorthDegrees),
             SunIntensity = scenario == LightingScenario.Overcast ? 0 : defaults.SunIntensity * sunFactor,
             SkyIntensity = defaults.SkyIntensity,
             MaxBounces = profile.MaxBounces,

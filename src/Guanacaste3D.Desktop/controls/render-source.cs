@@ -32,6 +32,9 @@ internal interface IRenderSource
     /// <summary>The scene with some levels left out (the movie's layer animation); the cached one when none is hidden.</summary>
     Task<RenderScene?> GetSceneAsync(IReadOnlySet<Guid> hiddenLevels);
 
+    /// <summary>Where the project is and how it is turned from true north, which decide where the sun stands.</summary>
+    ProjectSite Site { get; }
+
     /// <summary>The levels of the project, the layers a movie can show and hide.</summary>
     IReadOnlyList<Level> Levels { get; }
 

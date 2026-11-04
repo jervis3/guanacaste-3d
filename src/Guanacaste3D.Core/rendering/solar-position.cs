@@ -41,6 +41,19 @@ public static class SolarPosition
         return Vector3.Normalize(new Vector3((float)east, (float)north, (float)up));
     }
 
+    /// <summary>
+    /// Turns a sun direction given against true north (X east, Y north) into the project's axes, for a project whose +Y is
+    /// <paramref name="trueNorthDegrees"/> away from true north (counter-clockwise, as <c>ProjectSite</c> keeps it). The
+    /// height is unchanged. Zero degrees leaves the direction as it is.
+    /// </summary>
+    public static Vector3 ToProject(Vector3 sun, double trueNorthDegrees)
+    {
+        if (!double.IsFinite(trueNorthDegrees) || trueNorthDegrees % 360 == 0) return sun;
+        var angle = trueNorthDegrees * Math.PI / 180;
+        float cos = (float)Math.Cos(angle), sin = (float)Math.Sin(angle);
+        return new Vector3(sun.X * cos - sun.Y * sin, sun.X * sin + sun.Y * cos, sun.Z);
+    }
+
     /// <summary>Returns the sun altitude above the horizon in degrees.</summary>
     public static double AltitudeDegrees(Vector3 direction) =>
         Math.Asin(Math.Clamp(direction.Z, -1, 1)) * 180 / Math.PI;

@@ -97,6 +97,7 @@ public partial class RenderPanel : UserControl
         RefreshMaterialRows();
         RefreshRenderScenes();
         RefreshPhotos();
+        SyncProjectSite();
         source.QueryChanged += () => Dispatcher.BeginInvoke(ApplyCollision);
         ApplyCollision();
     }
@@ -128,6 +129,7 @@ public partial class RenderPanel : UserControl
             StopTour();
             return;
         }
+        SyncProjectSite();
         ShowInteractiveScene(!_showingFinal);
         RefreshRenderScenes();
         RefreshInteractiveScene();
