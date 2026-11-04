@@ -19,7 +19,8 @@
   <Border x:Name="WindowFrame" BorderBrush="{DynamicResource PanelBorderBrush}" BorderThickness="1">
   <Grid>
   <DockPanel LastChildFill="True">
-    <Border x:Name="MainTitleBar" DockPanel.Dock="Top" Background="{DynamicResource ChromeBrush}" Height="30">
+    <Border x:Name="MainTitleBar" DockPanel.Dock="Top" Background="{DynamicResource ChromeBrush}" Height="30"
+            MouseLeftButtonDown="MainTitleBar_MouseLeftButtonDown">
       <Grid>
         <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5,0,0,0"

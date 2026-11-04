@@ -1,6 +1,7 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
+using System.Windows.Input;
 
 namespace Guanacaste3D.Desktop;
 
@@ -14,15 +15,29 @@ public partial class MainWindow
         FileMenu.IsOpen = true;
     }
 
+    /// <summary>Minimizes the main window through the native system command.</summary>
     private void MinimizeWindow_Click(object sender, RoutedEventArgs e) => SystemCommands.MinimizeWindow(this);
 
+    /// <summary>Toggles the main window between its maximized and restored states.</summary>
     private void MaximizeWindow_Click(object sender, RoutedEventArgs e)
     {
         if (WindowState == WindowState.Maximized) SystemCommands.RestoreWindow(this);
         else SystemCommands.MaximizeWindow(this);
     }
 
+    /// <summary>Closes the main window through the native system command.</summary>
     private void CloseWindow_Click(object sender, RoutedEventArgs e) => SystemCommands.CloseWindow(this);
+
+    /// <summary>
+    /// Starts a native window move when the person drags an unoccupied part of the custom title bar.
+    /// Interactive child controls handle their own mouse presses, so their clicks never reach this handler.
+    /// </summary>
+    private void MainTitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (WindowState != WindowState.Normal || e.ChangedButton != MouseButton.Left || e.ClickCount != 1) return;
+        DragMove();
+        e.Handled = true;
+    }
 
     /// <summary>
     /// Keeps the custom frame inside the monitor work area when maximized and swaps the caption glyph.
