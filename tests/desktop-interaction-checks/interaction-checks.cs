@@ -37,6 +37,13 @@ internal static partial class InteractionChecks
             Console.WriteLine("Desktop interaction checks passed (cobogó house only).");
             return 0;
         }
+        // G3D_ONLY=render runs just the Render tab on the cobogó house sample (the render, movie and presentation checks).
+        if (Environment.GetEnvironmentVariable("G3D_ONLY") == "render")
+        {
+            StartupSampleChecks();
+            Console.WriteLine("Desktop interaction checks passed (render tab only).");
+            return 0;
+        }
         _window = new MainWindow { Width = 1440, Height = 1000, WindowState = WindowState.Normal };
         try
         {

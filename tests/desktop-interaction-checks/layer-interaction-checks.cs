@@ -126,44 +126,6 @@ internal static partial class InteractionChecks
     }
 
     /// <summary>
-    /// Decals in the real window: saving them keeps the text in the project and puts two more triangles in the render scene,
-    /// read from a real image file next to nothing else; removing them takes the triangles out again.
-    /// </summary>
-    private static void DecalChecks(MainWindow opened)
-    {
-        var session = (DocumentSession)typeof(MainWindow).GetField("_session", PrivateInstance)!.GetValue(opened)!;
-        var save = typeof(MainWindow).GetMethod("SaveDecals", PrivateInstance)!;
-        Task<RenderScene?> Scene() => (Task<RenderScene?>)typeof(MainWindow).GetMethod("GetSceneAsync", PrivateInstance, Type.EmptyTypes)!.Invoke(opened, null)!;
-        var image = Path.Combine(Path.GetTempPath(), $"g3d-decal-{Guid.NewGuid():N}.png");
-        try
-        {
-            var pixels = new byte[4 * 4 * 4];
-            for (var index = 0; index < pixels.Length; index += 4) { pixels[index] = 255; pixels[index + 2] = 255; pixels[index + 3] = 255; }
-            var encoder = new System.Windows.Media.Imaging.PngBitmapEncoder();
-            encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(System.Windows.Media.Imaging.BitmapSource.Create(
-                4, 4, 96, 96, System.Windows.Media.PixelFormats.Bgra32, null, pixels, 16)));
-            using (var stream = File.Create(image)) encoder.Save(stream);
-
-            var wall = session.Document.Walls.OrderByDescending(item => item.Length).First();
-            var decal = new Decal(Guid.NewGuid(), wall.Id, DecalFace.Left, wall.Length / 2, wall.BaseOffset + 1.2,
-                Math.Min(1, wall.Length / 2), 1, image);
-            Check(Decals.Fit(wall, decal) is null, "A decal sized for the cobogó house's longest wall fits it");
-            var before = Await(Scene())!.TriangleCount;
-            save.Invoke(opened, [new List<Decal> { decal }]);
-            Check(session.GetExtension(Decals.Key) is { Length: > 20 }, "Saving decals keeps them in the project");
-            var after = Await(Scene())!.TriangleCount;
-            Check(after == before + 2, $"A decal adds its two triangles to the render scene ({before} -> {after})");
-            save.Invoke(opened, [new List<Decal>()]);
-            Check(session.GetExtension(Decals.Key) is null && Await(Scene())!.TriangleCount == before,
-                "Removing the decals takes them out of the project and the render scene");
-        }
-        finally
-        {
-            if (File.Exists(image)) File.Delete(image);
-        }
-    }
-
-    /// <summary>
     /// Every effect of the picker edits a control that really exists in the Render panel, with a range the effect's own
     /// starting value and neutral value fit in, so adding or muting an effect can never silently do nothing.
     /// </summary>
@@ -193,84 +155,105 @@ internal static partial class InteractionChecks
     }
 
     /// <summary>
-    /// The ocean in the real window: switching it on from the panel keeps it in the project and puts the sea in the render
-    /// scene in place of the ground; switching it off takes it out; opening a project shows its ocean in the controls.
+    /// Decals, the ocean and the people in the real window, sharing ONE rebuild of the house's render scene (2.6 million
+    /// triangles, ten seconds or more each): all three are saved first, the scene is built once, and what it holds is
+    /// checked together. The panel's own controls (ocean save and restore) and the texts kept in the project are checked
+    /// without a scene, and the removals are checked in the project alone.
     /// </summary>
-    private static void OceanChecks(MainWindow opened, RenderPanel panel)
+    private static void RenderExtrasChecks(MainWindow opened, RenderPanel panel)
     {
         var session = (DocumentSession)typeof(MainWindow).GetField("_session", PrivateInstance)!.GetValue(opened)!;
         Task<RenderScene?> Scene() => (Task<RenderScene?>)typeof(MainWindow).GetMethod("GetSceneAsync", PrivateInstance, Type.EmptyTypes)!.Invoke(opened, null)!;
-        var save = typeof(RenderPanel).GetMethod("SaveOceanNow", PrivateInstance)!;
-        var restore = typeof(RenderPanel).GetMethod("RestoreOcean", PrivateInstance)!;
+        var host = typeof(RenderPanel).GetField("_source", PrivateInstance)!.GetValue(panel)!;
+        var saveDecals = typeof(MainWindow).GetMethod("SaveDecals", PrivateInstance)!;
+        var savePeople = host.GetType().GetMethod("SetActors")!;
+        var readPeople = host.GetType().GetMethod("GetActors")!;
+        var saveOcean = typeof(RenderPanel).GetMethod("SaveOceanNow", PrivateInstance)!;
+        var restoreOcean = typeof(RenderPanel).GetMethod("RestoreOcean", PrivateInstance)!;
         var on = (CheckBox)panel.FindName("OceanCheck");
         var level = (Slider)panel.FindName("OceanLevelSlider");
         var waves = (Slider)panel.FindName("OceanWavesSlider");
         var tint = (ComboBox)panel.FindName("OceanTintPicker");
         bool HasSea(RenderScene scene) => scene.Materials.Any(material => material.Pattern == SurfacePattern.Waves);
-
-        Check(tint.Items.Count == 3 && !HasSea(Await(Scene())!), "The house starts without an ocean, and the colour list has its three waters");
-        level.Value = -1.5;
-        waves.Value = 2;
-        tint.SelectedIndex = 1;
-        on.IsChecked = true;
-        save.Invoke(panel, null);
-        Check(session.GetExtension(Ocean.Key) is { Length: > 10 } && HasSea(Await(Scene())!),
-            "Switching the ocean on keeps it in the project and puts the sea in the render scene");
-        var saved = Ocean.Of(session.Document);
-        Check(saved == new OceanSettings(true, -1.5, 2, OceanTint.Pacific), "The saved ocean has the level, wave size and colour chosen in the panel");
-
-        level.Value = -0.5;
-        waves.Value = 1;
-        tint.SelectedIndex = 0;
-        on.IsChecked = false;
-        restore.Invoke(panel, null);
-        Check(on.IsChecked == true && Math.Abs(level.Value + 1.5) < 1e-9 && Math.Abs(waves.Value - 2) < 1e-9 && tint.SelectedIndex == 1,
-            "Opening a project shows its ocean in the panel's controls");
-
-        on.IsChecked = false;
-        save.Invoke(panel, null);
-        // Each scene rebuild of the house is ten seconds or more, so the off state is checked in the project, not in a third scene.
-        Check(!Ocean.Of(session.Document).Enabled && session.GetExtension(Ocean.Key) is not null,
-            "Switching the ocean off keeps its level and colour in the project for next time");
-        level.Value = -0.5;
-        waves.Value = 1;
-        tint.SelectedIndex = 0;
-        save.Invoke(panel, null);
-        Check(session.GetExtension(Ocean.Key) is null, "An ocean back at its defaults keeps nothing in the project");
-    }
-
-    /// <summary>
-    /// People in the real window: saving them keeps them in the project and puts their moving block in the render scene
-    /// (a few hundred triangles each, at the place they start); removing them takes the text out of the project again.
-    /// </summary>
-    private static void PeopleChecks(MainWindow opened, RenderPanel panel)
-    {
-        var session = (DocumentSession)typeof(MainWindow).GetField("_session", PrivateInstance)!.GetValue(opened)!;
-        var host = typeof(RenderPanel).GetField("_source", PrivateInstance)!.GetValue(panel)!;
-        var save = host.GetType().GetMethod("SetActors")!;
-        var read = host.GetType().GetMethod("GetActors")!;
-        Task<RenderScene?> Scene() => (Task<RenderScene?>)typeof(MainWindow).GetMethod("GetSceneAsync", PrivateInstance, Type.EmptyTypes)!.Invoke(opened, null)!;
-        var wall = session.Document.Walls.First();
-        var ground = new ActorPoint(wall.Start.X, wall.Start.Y - 2, 0);
-        var people = new List<Actor>
+        var image = Path.Combine(Path.GetTempPath(), $"g3d-decal-{Guid.NewGuid():N}.png");
+        try
         {
-            new(Guid.NewGuid(), "Ana", 0, 1.2, true, 0, [ground, ground with { X = ground.X + 5 }]),
-            new(Guid.NewGuid(), "Luis", 3, 1.0, false, 2, [ground with { Y = ground.Y - 1 }])
-        };
-        var before = Await(Scene())!;
-        Check(before.DynamicTriangleCount == 0 && ((IReadOnlyList<Actor>)read.Invoke(host, null)!).Count == 0, "The house starts without people");
-        save.Invoke(host, [people]);
-        Check(session.GetExtension(Actors.Key) is { Length: > 50 } && ((IReadOnlyList<Actor>)read.Invoke(host, null)!).Count == 2,
-            "Saving people keeps them, with their routes, in the project");
-        var after = Await(Scene())!;
-        Check(after.DynamicTriangleCount > 400 && after.DynamicTriangleCount % 2 == 0 && after.TriangleCount == before.TriangleCount + after.DynamicTriangleCount,
-            $"The render scene holds the two people as a block of moving triangles ({after.DynamicTriangleCount}) after everything else");
-        var tracer = new PathTracer(after, 16, 16, new RenderCamera(new System.Numerics.Vector3(0, -8, 2), System.Numerics.Vector3.Zero, 45));
-        var rig = ActorRig.From(people)!;
-        tracer.MoveActors(rig.Positions(3));
-        Check(tracer.HasActors && rig.VertexCount == after.DynamicVertexCount, "A tracer of the house's scene can move the people frame by frame");
-        save.Invoke(host, [new List<Actor>()]);
-        Check(session.GetExtension(Actors.Key) is null, "Removing the people takes them out of the project");
+            var pixels = new byte[4 * 4 * 4];
+            for (var index = 0; index < pixels.Length; index += 4) { pixels[index] = 255; pixels[index + 2] = 255; pixels[index + 3] = 255; }
+            var encoder = new System.Windows.Media.Imaging.PngBitmapEncoder();
+            encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(System.Windows.Media.Imaging.BitmapSource.Create(
+                4, 4, 96, 96, System.Windows.Media.PixelFormats.Bgra32, null, pixels, 16)));
+            using (var stream = File.Create(image)) encoder.Save(stream);
+
+            // What the house starts with.
+            var before = Await(Scene())!;
+            Check(before.DynamicTriangleCount == 0 && !HasSea(before) && ((IReadOnlyList<Actor>)readPeople.Invoke(host, null)!).Count == 0 && tint.Items.Count == 3,
+                "The house starts with no people and no ocean, and the colour list has its three waters");
+
+            // Decals: one on the longest wall.
+            var longest = session.Document.Walls.OrderByDescending(item => item.Length).First();
+            var decal = new Decal(Guid.NewGuid(), longest.Id, DecalFace.Left, longest.Length / 2, longest.BaseOffset + 1.2,
+                Math.Min(1, longest.Length / 2), 1, image);
+            Check(Decals.Fit(longest, decal) is null, "A decal sized for the cobogó house's longest wall fits it");
+            saveDecals.Invoke(opened, [new List<Decal> { decal }]);
+            Check(session.GetExtension(Decals.Key) is { Length: > 20 }, "Saving decals keeps them in the project");
+
+            // The ocean, through the panel's own controls.
+            level.Value = -1.5;
+            waves.Value = 2;
+            tint.SelectedIndex = 1;
+            on.IsChecked = true;
+            saveOcean.Invoke(panel, null);
+            Check(session.GetExtension(Ocean.Key) is { Length: > 10 } && Ocean.Of(session.Document) == new OceanSettings(true, -1.5, 2, OceanTint.Pacific),
+                "Switching the ocean on keeps its level, wave size and colour in the project");
+            level.Value = -0.5;
+            waves.Value = 1;
+            tint.SelectedIndex = 0;
+            on.IsChecked = false;
+            restoreOcean.Invoke(panel, null);
+            Check(on.IsChecked == true && Math.Abs(level.Value + 1.5) < 1e-9 && Math.Abs(waves.Value - 2) < 1e-9 && tint.SelectedIndex == 1,
+                "Opening a project shows its ocean in the panel's controls");
+
+            // People: two, one walking a route and one standing.
+            var start = new ActorPoint(longest.Start.X, longest.Start.Y - 2, 0);
+            var people = new List<Actor>
+            {
+                new(Guid.NewGuid(), "Ana", 0, 1.2, true, 0, [start, start with { X = start.X + 5 }]),
+                new(Guid.NewGuid(), "Luis", 3, 1.0, false, 2, [start with { Y = start.Y - 1 }])
+            };
+            savePeople.Invoke(host, [people]);
+            Check(session.GetExtension(Actors.Key) is { Length: > 50 } && ((IReadOnlyList<Actor>)readPeople.Invoke(host, null)!).Count == 2,
+                "Saving people keeps them, with their routes, in the project");
+
+            // ONE rebuild: the scene now has the sea, the decal and the people together.
+            var after = Await(Scene())!;
+            Check(HasSea(after), "Switching the ocean on puts the sea in the render scene");
+            Check(after.DynamicTriangleCount > 400 && after.DynamicTriangleCount % 2 == 0 &&
+                  after.TriangleCount == before.TriangleCount + 2 + after.DynamicTriangleCount,
+                $"The render scene holds the decal's two triangles and the two people as a block of moving triangles ({after.DynamicTriangleCount}) after everything else ({before.TriangleCount} -> {after.TriangleCount})");
+            var tracer = new PathTracer(after, 16, 16, new RenderCamera(new System.Numerics.Vector3(0, -8, 2), System.Numerics.Vector3.Zero, 45));
+            var rig = ActorRig.From(people)!;
+            tracer.MoveActors(rig.Positions(3));
+            Check(tracer.HasActors && rig.VertexCount == after.DynamicVertexCount, "A tracer of the house's scene can move the people frame by frame");
+
+            // Removals, checked in the project (each would otherwise cost another rebuild).
+            saveDecals.Invoke(opened, [new List<Decal>()]);
+            savePeople.Invoke(host, [new List<Actor>()]);
+            on.IsChecked = false;
+            saveOcean.Invoke(panel, null);
+            Check(!Ocean.Of(session.Document).Enabled && session.GetExtension(Ocean.Key) is not null,
+                "Switching the ocean off keeps its level and colour in the project for next time");
+            level.Value = -0.5;
+            waves.Value = 1;
+            tint.SelectedIndex = 0;
+            saveOcean.Invoke(panel, null);
+            Check(session.GetExtension(Decals.Key) is null && session.GetExtension(Actors.Key) is null && session.GetExtension(Ocean.Key) is null,
+                "Removing the decals and people, and an ocean back at its defaults, keep nothing in the project");
+        }
+        finally
+        {
+            if (File.Exists(image)) File.Delete(image);
+        }
     }
 
     private static T Await<T>(Task<T> task)

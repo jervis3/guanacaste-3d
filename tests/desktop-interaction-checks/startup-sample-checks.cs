@@ -17,6 +17,9 @@ internal static partial class InteractionChecks
     private static void StartupSampleChecks()
     {
         var opened = new MainWindow(showStartScreen: true) { Width = 1440, Height = 900, WindowState = WindowState.Normal };
+        // Pump() drains this window; set it here so the checks also run alone (G3D_ONLY=render), as the cobogó ones do.
+        var previous = _window;
+        _window = opened;
         try
         {
             var home = (StartScreen)opened.FindName("StartScreenControl");
@@ -131,10 +134,8 @@ internal static partial class InteractionChecks
             LayerAnimationChecks(opened, panel);
             SiteSunChecks(opened, panel);
             MovieStorageChecks(opened, panel);
-            DecalChecks(opened);
             EffectControlChecks(panel);
-            OceanChecks(opened, panel);
-            PeopleChecks(opened, panel);
+            RenderExtrasChecks(opened, panel);
 
             // A recent list in a scratch folder: it keeps the newest first and forgets on request.
             var folder = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"g3d-recents-{Guid.NewGuid():N}");
@@ -156,6 +157,7 @@ internal static partial class InteractionChecks
         {
             typeof(MainWindow).GetField("_dirty", PrivateInstance)!.SetValue(opened, false);
             opened.Close();
+            _window = previous;
         }
     }
 }
