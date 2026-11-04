@@ -1147,6 +1147,58 @@ internal static partial class InteractionChecks
                 Invoke("ExecuteApplicationCommand", "Sketch3D");
                 Check(session.Document.StructuralElements.Count(item => item.Kind == StructuralElementKind.Mass) == massesAtStart + 1, "A sketch with a side of no length makes nothing");
 
+                // Add-Ins: the command help, the model transmittal and the family converter.
+                Invoke("ExecuteApplicationCommand", "Help");
+                Pump();
+                var helpList = InWindow<System.Windows.Controls.ListBox>("_helpWindow", "HelpList");
+                Check(helpList.Items.Count > 250, $"Help lists every command of the ribbon ({helpList.Items.Count})");
+                InWindow<System.Windows.Controls.TextBox>("_helpWindow", "HelpSearch").Text = "zzzzqq";
+                Check(helpList.Items.Count == 0 && InWindow<System.Windows.Controls.TextBlock>("_helpWindow", "HelpDetail").Text.Length > 0, "Help says when nothing matches the search");
+                InWindow<System.Windows.Controls.TextBox>("_helpWindow", "HelpSearch").Text = "zona";
+                var zoneEntry = helpList.Items.Cast<string>().ToList().FindIndex(entry => entry.EndsWith("› Zona", StringComparison.Ordinal));
+                Check(zoneEntry >= 0 && helpList.Items.Count < 40, "Searching a word keeps only the commands that mention it");
+                helpList.SelectedIndex = zoneEntry;
+                Check(InWindow<System.Windows.Controls.TextBlock>("_helpWindow", "HelpDetail").Text.Contains("›"), "Choosing a command shows its tab and group");
+                ClickIn("_helpWindow", "HelpRun");
+                Pump();
+                Check(Field<System.Windows.Window?>("_zoneWindow") is { IsVisible: true } && Field<System.Windows.Window?>("_helpWindow") is null, "Help can run the command chosen, and closes itself");
+                ClickIn("_zoneWindow", "ZoneClose");
+
+                var transmitFile = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"transmision-{Guid.NewGuid():N}.zip");
+                Invoke("ExecuteApplicationCommand", "TransmitModel");
+                Pump();
+                Check(InWindow<System.Windows.Controls.CheckBox>("_transmitWindow", "TransmitExports").IsChecked == true, "Transmit Model offers to include the exports");
+                var transmitText = (string)Invoke("CreateTransmittal", transmitFile, false)!;
+                Check(System.IO.File.Exists(transmitFile) && transmitText.Contains(System.IO.Path.GetFileName(transmitFile)), "Transmit Model writes the package and says what it holds");
+                Check(((string)Invoke("VerifyTransmittal", transmitFile)!).Contains("completo"), "The package just written verifies as complete");
+                using (var archive = System.IO.Compression.ZipFile.Open(transmitFile, System.IO.Compression.ZipArchiveMode.Update))
+                {
+                    var projectEntry = archive.Entries.First(entry => entry.Name.EndsWith(".g3d", StringComparison.Ordinal));
+                    var name = projectEntry.FullName;
+                    projectEntry.Delete();
+                    using var writer = new System.IO.StreamWriter(archive.CreateEntry(name).Open());
+                    writer.Write("alterado");
+                }
+                Check(((string)Invoke("VerifyTransmittal", transmitFile)!).Contains("cambió"), "A package whose project was altered says which file changed");
+                Check(!((string)Invoke("CreateTransmittal", System.IO.Path.Combine(System.IO.Path.GetTempPath(), "no-es-zip.txt"), false)!).Contains("creado"), "A package that is not a .zip is refused");
+                ClickIn("_transmitWindow", "TransmitClose");
+                System.IO.File.Delete(transmitFile);
+
+                var convertFolder = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"conversion-{Guid.NewGuid():N}");
+                System.IO.Directory.CreateDirectory(convertFolder);
+                var tetra = System.IO.Path.Combine(convertFolder, "tetraedro.obj");
+                System.IO.File.WriteAllText(tetra, "v 0 0 0\nv 1 0 0\nv 0 1 0\nv 0 0 1\nf 1 3 2\nf 1 2 4\nf 2 3 4\nf 3 1 4\n");
+                var notAModel = System.IO.Path.Combine(convertFolder, "notas.txt");
+                System.IO.File.WriteAllText(notAModel, "nada");
+                Invoke("ExecuteApplicationCommand", "FamilyConverter");
+                Pump();
+                Check(InWindow<System.Windows.Controls.ComboBox>("_converterWindow", "ConverterCategory").Items.Count == Enum.GetValues<FamilyCategory>().Length - 1, "The family converter offers every category but the title blocks");
+                var convertText = (string)Invoke("ConvertFamilies", new[] { tetra, notAModel }, System.IO.Path.Combine(convertFolder, "familias"), FamilyCategory.Entourage, 60000, 1.0)!;
+                Check(convertText.Contains("tetraedro") && convertText.Contains("→") && convertText.Contains("no se convirtió") && System.IO.File.Exists(System.IO.Path.Combine(convertFolder, "familias", "tetraedro.g3df")),
+                    "The family converter makes a family of the model and lists the file that was not a model");
+                ClickIn("_converterWindow", "ConverterClose");
+                System.IO.Directory.Delete(convertFolder, true);
+
                 SetField("_viewSelection", null);
                 Pump();
                 tabs.SelectedIndex = 0;

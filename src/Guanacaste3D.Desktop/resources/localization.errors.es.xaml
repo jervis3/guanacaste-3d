@@ -136,6 +136,15 @@
   <sys:String x:Key="Error.The cutter does not reach the top of the wall.">El elemento que corta debe llegar hasta la parte de arriba del muro.</sys:String>
   <sys:String x:Key="Error.The cutter leaves the wall too low.">El elemento que corta dejaría el muro demasiado bajo.</sys:String>
   <sys:String x:Key="Error.The sketch is invalid.">El boceto no es válido: revise las esquinas, la elevación y la altura.</sys:String>
+  <sys:String x:Key="Error.The family file must be a .g3df.">El archivo de la familia debe terminar en .g3df.</sys:String>
+  <sys:String x:Key="Error.The family category is invalid.">La categoría de la familia no es válida.</sys:String>
+  <sys:String x:Key="Error.The scale or the turn is invalid.">La escala o el giro no son válidos.</sys:String>
+  <sys:String x:Key="Error.The family name is invalid.">El nombre de la familia no es válido.</sys:String>
+  <sys:String x:Key="Error.The model cannot be read.">No se pudo leer el modelo.</sys:String>
+  <sys:String x:Key="Error.The model has no triangles.">El modelo no tiene triángulos.</sys:String>
+  <sys:String x:Key="Error.Choose between one and 500 models.">Elija entre uno y 500 modelos.</sys:String>
+  <sys:String x:Key="Error.This kind of file cannot be converted.">Este tipo de archivo no se puede convertir.</sys:String>
+  <sys:String x:Key="Error.Choose a .zip file.">Elija un archivo .zip.</sys:String>
   <sys:String x:Key="Error.The render scene does not exist.">La escena seleccionada ya no existe.</sys:String>
   <sys:String x:Key="Error.The render scene preview is too large.">La miniatura de la foto es demasiado grande.</sys:String>
   <sys:String x:Key="Error.The render scene collection is invalid.">La colección de escenas del proyecto no es válida.</sys:String>
