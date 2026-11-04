@@ -132,6 +132,15 @@
   <sys:String x:Key="Transaction.AddViewReference">Colocar referencia de vista</sys:String>
   <sys:String x:Key="Transaction.AddAnnotationMark">Colocar anotación</sys:String>
   <sys:String x:Key="Transaction.FixTexts">Corregir textos</sys:String>
+  <sys:String x:Key="Transaction.AddTerrainFromPoints">Crear terreno desde puntos</sys:String>
+  <sys:String x:Key="Transaction.AddPointCloud">Guardar nube de puntos</sys:String>
+  <sys:String x:Key="Transaction.RemovePointCloud">Quitar nube de puntos</sys:String>
+  <sys:String x:Key="Transaction.ImportGbxml">Importar gbXML</sys:String>
+  <sys:String x:Key="Transaction.AddReferenceFile">Guardar archivo en el proyecto</sys:String>
+  <sys:String x:Key="Transaction.RemoveReferenceFile">Quitar archivo del proyecto</sys:String>
+  <sys:String x:Key="Transaction.PlaceImageUnderlay">Colocar imagen en el plano</sys:String>
+  <sys:String x:Key="Transaction.SetImageUnderlay">Cambiar imagen del plano</sys:String>
+  <sys:String x:Key="Transaction.RemoveImageUnderlay">Quitar imagen del plano</sys:String>
   <sys:String x:Key="Transaction.SetViewCategories">Cambiar categorías visibles de la vista</sys:String>
   <sys:String x:Key="Transaction.PasteWalls">Pegar muros</sys:String>
   <sys:String x:Key="Transaction.AddArcWall">Crear muro curvo</sys:String>

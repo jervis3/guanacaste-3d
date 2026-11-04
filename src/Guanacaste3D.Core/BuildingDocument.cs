@@ -119,6 +119,12 @@ public sealed class BuildingDocument
     public ProjectUnits Units { get; set; } = ProjectUnits.Default;
     /// <summary>Where the project is and how it is turned to true north; shared coordinates of its origin.</summary>
     public ProjectSite Site { get; set; } = ProjectSite.Default;
+    /// <summary>Images and PDFs kept inside the project.</summary>
+    public List<ReferenceFile> References { get; set; } = [];
+    /// <summary>Images laid in the plan of a level as drawings to trace over.</summary>
+    public List<ImageUnderlay> Underlays { get; set; } = [];
+    /// <summary>Scanned or surveyed points kept as a reference in the plan.</summary>
+    public List<PointCloud> PointClouds { get; set; } = [];
     /// <summary>The stages of the building's life in order; empty until the project uses phases.</summary>
     public List<ProjectPhase> Phases { get; set; } = [];
     public List<PhaseAssignment> PhaseAssignments { get; set; } = [];
@@ -194,6 +200,9 @@ public sealed class BuildingDocument
         ViewTemplates = [.. ViewTemplates],
         Units = Units,
         Site = Site,
+        References = [.. References],
+        Underlays = [.. Underlays],
+        PointClouds = [.. PointClouds],
         ElementGroups = ElementGroups.Select(group => group with { MemberIds = [.. group.MemberIds] }).ToList(),
         Phases = [.. Phases],
         PhaseAssignments = [.. PhaseAssignments],
@@ -227,6 +236,7 @@ public sealed class BuildingDocument
         foreach (var view in Views) view.Graphics?.Validate();
         ProjectStages.Validate(this);
         ElementGroups_Validate();
+        ReferenceFiles.Validate(this);
         if (Units is null || !Units.IsValid) throw new InvalidDataException("The project units are invalid.");
         if (Site is null || !Site.IsValid) throw new InvalidDataException("The project site is invalid.");
         if (Views.Any(view => view.ModelCrop is { } crop && (!double.IsFinite(crop.MinX + crop.MinY + crop.MaxX + crop.MaxY) ||

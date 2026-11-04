@@ -287,6 +287,7 @@ public partial class MainWindow
         }
         AddLine(new Point2(left / _scale, 0), new Point2(right / _scale, 0), 1, Brushes.LightSteelBlue);
         AddLine(new Point2(0, -bottom / _scale), new Point2(0, -top / _scale), 1, Brushes.LightSteelBlue);
+        RenderSiteReferences();
         // The plan draws what its own view shows; hidden or isolated elements are left out of this plan only.
         var planView = _session.Document.Views.FirstOrDefault(view =>
             view.Kind == ProjectViewKind.Plan && view.LevelId == _activeLevelId);

@@ -666,6 +666,57 @@ internal static partial class InteractionChecks
                       InWindow<System.Windows.Controls.TextBlock>("_spellingWindow", "SpellingSummary").Text.Length > 0, "Fix corrects the texts and the window checks again");
                 ClickIn("_spellingWindow", "SpellingClose");
 
+                // Site imports: terrain from survey points, a point cloud, gbXML spaces, an image to trace over and a kept PDF.
+                var temp = System.IO.Path.GetTempPath();
+                var pointsFile = System.IO.Path.Combine(temp, $"levantamiento-{Guid.NewGuid():N}.csv");
+                System.IO.File.WriteAllLines(pointsFile, new[] { "x,y,z" }.Concat(Enumerable.Range(0, 60).Select(i => FormattableString.Invariant($"{i % 10 * 3},{i / 10 * 3},{20 + i % 10 * 0.1}"))));
+                var floorsBeforeImport = session.Document.Floors.Count;
+                Check((bool)Invoke("ImportTerrainFile", pointsFile)! && session.Document.Floors.Count == floorsBeforeImport + 1 && session.Document.Floors.Last().IsToposolid,
+                    "Link Topography makes a terrain from a file of survey points");
+                Check((bool)Invoke("ImportPointCloudFile", pointsFile)! && session.Document.PointClouds.Count == 1, "Point Cloud keeps the points of a file as a reference");
+                Invoke("RenderPlan");
+                Pump();
+                Check(!(bool)Invoke("ImportTerrainFile", System.IO.Path.Combine(temp, "no-existe.csv"))!, "A file that does not exist is reported and imports nothing");
+                System.IO.File.Delete(pointsFile);
+
+                var gbxmlFile = System.IO.Path.Combine(temp, $"energia-{Guid.NewGuid():N}.xml");
+                System.IO.File.WriteAllText(gbxmlFile, "<gbXML lengthUnit=\"Meters\"><Campus><Building><Space id=\"s\"><Name>Taller</Name><ShellGeometry><ClosedShell><PolyLoop>" +
+                    "<CartesianPoint><Coordinate>0</Coordinate><Coordinate>0</Coordinate><Coordinate>0</Coordinate></CartesianPoint><CartesianPoint><Coordinate>6</Coordinate><Coordinate>0</Coordinate><Coordinate>0</Coordinate></CartesianPoint>" +
+                    "<CartesianPoint><Coordinate>6</Coordinate><Coordinate>4</Coordinate><Coordinate>0</Coordinate></CartesianPoint></PolyLoop></ClosedShell></ShellGeometry></Space></Building></Campus></gbXML>");
+                var roomsBeforeImport = session.Document.Rooms.Count;
+                Check((bool)Invoke("ImportGbxmlFile", gbxmlFile)! && session.Document.Rooms.Count == roomsBeforeImport + 1 && session.Document.Rooms.Any(room => room.Name == "Taller"),
+                    "Import gbXML makes a room for each space of the file");
+                System.IO.File.Delete(gbxmlFile);
+
+                var bitmap = System.Windows.Media.Imaging.BitmapSource.Create(8, 4, 96, 96, System.Windows.Media.PixelFormats.Bgr24, null, new byte[8 * 4 * 3], 8 * 3);
+                var encoder = new System.Windows.Media.Imaging.PngBitmapEncoder();
+                encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(bitmap));
+                var imageFile = System.IO.Path.Combine(temp, $"plano-{Guid.NewGuid():N}.png");
+                using (var stream = System.IO.File.Create(imageFile)) encoder.Save(stream);
+                Answer("12");
+                Check((bool)Invoke("AddImageFile", imageFile)! && session.Document.References.Count(file => file.Kind == ReferenceKind.Image) == 1 && session.Document.Underlays.Count == 1 &&
+                      Math.Abs(session.Document.Underlays[0].Width - 12) < 1e-9, "Import Image keeps the image in the project and lays it in the plan, 12 m wide");
+                Invoke("RenderPlan");
+                Pump();
+                Check(((Canvas)opened.FindName("PlanCanvas")).Children.OfType<System.Windows.Controls.Image>().Any(), "The plan draws the image under the walls");
+                System.IO.File.Delete(imageFile);
+                var pdfFile = System.IO.Path.Combine(temp, $"memoria-{Guid.NewGuid():N}.pdf");
+                System.IO.File.WriteAllText(pdfFile, "%PDF-1.4\n1 0 obj<<>>endobj\ntrailer<<>>\n%%EOF");
+                Check((bool)Invoke("AddPdfFile", pdfFile)! && session.Document.References.Count(file => file.Kind == ReferenceKind.Pdf) == 1, "Import PDF keeps the PDF inside the project");
+                System.IO.File.WriteAllText(pdfFile, "esto no es un pdf, aunque lo diga su nombre");
+                Check(!(bool)Invoke("AddPdfFile", pdfFile)! && session.Document.References.Count(file => file.Kind == ReferenceKind.Pdf) == 1, "A file that only has the name of a PDF is refused");
+                System.IO.File.Delete(pdfFile);
+                Invoke("ShowReferencesWindow");
+                Pump();
+                Check(InWindow<System.Windows.Controls.ListBox>("_referencesWindow", "ReferenceList").Items.Count == 2, "The references window lists the image and the PDF kept in the project");
+                InWindow<System.Windows.Controls.ListBox>("_referencesWindow", "ReferenceList").SelectedIndex = 0;
+                Answer("1 1 8 15 0.4");
+                ClickIn("_referencesWindow", "ReferenceMove");
+                Check(session.Document.Underlays[0] is { Width: 8, RotationDegrees: 15, Opacity: 0.4 }, "Move / scale changes the place, width, turn and opacity of the image");
+                ClickIn("_referencesWindow", "ReferenceRemove");
+                Check(session.Document.References.Count == 1 && session.Document.Underlays.Count == 0, "Removing the image from the window takes its placement away too");
+                ClickIn("_referencesWindow", "ReferenceClose");
+
                 SetField("_viewSelection", null);
                 Pump();
                 tabs.SelectedIndex = 0;
