@@ -63,6 +63,7 @@ public partial class MainWindow
                 Tag = column.Id
             });
         }
+        var colourByName = document.StructuralElements.Any(item => item.LevelId == _activeLevelId && item.Kind == StructuralElementKind.ColorLegend);
         foreach (var room in document.Rooms.Where(room => room.LevelId == _activeLevelId))
         {
             // Even-odd fill renders real footprints and leaves an inner courtyard unfilled.
@@ -83,7 +84,9 @@ public partial class MainWindow
             PlanCanvas.Children.Add(new System.Windows.Shapes.Path
             {
                 Data = footprint,
-                Fill = new SolidColorBrush(Color.FromArgb(45, 61, 132, 181)),
+                Fill = colourByName
+                    ? new SolidColorBrush(Color.FromArgb(120, RoomColors.Of(room.Name).R, RoomColors.Of(room.Name).G, RoomColors.Of(room.Name).B))
+                    : new SolidColorBrush(Color.FromArgb(45, 61, 132, 181)),
                 Stroke = room.Id == _selectedRoomId ? Brushes.DarkOrange : Brushes.SteelBlue,
                 StrokeThickness = room.Id == _selectedRoomId ? 2.5 : 1,
                 Tag = room.Id

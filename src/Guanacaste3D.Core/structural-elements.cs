@@ -116,7 +116,25 @@ public enum StructuralElementKind
     Matchline,
 
     /// <summary>A mark in a view that points to another view and the sheet it is on; its text is the element's name. It has no solid.</summary>
-    ViewReference
+    ViewReference,
+
+    /// <summary>The elevation of a point, read from its level plus a height. It has no solid.</summary>
+    SpotElevation,
+
+    /// <summary>The shared coordinates of a point, read from the project's site. It has no solid.</summary>
+    SpotCoordinate,
+
+    /// <summary>The slope between two points, from the rise stored in the element. It has no solid.</summary>
+    SpotSlope,
+
+    /// <summary>A keynote call-out whose text is the element's name. It has no solid.</summary>
+    Keynote,
+
+    /// <summary>A 2D symbol or detail component of the library; the name is its key and the width its size. It has no solid.</summary>
+    Symbol,
+
+    /// <summary>A legend that colours the rooms of its level by name and lists the names. It has no solid.</summary>
+    ColorLegend
 }
 
 /// <summary>Variant of an element's geometry. Which values apply depends on the element kind.</summary>
@@ -249,7 +267,9 @@ public sealed record StructuralElement(
         or StructuralElementKind.RoomSeparator or StructuralElementKind.AreaBoundary or StructuralElementKind.Area
         or StructuralElementKind.DetailLine or StructuralElementKind.FilledRegion or StructuralElementKind.RevisionCloud
         or StructuralElementKind.Insulation or StructuralElementKind.ParkingSpace or StructuralElementKind.Matchline
-        or StructuralElementKind.ViewReference);
+        or StructuralElementKind.ViewReference or StructuralElementKind.SpotElevation or StructuralElementKind.SpotCoordinate
+        or StructuralElementKind.SpotSlope or StructuralElementKind.Keynote or StructuralElementKind.Symbol
+        or StructuralElementKind.ColorLegend);
 
     /// <summary>Whether the kind is drafted as a single line between its two points.</summary>
     [JsonIgnore] public bool IsDatumLine => Kind is StructuralElementKind.ReferencePlane
@@ -332,7 +352,9 @@ public static class StructuralElementStandards
             or StructuralElementKind.AreaBoundary or StructuralElementKind.Area
             or StructuralElementKind.DetailLine or StructuralElementKind.FilledRegion
             or StructuralElementKind.RevisionCloud or StructuralElementKind.ParkingSpace or StructuralElementKind.Matchline
-            or StructuralElementKind.ViewReference => (0, 0, 0),
+            or StructuralElementKind.ViewReference or StructuralElementKind.SpotElevation or StructuralElementKind.SpotCoordinate
+            or StructuralElementKind.SpotSlope or StructuralElementKind.Keynote or StructuralElementKind.ColorLegend => (0, 0, 0),
+        StructuralElementKind.Symbol => (1.0, 0, 0),
         // A mass of two storeys is the usual first sketch of a building.
         StructuralElementKind.Mass => (0, 6.0, 0),
         // Batting 10 cm thick, the usual insulation of a masonry wall.

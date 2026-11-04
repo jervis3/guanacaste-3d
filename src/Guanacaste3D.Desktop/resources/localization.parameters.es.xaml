@@ -130,6 +130,8 @@
   <sys:String x:Key="Transaction.AddWallsOnMass">Construir muros sobre la masa</sys:String>
   <sys:String x:Key="Transaction.SetSheetGuideGrid">Cambiar la cuadrícula guía de la hoja</sys:String>
   <sys:String x:Key="Transaction.AddViewReference">Colocar referencia de vista</sys:String>
+  <sys:String x:Key="Transaction.AddAnnotationMark">Colocar anotación</sys:String>
+  <sys:String x:Key="Transaction.FixTexts">Corregir textos</sys:String>
   <sys:String x:Key="Transaction.SetViewCategories">Cambiar categorías visibles de la vista</sys:String>
   <sys:String x:Key="Transaction.PasteWalls">Pegar muros</sys:String>
   <sys:String x:Key="Transaction.AddArcWall">Crear muro curvo</sys:String>

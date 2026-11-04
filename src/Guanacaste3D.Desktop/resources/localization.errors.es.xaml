@@ -51,6 +51,10 @@
   <sys:String x:Key="Error.The mass is too low for a roof.">La masa es demasiado baja para una cubierta.</sys:String>
   <sys:String x:Key="Error.The guide grid spacing is invalid.">La separación de la cuadrícula guía no es válida.</sys:String>
   <sys:String x:Key="Error.The sheet does not exist.">La hoja no existe.</sys:String>
+  <sys:String x:Key="Error.The height is invalid.">La altura no es válida.</sys:String>
+  <sys:String x:Key="Error.The slope needs two different points.">La pendiente necesita dos puntos distintos.</sys:String>
+  <sys:String x:Key="Error.The symbol does not exist.">El símbolo no existe.</sys:String>
+  <sys:String x:Key="Error.The symbol size is invalid.">El tamaño del símbolo no es válido.</sys:String>
   <sys:String x:Key="Error.The render scene does not exist.">La escena seleccionada ya no existe.</sys:String>
   <sys:String x:Key="Error.The render scene preview is too large.">La miniatura de la foto es demasiado grande.</sys:String>
   <sys:String x:Key="Error.The render scene collection is invalid.">La colección de escenas del proyecto no es válida.</sys:String>

@@ -36,6 +36,17 @@ public static partial class PdfPlanExporter
                     element.Kind == StructuralElementKind.FilledRegion ? (0.85, 0.85, 0.85) : null));
             else if (element.Kind == StructuralElementKind.ViewReference)
                 items.Add(new SheetText(element.Start, element.Name, 2.5, Black));
+            else if (element.Kind is StructuralElementKind.SpotElevation or StructuralElementKind.SpotCoordinate)
+                items.Add(new SheetText(element.Start, "+ " + SpotMarks.Label(document, element), 2.5, Black));
+            else if (element.Kind == StructuralElementKind.SpotSlope)
+            {
+                items.Add(new SheetPolyline([element.Start, element.End], 0.18, Black));
+                items.Add(new SheetText(new((element.Start.X + element.End.X) / 2, (element.Start.Y + element.End.Y) / 2), SpotMarks.Label(document, element), 2.5, Black));
+            }
+            else if (element.Kind == StructuralElementKind.Keynote)
+                items.Add(new SheetText(element.Start, "▸ " + element.Name, 2.5, Black));
+            else if (element.Kind == StructuralElementKind.Symbol)
+                items.Add(new SheetPolygon(Circle(element.Start, Math.Max(0.1, element.Width / 2), 24), 0.18, Black, null));
             else if (element.Kind == StructuralElementKind.Insulation)
                 items.Add(new SheetPolygon(element.Footprint, 0.13, Grey, null));
             else if (element.IsDatumLine)

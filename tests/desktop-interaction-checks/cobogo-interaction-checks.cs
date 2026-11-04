@@ -611,6 +611,61 @@ internal static partial class InteractionChecks
                       session.Document.StructuralElements.Last().Name.StartsWith(targetView, StringComparison.Ordinal), "The click puts the reference, named after the view it points to");
                 Invoke("CancelStructuralTool");
 
+                // Annotation marks: spot marks, keynote, symbols, detail components, the colour legend and the spelling check.
+                foreach (var (command, kind, mode) in new[]
+                         {
+                             ("ElevationDimension", StructuralElementKind.SpotElevation, "Point"), ("SpotCoordinate", StructuralElementKind.SpotCoordinate, "Point"),
+                             ("SpotSlope", StructuralElementKind.SpotSlope, "Line"), ("ColorFillLegend", StructuralElementKind.ColorLegend, "Point")
+                         })
+                {
+                    Invoke("ExecuteApplicationCommand", command);
+                    Check(Field<object>("_structuralTool").ToString() == $"({kind}, {mode})", $"{command} arms the {kind} tool");
+                    Invoke("CancelStructuralTool");
+                }
+                tabs.SelectedIndex = 0;
+                Pump();
+                var marksBefore = session.Document.StructuralElements.Count;
+                Invoke("CreateStructuralFromTool", StructuralElementKind.SpotElevation, new Point2(615, 615), new Point2(615, 615));
+                Invoke("CreateStructuralFromTool", StructuralElementKind.SpotCoordinate, new Point2(616, 615), new Point2(616, 615));
+                Invoke("CreateStructuralFromTool", StructuralElementKind.ColorLegend, new Point2(620, 620), new Point2(620, 620));
+                Answer("0.5");
+                Invoke("CreateSpotSlope", new Point2(610, 610), new Point2(620, 610));
+                Check(session.Document.StructuralElements.Count == marksBefore + 4 && session.Document.StructuralElements.Last(item => item.Kind == StructuralElementKind.SpotSlope).Rise == 0.5,
+                    "Spot elevation, coordinate, legend and a slope (asking for its rise) are placed");
+
+                Answer("04 22 00");
+                Invoke("ExecuteApplicationCommand", "Keynote");
+                Check(Field<object>("_structuralTool").ToString() == "(Keynote, Point)", "Keynote asks for a code and arms a click");
+                Invoke("PlaceKeynote", new Point2(612, 612));
+                Check(session.Document.StructuralElements.Last().Name.StartsWith("04 22 00 · ", StringComparison.Ordinal), "The click places the keynote with its text from the table");
+                Answer("Flecha norte");
+                Invoke("ExecuteApplicationCommand", "Symbol");
+                Invoke("PlaceSymbol", new Point2(630, 630));
+                Check(session.Document.StructuralElements.Last() is { Kind: StructuralElementKind.Symbol, Name: "NorthArrow" }, "Symbol finds a symbol by its name and places it");
+                Answer("Anclaje");
+                Invoke("ExecuteApplicationCommand", "DetailComponent");
+                Invoke("PlaceSymbol", new Point2(632, 630));
+                Check(session.Document.StructuralElements.Last() is { Kind: StructuralElementKind.Symbol, Name: "Anchor" }, "Detail Component places a component of the detail library");
+                Invoke("CancelStructuralTool");
+                Answer("dragón");
+                Invoke("ExecuteApplicationCommand", "Symbol");
+                Check(Field<object?>("_structuralTool") is null, "A symbol name that is not in the library arms nothing");
+                Invoke("CancelStructuralTool");
+                Invoke("RenderPlan");
+                Pump();
+                Check(((Canvas)opened.FindName("PlanCanvas")).Children.Count > 50, "The plan draws the house with all its marks");
+
+                session.AddModelText(Field<Guid>("_activeLevelId"), new Point2(650, 650), "Muro  de  cobogo cobogo");
+                Invoke("ExecuteApplicationCommand", "Spelling");
+                Pump();
+                Check(Field<Window?>("_spellingWindow")?.IsVisible == true && InWindow<System.Windows.Controls.ListBox>("_spellingWindow", "SpellingList").Items.Count >= 3,
+                    "Spelling lists the problems it finds in the texts of the project");
+                ClickIn("_spellingWindow", "SpellingFix");
+                Pump();
+                Check(session.Document.StructuralElements.Any(item => item.Kind == StructuralElementKind.ModelText && item.Name == "Muro de cobogó") &&
+                      InWindow<System.Windows.Controls.TextBlock>("_spellingWindow", "SpellingSummary").Text.Length > 0, "Fix corrects the texts and the window checks again");
+                ClickIn("_spellingWindow", "SpellingClose");
+
                 SetField("_viewSelection", null);
                 Pump();
                 tabs.SelectedIndex = 0;

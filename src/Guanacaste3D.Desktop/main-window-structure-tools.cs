@@ -105,6 +105,8 @@ public partial class MainWindow
         {
             if (tool.Kind == StructuralElementKind.ModelText) PlaceModelText(point);
             else if (tool.Kind == StructuralElementKind.ViewReference) PlaceViewReference(point);
+            else if (tool.Kind == StructuralElementKind.Keynote) PlaceKeynote(point);
+            else if (tool.Kind == StructuralElementKind.Symbol) PlaceSymbol(point);
             else if (tool.Kind == StructuralElementKind.Opening) CreateOpeningFromTool(tool.Kind, point, point);
             else CreateStructuralFromTool(tool.Kind, point, point);
             return true;
@@ -170,6 +172,11 @@ public partial class MainWindow
         else if (tool.Kind == StructuralElementKind.Area)
         {
             CreateAreaFromTool(start, point);
+            return true;
+        }
+        else if (tool.Kind == StructuralElementKind.SpotSlope)
+        {
+            CreateSpotSlope(start, point);
             return true;
         }
         else

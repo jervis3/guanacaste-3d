@@ -24,6 +24,12 @@ public partial class MainWindow
                 AddAreaOutline(element, selected);
                 continue;
             }
+            if (element.Kind is StructuralElementKind.SpotElevation or StructuralElementKind.SpotCoordinate or StructuralElementKind.SpotSlope
+                or StructuralElementKind.Keynote or StructuralElementKind.Symbol or StructuralElementKind.ColorLegend)
+            {
+                AddAnnotationMark(element, selected);
+                continue;
+            }
             if (element.Kind == StructuralElementKind.ViewReference)
             {
                 AddViewReferenceSymbol(element, selected);
@@ -314,7 +320,8 @@ public partial class MainWindow
         if (tool.Kind == StructuralElementKind.Planting)
             AddPlantingSymbol(preview, selected: false, preview: true);
         else if (tool.Kind is StructuralElementKind.ReferencePlane or StructuralElementKind.RoomSeparator
-            or StructuralElementKind.AreaBoundary or StructuralElementKind.ModelLine or StructuralElementKind.DetailLine or StructuralElementKind.Matchline)
+            or StructuralElementKind.AreaBoundary or StructuralElementKind.ModelLine or StructuralElementKind.DetailLine or StructuralElementKind.Matchline
+            or StructuralElementKind.SpotSlope)
             AddStructuralPreviewOutline([origin, pointer]);
         else if (HasDetailedPlanParts(preview))
             foreach (var part in ElementGeometry.Parts(preview).Take(400)) AddStructuralPreviewOutline(part.Footprint);

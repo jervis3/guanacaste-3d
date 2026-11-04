@@ -24,7 +24,8 @@ public partial class MainWindow
     {
         StructuralElementKind.Downspout or StructuralElementKind.IsolatedFoundation or
             StructuralElementKind.Component or StructuralElementKind.Connection or
-            StructuralElementKind.ModelText or StructuralElementKind.Planting or StructuralElementKind.ViewReference => StructuralPlacementMode.Point,
+            StructuralElementKind.ModelText or StructuralElementKind.Planting or StructuralElementKind.ViewReference or StructuralElementKind.SpotElevation or
+            StructuralElementKind.SpotCoordinate or StructuralElementKind.Keynote or StructuralElementKind.Symbol or StructuralElementKind.ColorLegend => StructuralPlacementMode.Point,
         StructuralElementKind.Skylight or StructuralElementKind.Area or StructuralElementKind.Dormer or
             StructuralElementKind.Opening or StructuralElementKind.Shaft or StructuralElementKind.FilledRegion or
             StructuralElementKind.RevisionCloud or StructuralElementKind.Mass or StructuralElementKind.ParkingSpace => StructuralPlacementMode.Rectangle,
@@ -308,6 +309,12 @@ public partial class MainWindow
         StructuralElementKind.Mass => "Entity.Mass",
         StructuralElementKind.Matchline => "Entity.Matchline",
         StructuralElementKind.ViewReference => "Entity.ViewReference",
+        StructuralElementKind.SpotElevation => "Entity.SpotElevation",
+        StructuralElementKind.SpotCoordinate => "Entity.SpotCoordinate",
+        StructuralElementKind.SpotSlope => "Entity.SpotSlope",
+        StructuralElementKind.Keynote => "Entity.Keynote",
+        StructuralElementKind.Symbol => "Entity.Symbol",
+        StructuralElementKind.ColorLegend => "Entity.ColorLegend",
         StructuralElementKind.ParkingSpace => "Entity.ParkingSpace",
         _ => null
     };
