@@ -76,6 +76,10 @@
   <sys:String x:Key="Error.Collaboration is not enabled.">La colaboración no está activada.</sys:String>
   <sys:String x:Key="Error.The central model does not exist yet.">El modelo central todavía no existe: sincronice primero.</sys:String>
   <sys:String x:Key="Error.The element belongs to a workset that another person has taken.">El elemento pertenece a un subconjunto de trabajo que otra persona tomó.</sys:String>
+  <sys:String x:Key="Error.Choose a folder.">Elija una carpeta.</sys:String>
+  <sys:String x:Key="Error.Choose at least one format.">Elija al menos un formato.</sys:String>
+  <sys:String x:Key="Error.Choose at least one sheet.">Elija al menos una hoja.</sys:String>
+  <sys:String x:Key="Error.The publish settings are invalid.">La configuración de publicación no es válida.</sys:String>
   <sys:String x:Key="Error.The render scene does not exist.">La escena seleccionada ya no existe.</sys:String>
   <sys:String x:Key="Error.The render scene preview is too large.">La miniatura de la foto es demasiado grande.</sys:String>
   <sys:String x:Key="Error.The render scene collection is invalid.">La colección de escenas del proyecto no es válida.</sys:String>

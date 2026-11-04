@@ -150,6 +150,7 @@
   <sys:String x:Key="Transaction.BorrowWorkset">Tomar un subconjunto de trabajo</sys:String>
   <sys:String x:Key="Transaction.RelinquishWorksets">Soltar subconjuntos de trabajo</sys:String>
   <sys:String x:Key="Transaction.Synchronize">Sincronizar con el modelo central</sys:String>
+  <sys:String x:Key="Transaction.SetPublishSettings">Cambiar la configuración de publicación</sys:String>
   <sys:String x:Key="Transaction.SetViewCategories">Cambiar categorías visibles de la vista</sys:String>
   <sys:String x:Key="Transaction.PasteWalls">Pegar muros</sys:String>
   <sys:String x:Key="Transaction.AddArcWall">Crear muro curvo</sys:String>

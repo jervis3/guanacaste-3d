@@ -779,6 +779,44 @@ internal static partial class InteractionChecks
                 Environment.SetEnvironmentVariable("G3D_CENTRAL_DIR", null);
                 try { System.IO.Directory.Delete(centralFolder, true); } catch (System.IO.IOException) { }
 
+                // Coordination: interference check, share package, publish set and the list of shared models.
+                Invoke("ExecuteApplicationCommand", "Coordinate");
+                Pump();
+                var interferenceCount = InterferenceCheck.Run(session.Document).Count;
+                Check(InWindow<System.Windows.Controls.ListBox>("_interferenceWindow", "InterferenceList").Items.Count == interferenceCount,
+                    $"Coordinate lists the {interferenceCount} interferences of the house");
+                if (interferenceCount > 0)
+                {
+                    InWindow<System.Windows.Controls.ListBox>("_interferenceWindow", "InterferenceList").SelectedIndex = 0;
+                    ClickIn("_interferenceWindow", "InterferenceSelect");
+                    Check(Field<HashSet<Guid>?>("_viewSelection") is { Count: 2 }, "Selecting an interference selects the two elements");
+                    SetField("_viewSelection", null);
+                }
+                ClickIn("_interferenceWindow", "InterferenceClose");
+
+                var outFolder = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"salida-{Guid.NewGuid():N}");
+                Environment.SetEnvironmentVariable("G3D_CENTRAL_DIR", System.IO.Path.Combine(outFolder, "bases"));
+                Check((bool)Invoke("SharePackageTo", System.IO.Path.Combine(outFolder, "paquete"))! && System.IO.Directory.GetFiles(System.IO.Path.Combine(outFolder, "paquete")).Length == 5,
+                    "Share writes the project, IFC, DXF, PDF and the summary into a folder");
+                Invoke("ExecuteApplicationCommand", "PublishSettings");
+                Pump();
+                InWindow<System.Windows.Controls.TextBox>("_publishWindow", "PublishFolder").Text = System.IO.Path.Combine(outFolder, "publicar");
+                InWindow<System.Windows.Controls.CheckBox>("_publishWindow", "PublishDxf").IsChecked = true;
+                ClickIn("_publishWindow", "PublishNow");
+                Check(System.IO.Directory.Exists(System.IO.Path.Combine(outFolder, "publicar")) && System.IO.Directory.GetFiles(System.IO.Path.Combine(outFolder, "publicar")).Length == 2 &&
+                      session.Document.Publish.Dxf && session.Document.Publish.Folder.EndsWith("publicar", StringComparison.Ordinal), "Publish Now writes the sheets as PDF and the model as DXF, and remembers the choice");
+                ClickIn("_publishWindow", "PublishClose");
+
+                RecentCentralModels.Add(System.IO.Path.Combine(outFolder, "inexistente.g3d"));
+                Invoke("ExecuteApplicationCommand", "ManageCloudModels");
+                Pump();
+                Check(InWindow<System.Windows.Controls.ListBox>("_sharedModelsWindow", "SharedModelList").Items.Count == 1, "Manage Models lists the central models used on this computer");
+                ClickIn("_sharedModelsWindow", "SharedModelForget");
+                Check(RecentCentralModels.List().Count == 0, "Forgetting one takes it off the list");
+                ClickIn("_sharedModelsWindow", "SharedModelClose");
+                Environment.SetEnvironmentVariable("G3D_CENTRAL_DIR", null);
+                try { System.IO.Directory.Delete(outFolder, true); } catch (System.IO.IOException) { }
+
                 SetField("_viewSelection", null);
                 Pump();
                 tabs.SelectedIndex = 0;

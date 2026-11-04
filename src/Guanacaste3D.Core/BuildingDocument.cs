@@ -126,6 +126,8 @@ public sealed class BuildingDocument
     public List<WorksetAssignment> WorksetAssignments { get; set; } = [];
     /// <summary>Whether the project is shared through a central model, and by whom this copy is edited.</summary>
     public CollaborationSettings Collaboration { get; set; } = CollaborationSettings.Off;
+    /// <summary>Which sheets and formats the project publishes, and where.</summary>
+    public PublishSettings Publish { get; set; } = PublishSettings.Default;
     /// <summary>Images laid in the plan of a level as drawings to trace over.</summary>
     public List<ImageUnderlay> Underlays { get; set; } = [];
     /// <summary>Scanned or surveyed points kept as a reference in the plan.</summary>
@@ -209,6 +211,7 @@ public sealed class BuildingDocument
         Worksets = [.. Worksets],
         WorksetAssignments = [.. WorksetAssignments],
         Collaboration = Collaboration,
+        Publish = Publish with { SheetIds = [.. Publish.SheetIds] },
         Underlays = [.. Underlays],
         PointClouds = [.. PointClouds],
         ElementGroups = ElementGroups.Select(group => group with { MemberIds = [.. group.MemberIds] }).ToList(),
@@ -249,6 +252,7 @@ public sealed class BuildingDocument
             Worksets.Any(item => item is null || item.Id == Guid.Empty || string.IsNullOrWhiteSpace(item.Name) || item.Name.Length > 120 || (item.Owner is not null && item.Owner.Length > 60)) ||
             Worksets.Select(item => item.Id).Distinct().Count() != Worksets.Count || WorksetAssignments.Select(item => item.Id).Distinct().Count() != WorksetAssignments.Count)
             throw new InvalidDataException("Invalid worksets.");
+        if (Publish is null || !Publish.IsValid) throw new InvalidDataException("The publish settings are invalid.");
         if (Units is null || !Units.IsValid) throw new InvalidDataException("The project units are invalid.");
         if (Site is null || !Site.IsValid) throw new InvalidDataException("The project site is invalid.");
         if (Views.Any(view => view.ModelCrop is { } crop && (!double.IsFinite(crop.MinX + crop.MinY + crop.MaxX + crop.MaxY) ||

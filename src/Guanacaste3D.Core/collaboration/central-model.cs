@@ -67,6 +67,7 @@ public sealed partial class DocumentSession
         var settings = new CollaborationSettings(true, user?.Trim() ?? string.Empty, centralPath?.Trim() ?? string.Empty, null);
         if (!settings.IsValid) throw new InvalidDataException("The collaboration settings are invalid.");
         Commit("Transaction.EnableCollaboration", document => document.Collaboration = settings);
+        RecentCentralModels.Add(settings.CentralPath);
     }
 
     public void DisableCollaboration() => Commit("Transaction.DisableCollaboration", document => document.Collaboration = CollaborationSettings.Off);
