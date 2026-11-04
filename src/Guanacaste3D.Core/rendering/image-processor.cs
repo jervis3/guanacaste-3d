@@ -32,6 +32,11 @@ public static partial class ImageProcessor
         var exposed = new Vector3[linear.Length];
         var balance = WhiteBalance(finish.Temperature) * TintBalance(finish.Tint);
         var depth = finish.Fog > 0.001f ? Features()?.Depth : null;
+        // Snow lies on what faces up, so it reads the normals; rain and falling flakes need no buffer at all.
+        var snowFeatures = finish.Snow > 0.001f ? Features() : null;
+        var normals = snowFeatures?.Normal;
+        var surfaceDepth = snowFeatures?.Depth;
+        var weatherUnit = WeatherUnit(height);
         var highlight = finish.HighlightDim > 0.001f && !string.IsNullOrWhiteSpace(finish.HighlightMaterial)
             ? BuildHighlight(Features(), finish, width, height) : null;
         Parallel.For(0, height, row =>
@@ -74,6 +79,12 @@ public static partial class ImageProcessor
                 if (finish.Lut is { } lut && finish.LutStrength > 0.001f)
                     color = Vector3.Lerp(color, lut.Sample(color), Math.Clamp(finish.LutStrength, 0f, 1f));
                 if (highlight is not null) color = ApplyHighlight(color, highlight, index, finish.HighlightDim);
+                if (finish.Rain > 0.001f) color = ApplyRain(color, column, row, weatherUnit, finish.Rain);
+                if (finish.Snow > 0.001f)
+                {
+                    var onSurface = surfaceDepth is not null && !float.IsInfinity(surfaceDepth[index]);
+                    color = ApplySnow(color, column, row, weatherUnit, finish.Snow, onSurface ? normals![index] : null, onSurface);
+                }
                 if (vignette > 0)
                 {
                     var dx = (column + 0.5f) / width * 2 - 1;

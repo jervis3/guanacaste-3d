@@ -66,6 +66,8 @@ public partial class RenderPanel
         GrainSlider.Value = setup.FilmGrain;
         MonochromeCheck.IsChecked = setup.Monochrome;
         HighlightDimSlider.Value = setup.HighlightDim;
+        RainSlider.Value = setup.Rain;
+        SnowSlider.Value = setup.Snow;
         SelectHighlight(setup.HighlightMaterial);
         Select(LutPicker, setup.LutPresetId);
         LutStrengthSlider.Value = setup.LutStrength;
@@ -118,6 +120,7 @@ public partial class RenderPanel
             Sharpen = SharpenSlider.Value, ChromaticAberration = AberrationSlider.Value, FilmGrain = GrainSlider.Value,
             Monochrome = MonochromeCheck.IsChecked == true,
             HighlightMaterial = SelectedHighlight(), HighlightDim = HighlightDimSlider.Value,
+            Rain = RainSlider.Value, Snow = SnowSlider.Value,
             LutPresetId = Mode(LutPicker) is { Length: > 0 } lutId ? lutId : "none",
             LutPath = RenderSetup.SelectedCustomLutPath(Mode(LutPicker), _lutFilePath),
             LutStrength = LutStrengthSlider.Value

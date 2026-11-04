@@ -29,6 +29,8 @@
   <sys:String x:Key="RenderPanel.Sharpen">Nitidez</sys:String>
   <sys:String x:Key="RenderPanel.Aberration">Aberración cromática</sys:String>
   <sys:String x:Key="RenderPanel.Grain">Grano de película</sys:String>
+  <sys:String x:Key="RenderPanel.Rain">Lluvia</sys:String>
+  <sys:String x:Key="RenderPanel.Snow">Nieve</sys:String>
   <sys:String x:Key="RenderPanel.HighlightMaterial">Resaltar material</sys:String>
   <sys:String x:Key="RenderPanel.HighlightDim">Atenuar el resto</sys:String>
   <sys:String x:Key="RenderPanel.HighlightNone">Ninguno</sys:String>

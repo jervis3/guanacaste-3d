@@ -207,6 +207,10 @@ public sealed record ImageFinish
     public string? HighlightMaterial { get; init; }
     /// <summary>How far the rest of the picture is muted so <see cref="HighlightMaterial"/> stands out, 0–1 (0 is off).</summary>
     public float HighlightDim { get; init; }
+    /// <summary>Slanted rain streaks and a greyer, dimmer light, 0–1 (0 is off).</summary>
+    public float Rain { get; init; }
+    /// <summary>Falling snow, a cold cast and a white cover on surfaces that face up, 0–1 (0 is off).</summary>
+    public float Snow { get; init; }
     /// <summary>Optional 3D color lookup table applied after tone mapping and prior to lens effects.</summary>
     public ColorLookupTable? Lut { get; init; }
     /// <summary>Blend from unmodified color to LUT-graded color, between zero and one.</summary>

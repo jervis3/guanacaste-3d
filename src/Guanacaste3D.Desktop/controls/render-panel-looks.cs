@@ -137,6 +137,8 @@ public partial class RenderPanel
         Monochrome = MonochromeCheck.IsChecked == true,
         HighlightMaterial = SelectedHighlight(),
         HighlightDim = (float)HighlightDimSlider.Value,
+        Rain = (float)RainSlider.Value,
+        Snow = (float)SnowSlider.Value,
         Lut = SelectedLut(),
         LutStrength = (float)LutStrengthSlider.Value
     };
