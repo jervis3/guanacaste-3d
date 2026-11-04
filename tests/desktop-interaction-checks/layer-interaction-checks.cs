@@ -1,3 +1,4 @@
+using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using Guanacaste3D.Core;
@@ -122,6 +123,44 @@ internal static partial class InteractionChecks
         session.SetExtension("render.movie", null);
         restore.Invoke(panel, null);
         Check(path.Marks.Count == 0 && layers.IsEmpty, "A project without a movie opens with a blank one, not the previous project's");
+    }
+
+    /// <summary>
+    /// Decals in the real window: saving them keeps the text in the project and puts two more triangles in the render scene,
+    /// read from a real image file next to nothing else; removing them takes the triangles out again.
+    /// </summary>
+    private static void DecalChecks(MainWindow opened)
+    {
+        var session = (DocumentSession)typeof(MainWindow).GetField("_session", PrivateInstance)!.GetValue(opened)!;
+        var save = typeof(MainWindow).GetMethod("SaveDecals", PrivateInstance)!;
+        Task<RenderScene?> Scene() => (Task<RenderScene?>)typeof(MainWindow).GetMethod("GetSceneAsync", PrivateInstance, Type.EmptyTypes)!.Invoke(opened, null)!;
+        var image = Path.Combine(Path.GetTempPath(), $"g3d-decal-{Guid.NewGuid():N}.png");
+        try
+        {
+            var pixels = new byte[4 * 4 * 4];
+            for (var index = 0; index < pixels.Length; index += 4) { pixels[index] = 255; pixels[index + 2] = 255; pixels[index + 3] = 255; }
+            var encoder = new System.Windows.Media.Imaging.PngBitmapEncoder();
+            encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(System.Windows.Media.Imaging.BitmapSource.Create(
+                4, 4, 96, 96, System.Windows.Media.PixelFormats.Bgra32, null, pixels, 16)));
+            using (var stream = File.Create(image)) encoder.Save(stream);
+
+            var wall = session.Document.Walls.OrderByDescending(item => item.Length).First();
+            var decal = new Decal(Guid.NewGuid(), wall.Id, DecalFace.Left, wall.Length / 2, wall.BaseOffset + 1.2,
+                Math.Min(1, wall.Length / 2), 1, image);
+            Check(Decals.Fit(wall, decal) is null, "A decal sized for the cobogó house's longest wall fits it");
+            var before = Await(Scene())!.TriangleCount;
+            save.Invoke(opened, [new List<Decal> { decal }]);
+            Check(session.GetExtension(Decals.Key) is { Length: > 20 }, "Saving decals keeps them in the project");
+            var after = Await(Scene())!.TriangleCount;
+            Check(after == before + 2, $"A decal adds its two triangles to the render scene ({before} -> {after})");
+            save.Invoke(opened, [new List<Decal>()]);
+            Check(session.GetExtension(Decals.Key) is null && Await(Scene())!.TriangleCount == before,
+                "Removing the decals takes them out of the project and the render scene");
+        }
+        finally
+        {
+            if (File.Exists(image)) File.Delete(image);
+        }
     }
 
     private static T Await<T>(Task<T> task)

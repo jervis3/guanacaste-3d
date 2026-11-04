@@ -17,6 +17,9 @@ public partial class MainWindow
                 ViewTabs.SelectedIndex = RenderTabIndex;
                 RenderPanelControl.FocusWalkthrough();
                 return true;
+            case "Decal":
+                ShowDecalWindow();
+                return true;
             case "CloudRender":
                 // There is no render farm: the same job runs here, picture after picture, and lands in a folder.
                 ViewTabs.SelectedIndex = RenderTabIndex;

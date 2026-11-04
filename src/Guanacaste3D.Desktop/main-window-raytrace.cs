@@ -335,6 +335,8 @@ public partial class MainWindow
         {
             var mesh = BuildingMesher.Build(document, includeGround: true, plants: PlantDetail.Render);
             if (stoneDetail) RenderStoneDisplacement.Append(mesh);
+            // Images stuck on walls (Insert > Decal) are part of what the render shows.
+            Decals.AppendTo(mesh, document, image => RenderTextureLibrary.Load(DecalImagePath(image, projectFile)));
             var builder = new RenderSceneBuilder().AddBuilding(mesh,
                 RenderTextureLibrary.Resolver(materials, projectFile, lightsOn),
                 RenderTextureLibrary.ElementResolver(materials, projectFile, lightsOn));
