@@ -170,7 +170,30 @@ static class RenderPeopleChecks
                 var small = new Vector3[template.Positions.Length];
                 template.Pose(origin with { Distance = 0.05f }, small, spare);
                 check(small[top].X > standingPose[top].X, "The top of a wheel goes the way the car goes, so it rolls forward and not backward");
+                // Steering and lean: the two wheels at the nose turn into a curve, the others only ride with the body, which leans out.
+                var steering = Enumerable.Range(0, 4).Where(template.Steers).ToList();
+                var (flat, curved) = (new Vector3[template.Positions.Length], new Vector3[template.Positions.Length]);
+                var heading = -MathF.PI / 2;
+                template.Pose(new ActorState(Vector3.Zero, heading, 0, true, 0, 8), flat, spare);
+                template.Pose(new ActorState(Vector3.Zero, heading, 0, true, 0.25f, 8), curved, spare);
+                float Shift(int wheel) => spinning.Where(vertex => template.WheelOf(vertex) == wheel).Average(vertex => Vector3.Distance(flat[vertex], curved[vertex]));
+                var roof = Enumerable.Range(0, flat.Length).OrderByDescending(vertex => flat[vertex].Z).First();
+                check(steering.Count == 2 && steering.All(wheel => template.Wheels[wheel].Y * CarTemplate.Forward > 0) &&
+                      Math.Abs(template.SteerAngle(0.25f) - MathF.Atan((template.Wheels.Max(wheel => wheel.Y) - template.Wheels.Min(wheel => wheel.Y)) * 0.25f)) < 1e-5f &&
+                      template.SteerAngle(50) == CarTemplate.MaximumSteer && template.SteerAngle(-50) == -CarTemplate.MaximumSteer && template.SteerAngle(0) == 0,
+                    "Only the two wheels at the nose steer, by the angle a car of that wheelbase needs for the curve, never past the steering lock");
+                check(steering.All(wheel => Shift(wheel) > 0.05f) && Enumerable.Range(0, 4).Except(steering).All(wheel => Shift(wheel) < 0.06f) &&
+                      curved[roof].X < flat[roof].X - 0.02f && curved[roof].Z > flat[roof].Z - 0.02f,
+                    "In a left curve the front wheels turn left while the rear ones stay put, and the roof leans out to the right");
+                template.Pose(new ActorState(Vector3.Zero, heading, 0, true, 0, 8), curved, spare);
+                check(curved.SequenceEqual(flat) && CarTemplate.Lean(0.25f, 0) == 0 && CarTemplate.Lean(-0.25f, 8) > 0 && Math.Abs(CarTemplate.Lean(5, 40)) <= 0.061f,
+                    "On a straight, or standing, the car does not steer or lean, and the lean is limited");
             }
+            var leftCorner = Car(0, new ActorPoint(0, 0, 0), new ActorPoint(20, 0, 0), new ActorPoint(20, 20, 0)) with { Speed = 5 };
+            var turning = Actors.At(leftCorner, 4).Turn;
+            var righting = Actors.At(leftCorner with { Route = [new ActorPoint(0, 0, 0), new ActorPoint(20, 0, 0), new ActorPoint(20, -20, 0)] }, 4).Turn;
+            check(Actors.At(leftCorner, 1).Turn == 0 && turning > 0.15f && righting < -0.15f && Actors.At(leftCorner, 4).Speed == 5 && Actors.At(leftCorner, 100).Turn == 0,
+                $"A car on a straight does not turn, one rounding a left corner turns left ({turning:0.00} rad/m) and a right corner right, and one parked has stopped");
             var runOnce = Car(0, new ActorPoint(0, 0, 0), new ActorPoint(10, 0, 0)) with { Speed = 5 };
             check(Math.Abs(Actors.At(runOnce, 3).Distance - 10) < 1e-3f && Actors.At(runOnce, 30).Distance == Actors.At(runOnce, 3).Distance && !Actors.At(runOnce, 30).Walking &&
                   Actors.At(runOnce with { Loop = true }, 30).Distance > 100,

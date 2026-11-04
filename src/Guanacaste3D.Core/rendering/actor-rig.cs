@@ -34,6 +34,14 @@ internal sealed class CarTemplate
 
     private readonly (float Y, float Z, float Radius)[] _wheels;
     private readonly sbyte[] _wheelOfVertex;
+    private readonly float[] _wheelX;
+    private readonly bool[] _steers;
+
+    /// <summary>The farthest the front wheels turn, in radians (35°).</summary>
+    public const float MaximumSteer = 0.61f;
+
+    /// <summary>Whether a wheel is one of the two at the nose, which steer.</summary>
+    public bool Steers(int wheel) => _steers[wheel];
 
     /// <summary>The wheel a vertex turns with (0–3), or −1 for the body.</summary>
     public int WheelOf(int vertex) => _wheelOfVertex[vertex];
@@ -46,7 +54,28 @@ internal sealed class CarTemplate
         Indices = mesh.Indices;
         Kinds = mesh.Kinds;
         (_wheels, _wheelOfVertex) = FindWheels();
+        // Where each wheel stands across the car (the mean of its own vertices), and which two are at the nose.
+        _wheelX = new float[_wheels.Length];
+        var owned = new int[_wheels.Length];
+        for (var vertex = 0; vertex < Positions.Length; vertex++)
+            if (_wheelOfVertex[vertex] is var wheel and >= 0) { _wheelX[wheel] += Positions[vertex].X; owned[wheel]++; }
+        for (var wheel = 0; wheel < _wheelX.Length; wheel++) _wheelX[wheel] /= Math.Max(1, owned[wheel]);
+        _steers = _wheels.Select(wheel => wheel.Y * Forward > 0).ToArray();
     }
+
+    /// <summary>
+    /// The angle the front wheels point at for a curve of <paramref name="turn"/> radians per metre: the bicycle model
+    /// (atan of wheelbase × curvature), kept within what a steering wheel can do.
+    /// </summary>
+    public float SteerAngle(float turn)
+    {
+        if (_wheels.Length != 4) return 0;
+        var wheelbase = _wheels.Max(wheel => wheel.Y) - _wheels.Min(wheel => wheel.Y);
+        return Math.Clamp(MathF.Atan(wheelbase * turn), -MaximumSteer, MaximumSteer);
+    }
+
+    /// <summary>How far the body leans out of a curve, in radians: more the faster and the tighter (lateral acceleration), within 3.5°.</summary>
+    public static float Lean(float turn, float speed) => Math.Clamp(-0.005f * speed * speed * turn, -0.061f, 0.061f);
 
     /// <summary>
     /// Finds the wheels so they can turn: a tyre is a large connected piece of rubber that touches the ground and is about as tall as
@@ -135,6 +164,12 @@ internal sealed class CarTemplate
         // A wheel that rolls without slipping turns by the distance covered over its radius, about the axle across the car; the
         // top of the tyre goes the way the car goes.
         var spin = _wheels.Select(wheel => -Forward * state.Distance / wheel.Radius).ToArray();
+        // The front wheels turn into the curve about a vertical line through their middle, and the whole car (its wheels
+        // stay on the ground, but the body rides on springs) leans a little to the outside about the line it drives along.
+        var steer = SteerAngle(state.Turn);
+        float steerCos = MathF.Cos(steer), steerSin = MathF.Sin(steer);
+        var lean = Lean(state.Turn, state.Speed);
+        float leanCos = MathF.Cos(lean), leanSin = MathF.Sin(lean);
         for (var index = 0; index < Positions.Length; index++)
         {
             var (local, normal) = (Positions[index], Normals[index]);
@@ -144,6 +179,17 @@ internal sealed class CarTemplate
                 float c = MathF.Cos(spin[wheelIndex]), s = MathF.Sin(spin[wheelIndex]);
                 local = new Vector3(local.X, wheelY + (local.Y - wheelY) * c - (local.Z - wheelZ) * s, wheelZ + (local.Y - wheelY) * s + (local.Z - wheelZ) * c);
                 normal = new Vector3(normal.X, normal.Y * c - normal.Z * s, normal.Y * s + normal.Z * c);
+                if (_steers[wheelIndex] && steer != 0)
+                {
+                    float dx = local.X - _wheelX[wheelIndex], dy = local.Y - wheelY;
+                    local = new Vector3(_wheelX[wheelIndex] + dx * steerCos - dy * steerSin, wheelY + dx * steerSin + dy * steerCos, local.Z);
+                    normal = new Vector3(normal.X * steerCos - normal.Y * steerSin, normal.X * steerSin + normal.Y * steerCos, normal.Z);
+                }
+            }
+            if (lean != 0)
+            {
+                local = new Vector3(local.X * leanCos + local.Z * leanSin, local.Y, -local.X * leanSin + local.Z * leanCos);
+                normal = new Vector3(normal.X * leanCos + normal.Z * leanSin, normal.Y, -normal.X * leanSin + normal.Z * leanCos);
             }
             positions[index] = state.Position + new Vector3(local.X * cos - local.Y * sin, local.X * sin + local.Y * cos, local.Z);
             normals[index] = new Vector3(normal.X * cos - normal.Y * sin, normal.X * sin + normal.Y * cos, normal.Z);

@@ -29,8 +29,12 @@ public sealed record Actor(Guid Id, string Name, int Look, double Speed, bool Lo
         Route.All(point => double.IsFinite(point.X + point.Y + point.Z) && Math.Abs(point.X) < 1e6 && Math.Abs(point.Y) < 1e6 && Math.Abs(point.Z) < 1e5);
 }
 
-/// <summary>Where an actor is, and how it is moving, at a time of the movie.</summary>
-public readonly record struct ActorState(Vector3 Position, float Heading, float Distance, bool Walking);
+/// <summary>
+/// Where an actor is, and how it is moving, at a time of the movie. <paramref name="Turn"/> is how sharply it is turning, in
+/// radians per metre travelled (positive to the left, 0 on a straight), and <paramref name="Speed"/> its speed in metres per
+/// second; a car steers its front wheels and leans in its suspension from them.
+/// </summary>
+public readonly record struct ActorState(Vector3 Position, float Heading, float Distance, bool Walking, float Turn = 0, float Speed = 0);
 
 /// <summary>The route of an actor followed over time, and the actors as the text the project keeps.</summary>
 public static class Actors
@@ -80,7 +84,25 @@ public static class Actors
         var heading = (float)Math.Atan2(ahead.Y - behind.Y, ahead.X - behind.X);
         if (Math.Abs(ahead.X - behind.X) + Math.Abs(ahead.Y - behind.Y) < 1e-6) heading = HeadingAt(route, along);
         if (reversed) heading += MathF.PI;
-        return new ActorState(position, heading, (float)covered, moving);
+        // The curvature of the way ahead: how much the direction changes over a metre and a bit of the route, seen in the
+        // direction of travel (a looping actor coming back sees the route backwards).
+        var turn = moving ? AngleBetween(DirectionAt(route, Math.Max(0, along - 0.6)), DirectionAt(route, Math.Min(length, along + 0.6))) / 1.2f : 0f;
+        if (reversed) turn = -turn;
+        return new ActorState(position, heading, (float)covered, moving, turn, moving ? (float)actor.Speed : 0f);
+    }
+
+    private static float DirectionAt(IReadOnlyList<ActorPoint> route, double along)
+    {
+        var (ahead, behind) = (PointAt(route, along + 1.2), PointAt(route, Math.Max(0, along - 1.2)));
+        return Math.Abs(ahead.X - behind.X) + Math.Abs(ahead.Y - behind.Y) < 1e-6 ? HeadingAt(route, along) : (float)Math.Atan2(ahead.Y - behind.Y, ahead.X - behind.X);
+    }
+
+    private static float AngleBetween(float from, float to)
+    {
+        var difference = to - from;
+        while (difference > MathF.PI) difference -= 2 * MathF.PI;
+        while (difference < -MathF.PI) difference += 2 * MathF.PI;
+        return difference;
     }
 
     private static double Flat(ActorPoint a, ActorPoint b) => Math.Sqrt((b.X - a.X) * (b.X - a.X) + (b.Y - a.Y) * (b.Y - a.Y));
