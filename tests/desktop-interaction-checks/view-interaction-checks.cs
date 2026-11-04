@@ -177,9 +177,18 @@ internal static partial class InteractionChecks
             faceButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
             Pump();
             var gridPopup = LogicalDescendants(materialRows).OfType<System.Windows.Controls.Primitives.Popup>().First(item => item.IsOpen);
-            var ballGrid = (WrapPanel)((ScrollViewer)((StackPanel)((Border)gridPopup.Child).Child).Children[1]).Content;
+            var ballGrid = (WrapPanel)((ScrollViewer)((StackPanel)((Border)gridPopup.Child).Child).Children[2]).Content;
             Check(ballGrid.Children.OfType<Button>().Count() > 20,
                 "A surface's material picker opens a grid of material balls instead of a text list");
+            var allBalls = ballGrid.Children.OfType<Button>().Count();
+            var chipRow = (WrapPanel)((StackPanel)((Border)gridPopup.Child).Child).Children[1];
+            chipRow.Children.OfType<Button>().First(chip => Equals(chip.Content, "Metales"))
+                .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Pump();
+            var metalBalls = ((WrapPanel)((ScrollViewer)((StackPanel)((Border)gridPopup.Child).Child).Children[2]).Content)
+                .Children.OfType<Button>().Count();
+            Check(metalBalls > 5 && metalBalls < allBalls,
+                "A family chip narrows the ball grid to that family's materials");
             gridPopup.IsOpen = false;
             var gallery = (Expander)panel.FindName("GalleryExpander");
             gallery.IsExpanded = true;

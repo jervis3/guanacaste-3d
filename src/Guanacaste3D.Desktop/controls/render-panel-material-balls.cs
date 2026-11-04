@@ -155,6 +155,9 @@ public partial class RenderPanel
         if (focusedHere) { face.BorderBrush = Brushes.DarkOrange; face.BorderThickness = new Thickness(2); }
 
         var tiles = new WrapPanel();
+        // One chip per material family so a long catalogue is crossed in a click, not by scrolling.
+        var chips = new WrapPanel { Margin = new Thickness(0, 0, 0, 6) };
+        string? activeFamily = null;
         var search = new TextBox { Margin = new Thickness(0, 0, 0, 8), ToolTip = "Buscar por nombre o familia" };
         var scroller = new ScrollViewer
         {
@@ -163,6 +166,7 @@ public partial class RenderPanel
         };
         var stack = new StackPanel();
         stack.Children.Add(search);
+        stack.Children.Add(chips);
         stack.Children.Add(scroller);
         var popup = new System.Windows.Controls.Primitives.Popup
         {
@@ -180,12 +184,36 @@ public partial class RenderPanel
         void Rebuild()
         {
             tiles.Children.Clear();
+            chips.Children.Clear();
+            var families = picker.Items.OfType<ComboBoxItem>()
+                .Where(entry => !entry.IsEnabled && entry.Tag is null).Select(entry => entry.Content as string ?? "").ToArray();
+            if (activeFamily is not null && !families.Contains(activeFamily)) activeFamily = null;
+            foreach (var family in families.Prepend(""))
+            {
+                var isAll = family.Length == 0;
+                var on = isAll ? activeFamily is null : family == activeFamily;
+                var chip = new Button
+                {
+                    Content = isAll ? "Todos" : family, Margin = new Thickness(0, 0, 4, 4), MinHeight = 24,
+                    Padding = new Thickness(9, 2, 9, 2), FontSize = 11,
+                    Background = on ? new SolidColorBrush(Color.FromRgb(36, 110, 104)) : TileBackground,
+                    BorderBrush = on ? TileSelectedBorder : TileBorder
+                };
+                var chosenFamily = isAll ? null : family;
+                chip.Click += (_, _) => { activeFamily = chosenFamily; Rebuild(); };
+                chips.Children.Add(chip);
+            }
+            string? heading = null;
             var selectedTag = (picker.SelectedItem as ComboBoxItem)?.Tag as string;
             foreach (var item in picker.Items.OfType<ComboBoxItem>().ToArray())
             {
                 var label = item.Content as string ?? "";
+                if (!item.IsEnabled && item.Tag is null) heading = label;
+                // With a family chosen, only its own balls remain; the import actions belong to "Todos".
+                if (activeFamily is not null && (heading != activeFamily || IsActionTag(item.Tag as string))) continue;
                 if (!item.IsEnabled && item.Tag is null)
                 {
+                    if (activeFamily is not null) continue;
                     tiles.Children.Add(new TextBlock
                     {
                         Text = label, Width = 372, Margin = new Thickness(2, 10, 2, 4), FontWeight = FontWeights.SemiBold,
