@@ -17,12 +17,18 @@ public partial class MainWindow
     private string _modelBackground = "White";
 
     /// <summary>Resolves a consistent model-space sun direction for the selected time-of-day preset.</summary>
-    private Vector3 ModelSunDirection() => Vector3.Normalize(_modelSunPreset switch
+    private Vector3 ModelSunDirection()
     {
-        "Morning" => new Vector3(1, -0.4f, 0.4f),
-        "Afternoon" => new Vector3(-1, -0.4f, 0.4f),
-        _ => new Vector3(-0.45f, -0.55f, 0.85f)
-    });
+        var sun = Vector3.Normalize(_modelSunPreset switch
+        {
+            "Morning" => new Vector3(1, -0.4f, 0.4f),
+            "Afternoon" => new Vector3(-1, -0.4f, 0.4f),
+            _ => new Vector3(-0.45f, -0.55f, 0.85f)
+        });
+        // The presets are given against true north (x east, y north); the project may be turned away from it.
+        var (x, y) = _session.Document.Site.TrueToProject(sun.X, sun.Y);
+        return new Vector3((float)x, (float)y, sun.Z);
+    }
 
     /// <summary>Routes the view control bar to functional view-only operations.</summary>
     private void ExecuteModelViewCommand(string command)

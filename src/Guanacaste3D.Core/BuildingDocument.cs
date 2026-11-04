@@ -117,6 +117,8 @@ public sealed class BuildingDocument
     public List<ElementGroup> ElementGroups { get; set; } = [];
     /// <summary>How the project shows and reads lengths, areas and volumes; the model itself is always in meters.</summary>
     public ProjectUnits Units { get; set; } = ProjectUnits.Default;
+    /// <summary>Where the project is and how it is turned to true north; shared coordinates of its origin.</summary>
+    public ProjectSite Site { get; set; } = ProjectSite.Default;
     /// <summary>The stages of the building's life in order; empty until the project uses phases.</summary>
     public List<ProjectPhase> Phases { get; set; } = [];
     public List<PhaseAssignment> PhaseAssignments { get; set; } = [];
@@ -191,6 +193,7 @@ public sealed class BuildingDocument
         Views = [.. Views],
         ViewTemplates = [.. ViewTemplates],
         Units = Units,
+        Site = Site,
         ElementGroups = ElementGroups.Select(group => group with { MemberIds = [.. group.MemberIds] }).ToList(),
         Phases = [.. Phases],
         PhaseAssignments = [.. PhaseAssignments],
@@ -225,6 +228,7 @@ public sealed class BuildingDocument
         ProjectStages.Validate(this);
         ElementGroups_Validate();
         if (Units is null || !Units.IsValid) throw new InvalidDataException("The project units are invalid.");
+        if (Site is null || !Site.IsValid) throw new InvalidDataException("The project site is invalid.");
         if (Views.Any(view => view.ModelCrop is { } crop && (!double.IsFinite(crop.MinX + crop.MinY + crop.MaxX + crop.MaxY) ||
                 crop.MaxX - crop.MinX < 0.5 || crop.MaxY - crop.MinY < 0.5 ||
                 view.Kind is ProjectViewKind.Schedule)))

@@ -189,6 +189,35 @@ internal static partial class InteractionChecks
             ClickIn("_unitsWindow", "UnitClose");
             session.SetProjectUnits(ProjectUnits.Default);
 
+            // Site: the Position window turns true north and the sun of the 3D view follows it; Coordinates converts points.
+            Invoke("ExecuteApplicationCommand", "Position");
+            Pump();
+            var sunStraight = (System.Numerics.Vector3)Invoke("ModelSunDirection")!;
+            InWindow<System.Windows.Controls.TextBox>("_positionWindow", "SiteTrueNorth").Text = "90";
+            ClickIn("_positionWindow", "SitePositionApply");
+            var sunTurned = (System.Numerics.Vector3)Invoke("ModelSunDirection")!;
+            Check(Math.Abs(session.Document.Site.TrueNorthDegrees - 90) < 1e-9 && Math.Abs(sunTurned.Z - sunStraight.Z) < 1e-5 &&
+                  Math.Abs(sunTurned.X - -sunStraight.Y) < 1e-5 && Math.Abs(sunTurned.Y - sunStraight.X) < 1e-5,
+                "Setting true north to 90° turns the sun of the 3D view with the project and keeps its height");
+            InWindow<System.Windows.Controls.TextBox>("_positionWindow", "SiteTrueNorth").Text = "400";
+            ClickIn("_positionWindow", "SitePositionApply");
+            Check(Math.Abs(session.Document.Site.TrueNorthDegrees - 90) < 1e-9, "An angle out of range changes nothing");
+            ClickIn("_positionWindow", "SitePositionClose");
+            Invoke("RenderPlan");
+            Pump();
+            Invoke("ExecuteApplicationCommand", "Coordinates");
+            Pump();
+            InWindow<System.Windows.Controls.TextBox>("_coordinatesWindow", "SiteEast").Text = "500000";
+            InWindow<System.Windows.Controls.TextBox>("_coordinatesWindow", "SiteNorth").Text = "1170000";
+            ClickIn("_coordinatesWindow", "SiteApply");
+            Check(session.Document.Site.SharedEast == 500000 && session.Document.Site.SharedNorth == 1170000, "The Coordinates window stores the survey coordinates of the project origin");
+            InWindow<System.Windows.Controls.TextBox>("_coordinatesWindow", "SiteProjectPoint").Text = "0 1";
+            ClickIn("_coordinatesWindow", "SiteToShared");
+            Check(InWindow<System.Windows.Controls.TextBlock>("_coordinatesWindow", "SiteResult").Text.Contains("500001"),
+                "Project north one meter from the origin reads as one meter east of it, because true north is at 90°");
+            ClickIn("_coordinatesWindow", "SiteClose");
+            session.SetProjectSite(ProjectSite.Default);
+
             // Shared parameters: a file with parameters is opened in the window and its parameters are added to the project.
             var sharedFile = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"shared-{Guid.NewGuid():N}.txt");
             System.IO.File.WriteAllText(sharedFile, SharedParameterFile.Write(
