@@ -49,6 +49,7 @@ public partial class RenderPanel
             MarksList.Items.Add(UiText.Format("RenderPanel.MarkName", i + 1, i == 0 ? 0 : _path.Marks[i].SecondsFromPrevious));
         MarksList.SelectedIndex = Math.Min(selected, MarksList.Items.Count - 1);
         _playTime = Math.Min(_playTime, _path.Duration);
+        ScheduleMovieSave();
         RedrawTimeline();
     }
 

@@ -1,6 +1,7 @@
 using System.Windows;
 using System.Windows.Controls;
 using Guanacaste3D.Core;
+using Guanacaste3D.Core.Navigation;
 using Guanacaste3D.Core.Rendering;
 using Guanacaste3D.Desktop;
 using Guanacaste3D.Desktop.Controls;
@@ -84,6 +85,43 @@ internal static partial class InteractionChecks
             session.SetProjectSite(original);
             typeof(RenderPanel).GetMethod("SyncProjectSite", PrivateInstance)!.Invoke(panel, null);
         }
+    }
+
+    /// <summary>
+    /// The movie in the real window: saving puts it in the project without rebuilding the 3D scene, and restoring brings
+    /// the marks and layer keys back, as opening the project does.
+    /// </summary>
+    private static void MovieStorageChecks(MainWindow opened, RenderPanel panel)
+    {
+        var session = (DocumentSession)typeof(MainWindow).GetField("_session", PrivateInstance)!.GetValue(opened)!;
+        var path = (CameraPath)typeof(RenderPanel).GetField("_path", PrivateInstance)!.GetValue(panel)!;
+        var layers = (LayerAnimation)typeof(RenderPanel).GetField("_layers", PrivateInstance)!.GetValue(panel)!;
+        var upper = session.Document.Levels.OrderBy(level => level.Elevation).Last().Id;
+        var sceneVersion = typeof(MainWindow).GetField("_sceneVersion", PrivateInstance)!;
+        var save = typeof(RenderPanel).GetMethod("SaveMovieNow", PrivateInstance)!;
+        var restore = typeof(RenderPanel).GetMethod("RestoreMovie", PrivateInstance)!;
+
+        path.Clear();
+        path.Add(new CameraMark(new System.Numerics.Vector3(1, 2, 3), new System.Numerics.Vector3(4, 5, 6), 50, 0, "A"));
+        path.Add(new CameraMark(new System.Numerics.Vector3(7, 8, 9), new System.Numerics.Vector3(4, 5, 6), 50, 3, "B"));
+        layers.Clear();
+        layers.Set(upper, 1.5f, true);
+        var before = (int)sceneVersion.GetValue(opened)!;
+        save.Invoke(panel, null);
+        Check(session.GetExtension("render.movie") is { Length: > 20 } && (int)sceneVersion.GetValue(opened)! == before,
+            "Saving the movie keeps it in the project without rebuilding the 3D scene");
+
+        path.Clear();
+        layers.Clear();
+        restore.Invoke(panel, null);
+        Check(path.Marks.Count == 2 && path.Marks[1].SecondsFromPrevious == 3 && path.Marks[0].Name == "A" &&
+              layers.Keys.Count == 1 && layers.Keys[0].LevelId == upper &&
+              ((CheckBox)panel.FindName("LayersAnimationCheck")).IsChecked == true,
+            "Opening a project restores its camera marks and layer keys and switches layer animation on");
+
+        session.SetExtension("render.movie", null);
+        restore.Invoke(panel, null);
+        Check(path.Marks.Count == 0 && layers.IsEmpty, "A project without a movie opens with a blank one, not the previous project's");
     }
 
     private static T Await<T>(Task<T> task)

@@ -44,7 +44,7 @@
   <sys:String x:Key="Demo.CeilingSketch">Dibuja el contorno del cielo raso a mano.</sys:String>
   <sys:String x:Key="Demo.CesConfiguration">Ajusta la configuración de los elementos prefabricados CES.</sys:String>
   <sys:String x:Key="Demo.CloseHiddenWindows">Cierra las vistas que no estás usando.</sys:String>
-  <sys:String x:Key="Demo.CloudRender">Renderiza la imagen en servidores en la nube.</sys:String>
+  <sys:String x:Key="Demo.CloudRender">Renderiza varias fotos guardadas, una tras otra, y las guarda como imágenes. Se hace en este equipo: el programa no usa servidores en la nube.</sys:String>
   <sys:String x:Key="Demo.Collaborate">Trabaja en equipo sobre el mismo proyecto.</sys:String>
   <sys:String x:Key="Demo.ColorFillLegend">Muestra una leyenda de colores para habitaciones o áreas.</sys:String>
   <sys:String x:Key="Demo.ColumnArchitectural">Coloca un pilar decorativo o de acabado.</sys:String>

@@ -626,6 +626,7 @@ RenderLookChecks.Run(Check);
 RenderHighlightChecks.Run(Check);
 RenderLayerChecks.Run(Check);
 RenderSunChecks.Run(Check);
+RenderMovieStorageChecks.Run(Check);
 RenderWeatherChecks.Run(Check);
 ImportedUvChecks.Run(Check);
 FinishTransactionChecks.Run(Check);

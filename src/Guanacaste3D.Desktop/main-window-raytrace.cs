@@ -82,6 +82,15 @@ public partial class MainWindow
         public Task<RenderScene?> GetSceneAsync(IReadOnlySet<Guid> hiddenLevels) => window.GetSceneAsync(hiddenLevels);
         public IReadOnlyList<Level> Levels => window._session.Document.Levels;
         public ProjectSite Site => window._session.Document.Site;
+        public string? GetExtension(string key) => window._session.GetExtension(key);
+        public void SetExtension(string key, string? value)
+        {
+            // A committed step normally refreshes every view and rebuilds the render scene; the movie changes none of that.
+            window._session.Changed -= window.OnDocumentChanged;
+            try { window._session.SetExtension(key, value); }
+            finally { window._session.Changed += window.OnDocumentChanged; }
+            window.OnRenderPhotosChanged(null, EventArgs.Empty);
+        }
         /// <summary>Copies document and material state before building WPF geometry off the UI thread.</summary>
         public Task<ModelSceneSnapshot> GetInteractiveSceneAsync()
         {

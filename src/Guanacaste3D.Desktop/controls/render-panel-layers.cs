@@ -83,6 +83,7 @@ public partial class RenderPanel
 
     private void LayersChanged()
     {
+        ScheduleMovieSave();
         RedrawTimeline();
         ApplyLayerPreview(_playTime);
     }
@@ -145,6 +146,7 @@ public partial class RenderPanel
     {
         if (_dragLayer is null) return false;
         _dragLayer = null;
+        ScheduleMovieSave();
         ApplyLayerPreview(_playTime);
         return true;
     }

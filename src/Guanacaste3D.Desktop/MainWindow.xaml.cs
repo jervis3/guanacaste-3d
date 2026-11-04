@@ -212,6 +212,7 @@ public partial class MainWindow : Window
     /// <summary>Persists the active document and returns whether the operation completed.</summary>
     private bool SaveProject(bool choosePath)
     {
+        RenderPanelControl.SaveMovieNow();
         var path = _filePath;
         if (choosePath || path is null)
         {
@@ -296,6 +297,7 @@ public partial class MainWindow : Window
         RefreshAll();
         FrameCameraToScene();
         if (document.RenderSetup is { } setup) ApplyRenderSetup(setup);
+        RenderPanelControl.RestoreMovie();
     }
 
     /// <summary>Restores a project's saved render view: the shared camera and the Render panel's settings.</summary>

@@ -109,7 +109,7 @@
   <sys:String x:Key="RibbonCommand.CanvasTheme">Tema del lienzo</sys:String>
   <sys:String x:Key="RibbonCommand.CesConfiguration">Configuración CES</sys:String>
   <sys:String x:Key="RibbonCommand.CloseHiddenWindows">Cerrar ventanas inactivas</sys:String>
-  <sys:String x:Key="RibbonCommand.CloudRender">Renderización en la nube</sys:String>
+  <sys:String x:Key="RibbonCommand.CloudRender">Renderizar en lote</sys:String>
   <sys:String x:Key="RibbonCommand.Collaborate">Colaborar</sys:String>
   <sys:String x:Key="RibbonCommand.ColorFillLegend">Leyenda de relleno</sys:String>
   <sys:String x:Key="RibbonCommand.ColorScheme">Esquema de color</sys:String>

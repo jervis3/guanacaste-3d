@@ -32,6 +32,15 @@ internal interface IRenderSource
     /// <summary>The scene with some levels left out (the movie's layer animation); the cached one when none is hidden.</summary>
     Task<RenderScene?> GetSceneAsync(IReadOnlySet<Guid> hiddenLevels);
 
+    /// <summary>Text a feature keeps in the project under a key (the movie, for one); null when there is none.</summary>
+    string? GetExtension(string key);
+
+    /// <summary>
+    /// Saves such text as one undoable step. Unlike a model edit it does not rebuild the 3D views: it only marks the
+    /// project as changed, because nothing the views draw has moved.
+    /// </summary>
+    void SetExtension(string key, string? value);
+
     /// <summary>Where the project is and how it is turned from true north, which decide where the sun stands.</summary>
     ProjectSite Site { get; }
 

@@ -146,6 +146,7 @@ public partial class RenderPanel : UserControl
         HideStyledPreview();
         _flightTimer?.Stop();
         _photoWatch?.Stop();
+        try { SaveMovieNow(); } catch (Exception exception) when (exception is InvalidOperationException or InvalidDataException) { }
         // Invalidate asynchronous scene requests before disposing the preview.
         _sceneRefreshVersion++;
         _cancel?.Cancel();
