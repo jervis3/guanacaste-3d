@@ -219,6 +219,11 @@ public sealed record ImageFinish
     public float TiltShift { get; init; }
     /// <summary>Where the sharp band of <see cref="TiltShift"/> sits, −1 (high) to 1 (low); 0 is the middle.</summary>
     public float TiltShiftPosition { get; init; }
+    /// <summary>Fires and smoke to draw (null for none), at <see cref="FireSeconds"/> of the movie; the tracer works out where they fall.</summary>
+    public IReadOnlyList<FireEmitter>? Fires { get; init; }
+    public float FireSeconds { get; init; }
+    /// <summary>The particles of <see cref="Fires"/> already placed on this picture by the tracer that made it; not set by hand.</summary>
+    internal IReadOnlyList<FireSprite>? FireSprites { get; init; }
     /// <summary>Optional 3D color lookup table applied after tone mapping and prior to lens effects.</summary>
     public ColorLookupTable? Lut { get; init; }
     /// <summary>Blend from unmodified color to LUT-graded color, between zero and one.</summary>

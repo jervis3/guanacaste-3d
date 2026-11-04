@@ -555,6 +555,8 @@
                     <Slider x:Name="TiltShiftPositionSlider" Minimum="-1" Maximum="1" Value="0" TickFrequency="0.05"
                             IsSnapToTickEnabled="True" ValueChanged="Finish_SliderChanged"/>
                   </DockPanel>
+                  <Button x:Name="FireButton" Content="{DynamicResource Render.Fire.Open}" Margin="0,12,0,0" Padding="10,5" HorizontalAlignment="Left"
+                          Click="Fire_Click"/>
                   <CheckBox x:Name="OceanCheck" Style="{StaticResource PanelCheck}" IsChecked="False" Margin="0,12,0,0"
                             Content="{DynamicResource Render.Ocean.Use}" Checked="Ocean_Changed" Unchecked="Ocean_Changed"/>
                   <TextBlock Style="{StaticResource PanelLabel}" Text="{DynamicResource Render.Ocean.Level}"/>

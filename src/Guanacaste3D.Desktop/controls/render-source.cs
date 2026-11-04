@@ -50,6 +50,12 @@ internal interface IRenderSource
     /// <summary>Saves the people as one undoable step; the render scene is rebuilt, because it holds them.</summary>
     void SetActors(IReadOnlyList<Actor> actors);
 
+    /// <summary>The fires and columns of smoke of the project.</summary>
+    IReadOnlyList<FireEmitter> GetFires();
+
+    /// <summary>Saves the fires as one undoable step; the render scene is rebuilt, because their flames light it.</summary>
+    void SetFires(IReadOnlyList<FireEmitter> fires);
+
     /// <summary>The ocean of the project (off when it has none).</summary>
     OceanSettings GetOcean();
 

@@ -168,6 +168,8 @@ internal static partial class InteractionChecks
         var saveDecals = typeof(MainWindow).GetMethod("SaveDecals", PrivateInstance)!;
         var savePeople = host.GetType().GetMethod("SetActors")!;
         var readPeople = host.GetType().GetMethod("GetActors")!;
+        var saveFires = host.GetType().GetMethod("SetFires")!;
+        var readFires = host.GetType().GetMethod("GetFires")!;
         var saveOcean = typeof(RenderPanel).GetMethod("SaveOceanNow", PrivateInstance)!;
         var restoreOcean = typeof(RenderPanel).GetMethod("RestoreOcean", PrivateInstance)!;
         var on = (CheckBox)panel.FindName("OceanCheck");
@@ -223,6 +225,15 @@ internal static partial class InteractionChecks
                 new(Guid.NewGuid(), "Coche", 2, 8, true, 0, [start with { Y = start.Y - 6 }, start with { X = start.X + 12, Y = start.Y - 6 }], ActorKind.Car)
             };
             savePeople.Invoke(host, [people]);
+            // Fires: a campfire (flames and smoke) and a column of smoke, near the people.
+            var fires = new List<FireEmitter>
+            {
+                new(Guid.NewGuid(), "Fogata", start.X + 4, start.Y - 3, 0, 0.9, 0.5, 1.2),
+                new(Guid.NewGuid(), "Humo", start.X + 8, start.Y - 3, 0, 0, 0.7, 1.0)
+            };
+            saveFires.Invoke(host, [fires]);
+            Check(session.GetExtension(Fires.Key) is { Length: > 50 } && ((IReadOnlyList<FireEmitter>)readFires.Invoke(host, null)!).Count == 2,
+                "Saving fires keeps them in the project");
             Check(session.GetExtension(Actors.Key) is { Length: > 50 } && ((IReadOnlyList<Actor>)readPeople.Invoke(host, null)!).Count == 3,
                 "Saving people keeps them, with their routes, in the project");
 
@@ -232,6 +243,8 @@ internal static partial class InteractionChecks
             Check(after.DynamicTriangleCount > 30000 &&
                   after.TriangleCount == before.TriangleCount + 2 + after.DynamicTriangleCount,
                 $"The render scene holds the decal's two triangles and the two people and the car as a block of moving triangles ({after.DynamicTriangleCount}) after everything else ({before.TriangleCount} -> {after.TriangleCount})");
+            Check(after.Lights.Length == before.Lights.Length + 1,
+                $"The campfire's flames light the render scene with one warm light, and a column of smoke adds none ({before.Lights.Length} -> {after.Lights.Length})");
             var tracer = new PathTracer(after, 16, 16, new RenderCamera(new System.Numerics.Vector3(0, -8, 2), System.Numerics.Vector3.Zero, 45));
             // The window's own loader of car meshes, as the program reads them from its resources folder.
             FamilyMesh.Decoded? CarMesh(int model) => NativeDocumentStore.LoadFamily(Path.Combine(AppContext.BaseDirectory, "resources", "families",
@@ -244,6 +257,7 @@ internal static partial class InteractionChecks
             // Removals, checked in the project (each would otherwise cost another rebuild).
             saveDecals.Invoke(opened, [new List<Decal>()]);
             savePeople.Invoke(host, [new List<Actor>()]);
+            saveFires.Invoke(host, [new List<FireEmitter>()]);
             on.IsChecked = false;
             saveOcean.Invoke(panel, null);
             Check(!Ocean.Of(session.Document).Enabled && session.GetExtension(Ocean.Key) is not null,
@@ -252,8 +266,8 @@ internal static partial class InteractionChecks
             waves.Value = 1;
             tint.SelectedIndex = 0;
             saveOcean.Invoke(panel, null);
-            Check(session.GetExtension(Decals.Key) is null && session.GetExtension(Actors.Key) is null && session.GetExtension(Ocean.Key) is null,
-                "Removing the decals and people, and an ocean back at its defaults, keep nothing in the project");
+            Check(session.GetExtension(Decals.Key) is null && session.GetExtension(Actors.Key) is null && session.GetExtension(Fires.Key) is null && session.GetExtension(Ocean.Key) is null,
+                "Removing the decals, people and fires, and an ocean back at its defaults, keep nothing in the project");
         }
         finally
         {

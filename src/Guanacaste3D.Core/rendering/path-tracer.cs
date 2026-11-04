@@ -805,8 +805,27 @@ public sealed partial class PathTracer
 
     /// <summary>Returns tone-mapped, gamma-encoded pixels in BGRA32 order for display.</summary>
     public byte[] ToBgra32(bool denoise = false, ImageFinish? finish = null) =>
-        ImageProcessor.ToBgra32(LinearImage(denoise), Width, Height, _settings.Exposure, finish ?? ImageProcessor.Plain,
+        ImageProcessor.ToBgra32(LinearImage(denoise), Width, Height, _settings.Exposure, WithScreenEffects(finish ?? ImageProcessor.Plain),
             CaptureFeatures);
+
+    /// <summary>The camera's view as a projection of world points onto the picture (null for a panorama, which has no flat picture).</summary>
+    public ScreenProjection? Projection()
+    {
+        if (_camera.Panoramic) return null;
+        var basis = Basis();
+        return new ScreenProjection(_camera.Position, basis.Forward, basis.Right, basis.Up, basis.HalfWidth, basis.HalfHeight,
+            basis.HorizontalShift, basis.VerticalShift, Width, Height);
+    }
+
+    /// <summary>
+    /// The finish with the particles of its fires and smoke placed on this tracer's picture: they depend on where the camera
+    /// is and how big the picture is, so the tracer that knows both does it. A finish without fires comes back as it was.
+    /// </summary>
+    public ImageFinish WithScreenEffects(ImageFinish finish)
+    {
+        if (finish.Fires is not { Count: > 0 } fires || Projection() is not { } view) return finish;
+        return finish with { FireSprites = FireParticles.Build(fires, view, finish.FireSeconds) };
+    }
 
     /// <summary>Returns the linear (pre-tone-mapping) mean radiance for one pixel.</summary>
     public Vector3 LinearPixel(int column, int row)

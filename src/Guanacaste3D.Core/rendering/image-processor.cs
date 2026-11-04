@@ -51,6 +51,9 @@ public static partial class ImageProcessor
             }
         });
 
+        // Fire and smoke are painted into the exposed picture, so bloom and glare make the flames glow.
+        if (finish.FireSprites is { Count: > 0 } fireSprites) DrawFire(exposed, width, height, fireSprites, Features()?.Depth);
+
         var glow = finish.Bloom > 0.001f ? Bloom(exposed, width, height) : null;
         var streaks = finish.Glare > 0.001f ? Glare(exposed, width, height) : null;
         // Flare and rays come from the brightest light in view; with none in view they add nothing.

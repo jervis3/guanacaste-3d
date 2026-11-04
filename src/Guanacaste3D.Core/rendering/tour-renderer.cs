@@ -87,7 +87,9 @@ public static class TourRenderer
                     tracer.RenderPass(safety.Token);
                     if (tracer.ActiveFraction <= 0.0005f && sample >= settings.AdaptiveMinimumSamples) break;
                 }
-                var bytes = ImageProcessor.ToBgra32(tracer.LinearImage(denoise: true), width, height, tracer.BaseExposure, finish,
+                // Fires and smoke burn with the movie: the same instant that places the camera shapes their flames.
+                var frameFinish = tracer.WithScreenEffects(finish with { FireSeconds = total <= 1 ? 0 : (float)(path.Duration * frame / (total - 1)) });
+                var bytes = ImageProcessor.ToBgra32(tracer.LinearImage(denoise: true), width, height, tracer.BaseExposure, frameFinish,
                     tracer.CaptureFeatures);
                 PngCodec.Save(Path.Combine(folder, $"frame_{frame + 1:00000}.png"), RasterImage.FromBgra32(width, height, bytes));
                 written++;

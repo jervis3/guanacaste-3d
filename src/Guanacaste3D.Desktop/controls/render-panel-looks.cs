@@ -139,6 +139,8 @@ public partial class RenderPanel
         HighlightDim = (float)HighlightDimSlider.Value,
         Rain = (float)RainSlider.Value,
         Snow = (float)SnowSlider.Value,
+        Fires = FiresForFinish(),
+        FireSeconds = (float)_playTime,
         LensFlare = (float)LensFlareSlider.Value,
         LightRays = (float)LightRaysSlider.Value,
         TiltShift = (float)TiltShiftSlider.Value,

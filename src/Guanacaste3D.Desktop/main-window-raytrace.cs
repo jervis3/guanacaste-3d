@@ -82,6 +82,8 @@ public partial class MainWindow
         public Task<RenderScene?> GetSceneAsync(IReadOnlySet<Guid> hiddenLevels) => window.GetSceneAsync(hiddenLevels);
         public IReadOnlyList<Level> Levels => window._session.Document.Levels;
         public ProjectSite Site => window._session.Document.Site;
+        public IReadOnlyList<FireEmitter> GetFires() => Fires.Of(window._session.Document);
+        public void SetFires(IReadOnlyList<FireEmitter> fires) => window._session.SetExtension(Fires.Key, Fires.Serialize(fires));
         public IReadOnlyList<Actor> GetActors() => Actors.Of(window._session.Document);
         public void SetActors(IReadOnlyList<Actor> actors) => window._session.SetExtension(Actors.Key, Actors.Serialize(actors));
         public OceanSettings GetOcean() => Ocean.Of(window._session.Document);
@@ -350,6 +352,9 @@ public partial class MainWindow
                 kind => kind == SurfaceKind.Ocean ? Ocean.Material(sea) : stock(kind),
                 (id, kind) => kind == SurfaceKind.Ocean ? Ocean.Material(sea) : perElement(id, kind));
             foreach (var (link, loaded) in links) builder.AddModel(loaded.Model, link.Placement);
+            // Flames light their surroundings: one warm point light for each fire that has them.
+            foreach (var fire in Fires.Of(document))
+                if (Fires.Light(fire) is { } glow) builder.AddLight(glow);
             // The people go in last: they are the one block the movie moves, from the place they start at.
             if (ActorRig.Of(document, CarLibrary.Load) is { } people)
             {
