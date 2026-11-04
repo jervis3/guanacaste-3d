@@ -38,7 +38,19 @@ public enum SurfacePattern : byte
     /// <summary>Small, calm ripples for a pool or a basin.</summary>
     Ripples,
     /// <summary>Open-sea waves of several lengths, with white caps on the crests.</summary>
-    Waves
+    Waves,
+    /// <summary>Fine parallel lines along one direction, as left on steel by a wire brush.</summary>
+    Brushed,
+    /// <summary>A 2×2 twill weave of carbon fibre under clear lacquer.</summary>
+    CarbonFiber,
+    /// <summary>A sheet with staggered round holes, a metal grill.</summary>
+    Perforated,
+    /// <summary>Blue paint flaking off to show orange-brown rust.</summary>
+    RustPaint,
+    /// <summary>Green verdigris streaks and grime, as on old copper.</summary>
+    Patina,
+    /// <summary>Black rubber faded and scuffed by use.</summary>
+    WornRubber
 }
 
 /// <summary>

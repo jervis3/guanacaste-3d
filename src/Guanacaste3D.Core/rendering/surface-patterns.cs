@@ -128,6 +128,13 @@ internal static partial class SurfacePatterns
             case SurfacePattern.Ripples:
             case SurfacePattern.Waves:
                 return WaterTone(pattern, scale, u, v);
+            case SurfacePattern.Brushed:
+            case SurfacePattern.CarbonFiber:
+            case SurfacePattern.Perforated:
+            case SurfacePattern.RustPaint:
+            case SurfacePattern.Patina:
+            case SurfacePattern.WornRubber:
+                return MaterialTone(pattern, u, v);
             case SurfacePattern.Bark:
             {
                 var furrows = ValueNoise(u * 18f, v * 1.6f);
@@ -290,6 +297,13 @@ internal static partial class SurfacePatterns
                 var leaves = ValueNoise(worldU * 23f, worldV * 23f) * 0.008f * fade;
                 return clumps + leaves;
             }
+            case SurfacePattern.Brushed:
+            case SurfacePattern.CarbonFiber:
+            case SurfacePattern.Perforated:
+            case SurfacePattern.RustPaint:
+            case SurfacePattern.Patina:
+            case SurfacePattern.WornRubber:
+                return MaterialHeight(pattern, u, v, fade);
             case SurfacePattern.Bark:
                 return ValueNoise(worldU * 18f, worldV * 1.6f) * 0.012f + ValueNoise(worldU * 60f, worldV * 6f) * 0.002f * fade;
             case SurfacePattern.Fabric:

@@ -206,6 +206,38 @@ internal static partial class InteractionChecks
                     material.TexturePath == "builtin:tree-bark-guanacaste"),
                 "Clicking a thumbnail assigns its stable built-in texture key through the real project material transaction");
 
+            // The big Lumion-style library: lit balls by category, named, applied with one click.
+            target.SelectedItem = target.Items.OfType<ComboBoxItem>().First(item => item.Tag is SurfaceKind.Metal);
+            ((Button)panel.FindName("MaterialPickerButton")).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Pump();
+            var picker = Application.Current.Windows.Cast<Window>().FirstOrDefault(window => window.GetType().Name == "MaterialPickerWindow");
+            Check(picker is not null, "The materials button opens the big library window");
+            if (picker is not null)
+            {
+                static IEnumerable<T> Descendants<T>(DependencyObject root) where T : DependencyObject
+                {
+                    for (var i = 0; i < System.Windows.Media.VisualTreeHelper.GetChildrenCount(root); i++)
+                    {
+                        var child = System.Windows.Media.VisualTreeHelper.GetChild(root, i);
+                        if (child is T match) yield return match;
+                        foreach (var inner in Descendants<T>(child)) yield return inner;
+                    }
+                }
+                Pump();
+                var grid = Descendants<WrapPanel>(picker).First(wrap => wrap.Children.Count > 20);
+                var names = grid.Children.OfType<Border>().SelectMany(tile => Descendants<TextBlock>(tile)).Select(text => text.Text).ToList();
+                Check(names.Contains("Acero") && names.Contains("Caucho negro") && names.Contains("Fibra de carbono"),
+                    "The library lists metals, rubbers and plastics by name under each ball");
+                var steel = grid.Children.OfType<Border>().First(tile => Descendants<TextBlock>(tile).Any(text => text.Text == "Acero"));
+                steel.RaiseEvent(new System.Windows.Input.MouseButtonEventArgs(System.Windows.Input.Mouse.PrimaryDevice, 0, System.Windows.Input.MouseButton.Left)
+                    { RoutedEvent = UIElement.MouseLeftButtonUpEvent });
+                Pump();
+                Check(Field<DocumentSession>("_session").Document.RenderMaterials.Any(material => material.TexturePath == "material:metal-steel"),
+                    "One click on a ball applies that material to the chosen surface");
+                picker.Close();
+            }
+            target.SelectedItem = target.Items.OfType<ComboBoxItem>().First(item => item.Tag is SurfaceKind.Bark);
+
             // A referenced .g3dm appears as a picture in the same gallery, without a filesystem scan.
             var libraryType = typeof(MainWindow).Assembly.GetType("Guanacaste3D.Desktop.RenderTextureLibrary")!;
             var sourceImage = (string)libraryType.GetMethod("Resolve", BindingFlags.Public | BindingFlags.Static)!

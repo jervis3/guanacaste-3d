@@ -776,6 +776,9 @@
                   <TextBlock x:Name="MaterialScopeInfo" Style="{StaticResource PanelHint}" Text="Material general por categoría"/>
                   <Button x:Name="MaterialScopeReset" Visibility="Collapsed" Content="Volver a materiales generales"
                           HorizontalAlignment="Left" Margin="0,6,0,3" Padding="8,4" Click="MaterialScopeReset_Click"/>
+                  <Button x:Name="MaterialPickerButton" Content="Biblioteca de materiales (esferas)…" Margin="0,12,0,0" Padding="10,8"
+                          HorizontalAlignment="Stretch" FontWeight="SemiBold" Click="MaterialPicker_Click"
+                          ToolTip="Abre la biblioteca grande: esferas agrupadas por tipo, un clic aplica el material a la superficie elegida"/>
                   <!-- Eight thumbnails per page, generated off the UI thread only when expanded. -->
                   <Expander x:Name="GalleryExpander" IsExpanded="True" Margin="0,12,0,12"
                             Expanded="GalleryExpanded" Collapsed="GalleryCollapsed"

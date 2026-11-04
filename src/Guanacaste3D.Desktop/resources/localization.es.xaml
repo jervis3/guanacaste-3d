@@ -85,6 +85,7 @@
   <sys:String x:Key="MaterialFamily.Fabric">Telas y cuero</sys:String>
   <sys:String x:Key="MaterialFamily.Outdoor">Exteriores</sys:String>
   <sys:String x:Key="MaterialFamily.Finish">Otros acabados</sys:String>
+  <sys:String x:Key="MaterialFamily.Plastic">Plásticos y cauchos</sys:String>
   <sys:String x:Key="MaterialFamily.Textures">Texturas</sys:String>
   <sys:String x:Key="Material.WallConcrete">Muros de concreto visto</sys:String>
   <sys:String x:Key="Material.WallWood">Revestimientos de madera</sys:String>

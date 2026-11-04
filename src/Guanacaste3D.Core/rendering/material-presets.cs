@@ -3,7 +3,7 @@ using System.Numerics;
 namespace Guanacaste3D.Core.Rendering;
 
 /// <summary>The group a material preset is listed under.</summary>
-public enum MaterialFamily { Paint, Concrete, Masonry, Stone, Wood, Floor, Metal, Glass, Fabric, Outdoor, Finish }
+public enum MaterialFamily { Paint, Concrete, Masonry, Stone, Wood, Floor, Metal, Glass, Fabric, Outdoor, Finish, Plastic }
 
 /// <summary>
 /// A ready-made physically based material: its colour, roughness, metalness, transparency and, when it has one, the
@@ -73,7 +73,7 @@ public static class MaterialPresets
             Matte("Adoquín gris", .35f, .36f, .34f, .92f, SurfacePattern.Blocks, 1)),
         new("nicaragua-polished-cement", "Piso de concreto afinado", MaterialFamily.Concrete,
             Matte("Piso de concreto afinado", .51f, .50f, .46f, .33f, SurfacePattern.PouredConcrete, 1.4f)),
-        new("nicaragua-pvc-white", "PVC blanco satinado", MaterialFamily.Finish,
+        new("nicaragua-pvc-white", "PVC blanco satinado", MaterialFamily.Plastic,
             Matte("PVC blanco", .72f, .72f, .69f, .32f)),
         new("nicaragua-galvanized", "Acero galvanizado", MaterialFamily.Metal,
             Metal("Acero galvanizado", .56f, .59f, .60f, .42f)),
@@ -180,8 +180,8 @@ public static class MaterialPresets
 
         // Other finishes.
         new("ceramic-sanitary", "Porcelana sanitaria", MaterialFamily.Finish, MaterialLibrary.ForKind(Geometry.SurfaceKind.Ceramic)),
-        new("plastic-white", "Plástico blanco", MaterialFamily.Finish, Matte("Plástico blanco", 0.80f, 0.80f, 0.78f, 0.3f)),
-        new("rubber", "Caucho", MaterialFamily.Finish, MaterialLibrary.ForKind(Geometry.SurfaceKind.Rubber)),
+        new("plastic-white", "Plástico blanco", MaterialFamily.Plastic, Matte("Plástico blanco", 0.80f, 0.80f, 0.78f, 0.3f)),
+        new("rubber", "Caucho", MaterialFamily.Plastic, MaterialLibrary.ForKind(Geometry.SurfaceKind.Rubber)),
         new("car-paint-red", "Pintura de auto roja", MaterialFamily.Finish, new RenderMaterial
         {
             Name = "Pintura de auto roja", BaseColor = new(0.42f, 0.02f, 0.02f), Roughness = 0.08f, Metallic = 0.3f
@@ -190,7 +190,53 @@ public static class MaterialPresets
         {
             Name = "Pintura de auto blanca", BaseColor = new(0.80f, 0.80f, 0.79f), Roughness = 0.1f, Metallic = 0.1f
         })
-    }).Concat(ExpandedCatalog()).ToArray();
+    }).Concat(ReferenceCatalog()).Concat(ExpandedCatalog()).ToArray();
+
+    /// <summary>
+    /// Materials that a visualiser reaches for first, as in the reference sheets of Lumion and V-Ray: the metals one by one (steel,
+    /// iron, brushed, galvanized, lead, dirty copper, grill, pearl, rust under paint), plastics and rubbers, hard natural
+    /// surfaces and living ones. Each is told apart by what the ball shows: gloss, metal, and a pattern where the real thing has one.
+    /// </summary>
+    private static IEnumerable<MaterialPreset> ReferenceCatalog()
+    {
+        MaterialPreset Patterned(string id, string name, MaterialFamily group, float r, float g, float b, float roughness, float metallic,
+            SurfacePattern pattern, float scale = 1) =>
+            new(id, name, group, new RenderMaterial { Name = name, BaseColor = new(r, g, b), Roughness = roughness, Metallic = metallic, Pattern = pattern, PatternScale = scale });
+
+        // Metals.
+        yield return Patterned("metal-steel", "Acero", MaterialFamily.Metal, .56f, .57f, .58f, .16f, 1, SurfacePattern.None);
+        yield return Patterned("metal-iron", "Hierro", MaterialFamily.Metal, .24f, .24f, .25f, .5f, 1, SurfacePattern.Patina, 2.5f);
+        yield return Patterned("metal-brushed", "Metal cepillado", MaterialFamily.Metal, .66f, .66f, .67f, .32f, 1, SurfacePattern.Brushed);
+        yield return Patterned("metal-aluminium-brushed", "Aluminio cepillado", MaterialFamily.Metal, .88f, .89f, .9f, .3f, 1, SurfacePattern.Brushed, 1.5f);
+        yield return Patterned("metal-galvanized-spangle", "Galvanizado", MaterialFamily.Metal, .50f, .53f, .56f, .42f, 1, SurfacePattern.Concrete, .15f);
+        yield return Patterned("metal-lead", "Plomo", MaterialFamily.Metal, .32f, .33f, .37f, .22f, 1, SurfacePattern.None);
+        yield return Patterned("metal-copper-dirty", "Cobre sucio", MaterialFamily.Metal, .85f, .5f, .4f, .38f, 1, SurfacePattern.Patina);
+        yield return Patterned("metal-grill", "Rejilla metálica", MaterialFamily.Metal, .60f, .61f, .62f, .28f, 1, SurfacePattern.Perforated);
+        yield return Patterned("metal-pearl", "Perla decorativa", MaterialFamily.Metal, .86f, .86f, .88f, .07f, .75f, SurfacePattern.None);
+        yield return Patterned("metal-rust-paint", "Metal oxidado con pintura", MaterialFamily.Metal, .07f, .26f, .55f, .62f, .6f, SurfacePattern.RustPaint);
+        yield return Patterned("metal-gold", "Oro", MaterialFamily.Metal, .98f, .78f, .34f, .14f, 1, SurfacePattern.None);
+
+        // Plastics and rubbers.
+        yield return Patterned("plastic-carbon-fiber", "Fibra de carbono", MaterialFamily.Plastic, .035f, .035f, .04f, .12f, 0, SurfacePattern.CarbonFiber);
+        yield return Patterned("plastic-glossy-black", "Plástico brillante", MaterialFamily.Plastic, .02f, .02f, .022f, .06f, 0, SurfacePattern.None);
+        yield return Patterned("plastic-rough", "Plástico rugoso", MaterialFamily.Plastic, .22f, .30f, .32f, .7f, 0, SurfacePattern.Concrete, .08f);
+        yield return Patterned("plastic-red", "Plástico rojo", MaterialFamily.Plastic, .55f, .04f, .04f, .22f, 0, SurfacePattern.None);
+        yield return Patterned("plastic-blue", "Plástico azul", MaterialFamily.Plastic, .04f, .14f, .5f, .22f, 0, SurfacePattern.None);
+        yield return Patterned("rubber-black", "Caucho negro", MaterialFamily.Plastic, .03f, .03f, .032f, .8f, 0, SurfacePattern.Concrete, .08f);
+        yield return Patterned("rubber-worn", "Caucho desgastado", MaterialFamily.Plastic, .05f, .05f, .052f, .88f, 0, SurfacePattern.WornRubber);
+        yield return Patterned("tarp", "Lona", MaterialFamily.Plastic, .28f, .34f, .36f, .65f, 0, SurfacePattern.Fabric, .8f);
+
+        // Hard natural and mineral surfaces.
+        yield return Patterned("asphalt-worn", "Asfalto gastado", MaterialFamily.Stone, .06f, .06f, .065f, .95f, 0, SurfacePattern.Asphalt, 1.5f);
+        yield return Patterned("concrete-weathered", "Concreto envejecido", MaterialFamily.Concrete, .36f, .36f, .35f, .88f, 0, SurfacePattern.PouredConcrete, .9f);
+        yield return Patterned("cobblestone", "Adoquín de piedra", MaterialFamily.Stone, .09f, .09f, .10f, .8f, 0, SurfacePattern.StoneMasonry, .5f);
+        yield return Patterned("sand", "Arena", MaterialFamily.Outdoor, .55f, .46f, .30f, .97f, 0, SurfacePattern.Concrete, .05f);
+
+        // Living surfaces.
+        yield return Patterned("bark-pine", "Corteza de pino", MaterialFamily.Outdoor, .16f, .10f, .065f, .92f, 0, SurfacePattern.Bark, 2);
+        yield return Patterned("moss", "Musgo", MaterialFamily.Outdoor, .10f, .22f, .05f, .97f, 0, SurfacePattern.Grass, .4f);
+        yield return Patterned("snow", "Nieve", MaterialFamily.Outdoor, .85f, .88f, .92f, .6f, 0, SurfacePattern.Concrete, .06f);
+    }
 
     /// <summary>Additional physically based colour/finish variations without external texture dependencies.</summary>
     private static IEnumerable<MaterialPreset> ExpandedCatalog()
