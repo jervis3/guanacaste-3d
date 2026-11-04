@@ -175,6 +175,7 @@ public sealed partial class PathTracer
         if (glassTriangles.Count > 0)
             _portalCandidates = SkyPortals.TryCreate(scene, glassTriangles, _opaque, _rayEpsilon);
         ApplySettings(_settings);
+        RebuildWetness();
         _buildMilliseconds = buildClock.Elapsed.TotalMilliseconds;
         AllocateImageBuffers(width, height);
     }
@@ -275,6 +276,7 @@ public sealed partial class PathTracer
     {
         ArgumentNullException.ThrowIfNull(settings);
         ApplySettings(settings);
+        RebuildWetness();
         _radianceCache?.Clear();   // light changed, so what was cached no longer describes the scene
         Reset();
     }
@@ -1210,6 +1212,9 @@ public sealed partial class PathTracer
             var bent = SurfacePatterns.MapNormal(normal, sample);
             if (Vector3.Dot(bent, direction) < -0.05f) normal = bent;
         }
+        // Rain: level ground under open sky is wet (darker, glossier, with puddles and rings).
+        if (_damp is not null && Wet(material, position, geometric, detailed, hit.Distance, ref diffuse, ref normal, direction) is { } wetSurface)
+            materialAtPoint = wetSurface;
         return new ShadePoint(position, geometric, normal, diffuse, material, materialAtPoint);
     }
 

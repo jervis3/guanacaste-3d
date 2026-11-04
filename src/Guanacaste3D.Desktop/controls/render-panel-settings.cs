@@ -207,6 +207,7 @@ public partial class RenderPanel
         return lighting with
         {
             AerialPerspective = HazeCheck.IsChecked == true ? 1f : 0f,
+            Wetness = (float)WetnessSlider.Value,
             CloudCover = _hdriEnvironment is null ? (float)(CloudSlider.Value / 100) : 0f,
             Clouds = SelectedClouds(),
             CloudSeed = (uint)CloudSeedSlider.Value,

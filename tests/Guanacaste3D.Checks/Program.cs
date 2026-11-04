@@ -631,6 +631,7 @@ RenderDecalChecks.Run(Check);
 RenderCameraEffectChecks.Run(Check);
 RenderWaterChecks.Run(Check);
 RenderPeopleChecks.Run(Check);
+RenderWetChecks.Run(Check);
 RenderFireChecks.Run(Check);
 await RenderMotionChecks.Run(Check);
 RenderWeatherChecks.Run(Check);

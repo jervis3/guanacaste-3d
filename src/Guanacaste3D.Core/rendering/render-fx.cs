@@ -62,6 +62,8 @@ public static class RenderFx
             [Slider("RainSlider", "Intensidad", start: 0.5)], Featured: true),
         new("snow", "Nieve", "Copos que caen y nieve blanca sobre lo que mira hacia arriba", FxCategory.Weather, "",
             [Slider("SnowSlider", "Intensidad", start: 0.6)], Featured: true),
+        new("wet", "Suelo mojado", "El suelo bajo el cielo abierto se oscurece, brilla y forma charcos con ondas de lluvia", FxCategory.Weather, "",
+            [Slider("WetnessSlider", "Intensidad", start: 0.6)], Featured: true),
         new("vignette", "Viñeta", "Oscurece las esquinas de la imagen", FxCategory.Camera, "",
             [Toggle("VignetteCheck", "Activada", neutral: false)], Featured: true),
         new("dof", "Profundidad de campo", "Desenfoca lo que está lejos o cerca de la distancia de enfoque", FxCategory.Camera, "",

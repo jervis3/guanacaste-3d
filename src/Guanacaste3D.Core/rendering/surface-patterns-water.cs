@@ -75,3 +75,39 @@ internal static partial class SurfacePatterns
         return new Vector3(tone + 7f * foam);
     }
 }
+
+internal static partial class SurfacePatterns
+{
+    /// <summary>
+    /// How much of a point of level ground is under a puddle, 0 (dry) to 1 (a pool), for a wetness of 0–1: water collects where
+    /// the noise of the ground's gentle unevenness is high, so more of the ground floods as the wetness grows, in patches of
+    /// a metre or two with soft edges.
+    /// </summary>
+    public static float Puddles(Vector3 position, float wetness)
+    {
+        if (!(wetness > 0.001f)) return 0;
+        var unevenness = 0.65f * ValueNoise(position.X * 0.42f + 11, position.Y * 0.42f - 5) + 0.35f * ValueNoise(position.X * 1.3f - 3, position.Y * 1.3f + 8);
+        var level = 1 - Math.Clamp(wetness, 0f, 1f) * 0.62f;
+        return SmoothStep(level, level + 0.06f, unevenness);
+    }
+
+    /// <summary>
+    /// The slope of the rings that raindrops leave on a puddle: in each half-metre cell, one drop at a fixed place sends out a few
+    /// thin rings that fade within twenty centimetres. Returned as the slope along the plane's two axes, for <see cref="Bend"/>.
+    /// </summary>
+    public static (float SlopeU, float SlopeV) RainRings(Vector3 position, float viewDistance = 0)
+    {
+        // Rings a few centimetres across are finer than a pixel from a distance and would only shimmer: they fade out with it.
+        var fade = 1 / (1 + viewDistance * viewDistance / 225f);
+        const float cell = 0.55f, reach = 0.26f, wavelength = 0.11f, amplitude = 0.0035f;
+        int cx = (int)MathF.Floor(position.X / cell), cy = (int)MathF.Floor(position.Y / cell);
+        var centreX = (cx + 0.2f + 0.6f * Hash01(cx * 7 + 1, cy * 13 + 3)) * cell;
+        var centreY = (cy + 0.2f + 0.6f * Hash01(cx * 11 + 5, cy * 5 + 9)) * cell;
+        float dx = position.X - centreX, dy = position.Y - centreY;
+        var distance = MathF.Sqrt(dx * dx + dy * dy);
+        if (distance >= reach || distance < 1e-4f) return (0, 0);
+        var phase = Hash01(cx * 3 + 17, cy * 19 + 2) * 6.2832f;
+        var slope = fade * amplitude * (2 * MathF.PI / wavelength) * MathF.Cos(distance * 2 * MathF.PI / wavelength - phase) * (1 - distance / reach);
+        return (slope * dx / distance, slope * dy / distance);
+    }
+}

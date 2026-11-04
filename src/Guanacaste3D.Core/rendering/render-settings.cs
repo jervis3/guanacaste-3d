@@ -84,6 +84,8 @@ public sealed record RenderSettings
     public int AdaptiveMinimumSamples { get; init; } = 16;
     /// <summary>Caps the radiance of one noisy indirect sample (0 disables), trading a little energy for no white speckles.</summary>
     public float FireflyClamp { get; init; } = 10f;
+    /// <summary>Wet ground after rain, 0–1 (0 is dry): level surfaces that see the sky darken, turn glossy and collect puddles with raindrop rings.</summary>
+    public float Wetness { get; init; }
     /// <summary>
     /// Candidate lights examined per shading point. Where more lights than this can reach a point, one is chosen by
     /// resampled importance sampling, so cost stays flat as luminaires multiply; 0 evaluates every light every time.
