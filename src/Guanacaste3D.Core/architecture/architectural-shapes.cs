@@ -81,7 +81,7 @@ public static class ArchitecturalShapes
     {
         StructuralElementKind.Beam or StructuralElementKind.Brace or StructuralElementKind.Truss =>
             [ElementStyle.Default, ElementStyle.IShape, ElementStyle.Tee],
-        StructuralElementKind.Component or StructuralElementKind.IsolatedFoundation or StructuralElementKind.Downspout =>
+        StructuralElementKind.Component or StructuralElementKind.IsolatedFoundation or StructuralElementKind.Downspout or StructuralElementKind.Bolt =>
             [ElementStyle.Default, ElementStyle.Round],
         StructuralElementKind.Railing =>
             [ElementStyle.Default, ElementStyle.Pickets, ElementStyle.GlassPanel, ElementStyle.Cable, ElementStyle.SolidParapet],
@@ -113,10 +113,12 @@ public static class ArchitecturalShapes
                     (element.Depth != 0 || element.ComponentShape != ResidentialComponentShape.Box ||
                      element.ComponentCategory != ResidentialComponentCategory.None)))
                 throw new InvalidDataException("Invalid component family geometry.");
-            if (element.HasSolid && element.Kind is not (StructuralElementKind.Dormer or StructuralElementKind.Skylight or StructuralElementKind.Mass) &&
+            if (element.HasSolid && element.Kind is not (StructuralElementKind.Dormer or StructuralElementKind.Skylight or StructuralElementKind.Mass or StructuralElementKind.Plate) &&
                 (!double.IsFinite(element.Width) || !double.IsFinite(element.Height) || !double.IsFinite(element.Offset) ||
                  element.Width is < 0.005 or > 50 || element.Height is <= 0 or > 100 || element.Offset is < -100 or > 1000))
                 throw new InvalidDataException("Invalid ramp, gutter, downspout, curtain wall or skylight geometry.");
+            if (element.Cuts is { } cuts && (cuts.Count > MemberCuts.MaximumCuts || cuts.Any(cut => cut is null || !cut.IsValid)))
+                throw new InvalidDataException("The cut is invalid.");
             if (!double.IsFinite(element.GridWidth) || !double.IsFinite(element.GridHeight) ||
                 element.GridWidth != 0 && element.GridWidth is < 0.2 or > 20 ||
                 element.GridHeight != 0 && element.GridHeight is < 0.2 or > 20)

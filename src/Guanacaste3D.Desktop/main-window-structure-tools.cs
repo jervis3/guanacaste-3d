@@ -58,7 +58,7 @@ public partial class MainWindow
                 StructuralElementKind.Dormer => "Status.DormerFirstCorner",
                 StructuralElementKind.Skylight => "Status.SkylightFirstCorner",
                 StructuralElementKind.Area => "Status.AreaFirstCorner",
-                StructuralElementKind.FilledRegion or StructuralElementKind.RevisionCloud or StructuralElementKind.Mass or StructuralElementKind.ParkingSpace => "Status.RegionFirstCorner",
+                StructuralElementKind.FilledRegion or StructuralElementKind.RevisionCloud or StructuralElementKind.Mass or StructuralElementKind.ParkingSpace or StructuralElementKind.Plate => "Status.RegionFirstCorner",
                 _ => "Status.OpeningFirstCorner"
             }),
             _ => FormatText("Status.StructuralFirstPoint", GetStructuralName(kind))
@@ -107,6 +107,7 @@ public partial class MainWindow
             else if (tool.Kind == StructuralElementKind.ViewReference) PlaceViewReference(point);
             else if (tool.Kind == StructuralElementKind.Keynote) PlaceKeynote(point);
             else if (tool.Kind == StructuralElementKind.Symbol) PlaceSymbol(point);
+            else if (tool.Kind == StructuralElementKind.Bolt && _pendingBolts is not null) PlaceBolts(point);
             else if (tool.Kind == StructuralElementKind.Opening) CreateOpeningFromTool(tool.Kind, point, point);
             else CreateStructuralFromTool(tool.Kind, point, point);
             return true;
@@ -127,7 +128,7 @@ public partial class MainWindow
                     GetText("Status.SkylightSecondCorner"),
                 StructuralPlacementMode.Rectangle when tool.Kind == StructuralElementKind.Area =>
                     GetText("Status.AreaSecondCorner"),
-                StructuralPlacementMode.Rectangle when tool.Kind is StructuralElementKind.FilledRegion or StructuralElementKind.RevisionCloud or StructuralElementKind.Mass or StructuralElementKind.ParkingSpace =>
+                StructuralPlacementMode.Rectangle when tool.Kind is StructuralElementKind.FilledRegion or StructuralElementKind.RevisionCloud or StructuralElementKind.Mass or StructuralElementKind.ParkingSpace or StructuralElementKind.Plate =>
                     GetText("Status.RegionSecondCorner"),
                 StructuralPlacementMode.Rectangle => GetText("Status.OpeningSecondCorner"),
                 _ => FormatText("Status.StructuralSecondPoint", GetStructuralName(tool.Kind))

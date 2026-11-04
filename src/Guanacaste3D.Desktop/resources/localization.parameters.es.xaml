@@ -155,6 +155,11 @@
   <sys:String x:Key="Transaction.ImportReviewMarks">Importar marcas de revisión</sys:String>
   <sys:String x:Key="Transaction.AddDuctStiffeners">Colocar rigidizadores en un ducto</sys:String>
   <sys:String x:Key="Transaction.AddRoute">Dibujar una ruta de varios puntos</sys:String>
+  <sys:String x:Key="Transaction.AddMemberCut">Cortar un miembro</sys:String>
+  <sys:String x:Key="Transaction.ClearMemberCuts">Quitar los cortes de un miembro</sys:String>
+  <sys:String x:Key="Transaction.ShortenMember">Acortar un miembro</sys:String>
+  <sys:String x:Key="Transaction.MiterMembers">Ensamblar miembros a inglete</sys:String>
+  <sys:String x:Key="Transaction.AddBoltPattern">Colocar un patrón de pernos</sys:String>
   <sys:String x:Key="Transaction.SetViewCategories">Cambiar categorías visibles de la vista</sys:String>
   <sys:String x:Key="Transaction.PasteWalls">Pegar muros</sys:String>
   <sys:String x:Key="Transaction.AddArcWall">Crear muro curvo</sys:String>

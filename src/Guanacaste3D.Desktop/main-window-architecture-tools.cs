@@ -26,10 +26,10 @@ public partial class MainWindow
             StructuralElementKind.Component or StructuralElementKind.Connection or
             StructuralElementKind.ModelText or StructuralElementKind.Planting or StructuralElementKind.ViewReference or StructuralElementKind.SpotElevation or
             StructuralElementKind.SpotCoordinate or StructuralElementKind.Keynote or StructuralElementKind.Symbol or StructuralElementKind.ColorLegend or StructuralElementKind.AirTerminal or
-            StructuralElementKind.MechanicalControlDevice => StructuralPlacementMode.Point,
+            StructuralElementKind.MechanicalControlDevice or StructuralElementKind.Bolt => StructuralPlacementMode.Point,
         StructuralElementKind.Skylight or StructuralElementKind.Area or StructuralElementKind.Dormer or
             StructuralElementKind.Opening or StructuralElementKind.Shaft or StructuralElementKind.FilledRegion or
-            StructuralElementKind.RevisionCloud or StructuralElementKind.Mass or StructuralElementKind.ParkingSpace => StructuralPlacementMode.Rectangle,
+            StructuralElementKind.RevisionCloud or StructuralElementKind.Mass or StructuralElementKind.ParkingSpace or StructuralElementKind.Plate => StructuralPlacementMode.Rectangle,
         _ => StructuralPlacementMode.Line
     };
 
@@ -326,6 +326,9 @@ public partial class MainWindow
         StructuralElementKind.AirTerminal => "Entity.AirTerminal",
         StructuralElementKind.MechanicalControlDevice => "Entity.MechanicalControlDevice",
         StructuralElementKind.DuctStiffener => "Entity.DuctStiffener",
+        StructuralElementKind.Plate => "Entity.Plate",
+        StructuralElementKind.Bolt => "Entity.Bolt",
+        StructuralElementKind.Weld => "Entity.Weld",
         StructuralElementKind.ParkingSpace => "Entity.ParkingSpace",
         _ => null
     };

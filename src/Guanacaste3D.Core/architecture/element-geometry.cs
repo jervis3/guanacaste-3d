@@ -24,6 +24,12 @@ public static class ElementGeometry
     public static IEnumerable<ElementPart> Parts(StructuralElement element)
     {
         if (!element.HasSolid) return [];
+        var parts = BaseParts(element);
+        return element.Cuts is { Count: > 0 } cuts && element.Length >= 0.01 ? MemberCuts.Apply(element, parts, cuts) : parts;
+    }
+
+    private static IEnumerable<ElementPart> BaseParts(StructuralElement element)
+    {
         return element.Kind switch
         {
             StructuralElementKind.Stair => StairParts(element),
@@ -38,7 +44,7 @@ public static class ElementGeometry
             StructuralElementKind.Planting => PlantGeometry.ProxyParts(element),
             StructuralElementKind.Component when element.ComponentShape != ResidentialComponentShape.Box =>
                 ResidentialComponentGeometry.Parts(element),
-            StructuralElementKind.Downspout or StructuralElementKind.Component or
+            StructuralElementKind.Downspout or StructuralElementKind.Component or StructuralElementKind.Bolt or
                 StructuralElementKind.IsolatedFoundation when element.Style == ElementStyle.Round => RoundPointParts(element),
             StructuralElementKind.Beam or StructuralElementKind.Brace or StructuralElementKind.Truss
                 when element.Style is ElementStyle.IShape or ElementStyle.Tee && element.Length >= 0.05 =>

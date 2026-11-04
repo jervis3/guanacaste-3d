@@ -164,7 +164,16 @@ public enum StructuralElementKind
     MechanicalControlDevice,
 
     /// <summary>A band that stiffens a duct; made by the duct stiffener command.</summary>
-    DuctStiffener
+    DuctStiffener,
+
+    /// <summary>A steel plate drawn between two corners; its height is its thickness.</summary>
+    Plate,
+
+    /// <summary>A bolt at a point; its width is its diameter.</summary>
+    Bolt,
+
+    /// <summary>A weld bead along a line.</summary>
+    Weld
 }
 
 /// <summary>Variant of an element's geometry. Which values apply depends on the element kind.</summary>
@@ -291,6 +300,9 @@ public sealed record StructuralElement(
     /// <summary>Geometry variant: beam section, guard type, stair type, or round point elements.</summary>
     public ElementStyle Style { get; init; }
 
+    /// <summary>Rectangles cut out of the member, from its top down; null when it has none. The list is never changed after it is set.</summary>
+    public List<MemberCut>? Cuts { get; init; }
+
     /// <summary>Drafting marks and openings have no solid of their own; openings only cut floor slabs.</summary>
     [JsonIgnore] public bool HasSolid => Kind is not (StructuralElementKind.ModelLine or StructuralElementKind.Opening
         or StructuralElementKind.Shaft or StructuralElementKind.ModelText or StructuralElementKind.ReferencePlane
@@ -322,7 +334,7 @@ public sealed record StructuralElement(
             if (Kind is StructuralElementKind.Opening or StructuralElementKind.Shaft or StructuralElementKind.Dormer
                     or StructuralElementKind.Skylight or StructuralElementKind.Area or StructuralElementKind.Elevator
                     or StructuralElementKind.FilledRegion or StructuralElementKind.RevisionCloud or StructuralElementKind.Mass
-                    or StructuralElementKind.ParkingSpace && length >= 1e-9)
+                    or StructuralElementKind.ParkingSpace or StructuralElementKind.Plate && length >= 1e-9)
                 return Geometry.SlabOpenings.Corners(PlanExtent);
             if (length < 1e-9)
             {
@@ -395,6 +407,10 @@ public static class StructuralElementStandards
         StructuralElementKind.AirTerminal => (0.60, 0.12, 2.70),
         StructuralElementKind.MechanicalControlDevice => (0.12, 0.12, 1.50),
         StructuralElementKind.DuctStiffener => (0.48, 0.38, 2.56),
+        // Steel: a 12 mm plate, a 20 mm bolt 80 mm long and an 8 mm weld bead.
+        StructuralElementKind.Plate => (0, 0.012, 1.0),
+        StructuralElementKind.Bolt => (0.02, 0.08, 1.0),
+        StructuralElementKind.Weld => (0.008, 0.008, 1.0),
         // A mass of two storeys is the usual first sketch of a building.
         StructuralElementKind.Mass => (0, 6.0, 0),
         // Batting 10 cm thick, the usual insulation of a masonry wall.

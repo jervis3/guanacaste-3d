@@ -875,6 +875,64 @@ internal static partial class InteractionChecks
                 System.IO.File.Delete(schematicFile);
                 ClickIn("_schematicWindow", "SchematicClose");
 
+                // Steel: plate, weld and bolt tools, and the cuts and fittings of the selected member.
+                foreach (var (command, kind, mode) in new[] { ("Plate", StructuralElementKind.Plate, "Rectangle"), ("Welds", StructuralElementKind.Weld, "Line") })
+                {
+                    Invoke("ExecuteApplicationCommand", command);
+                    Check(Field<object>("_structuralTool").ToString() == $"({kind}, {mode})", $"{command} arms the {kind} tool");
+                    Invoke("CancelStructuralTool");
+                }
+                Answer("2 2 0.075 0.02");
+                Invoke("ExecuteApplicationCommand", "Bolts");
+                Check(Field<object>("_structuralTool").ToString() == "(Bolt, Point)", "Bolts asks for the pattern and arms a click");
+                var boltsBefore = session.Document.StructuralElements.Count(item => item.Kind == StructuralElementKind.Bolt);
+                Invoke("PlaceBolts", new Point2(690, 690));
+                Check(session.Document.StructuralElements.Count(item => item.Kind == StructuralElementKind.Bolt) == boltsBefore + 4, "The click places the 4 bolts of the pattern");
+                Invoke("CancelStructuralTool");
+
+                Invoke("CreateStructuralFromTool", StructuralElementKind.Beam, new Point2(700, 700), new Point2(706, 700));
+                var steelBeam = session.Document.StructuralElements.Last();
+                Invoke("CreateStructuralFromTool", StructuralElementKind.Beam, new Point2(703, 695), new Point2(703, 705));
+                var crossingBeam = session.Document.StructuralElements.Last();
+                SetField("_selectedStructuralId", (Guid?)steelBeam.Id);
+                Answer("final 0.5 0.05");
+                Invoke("ExecuteApplicationCommand", "Cope");
+                Check(session.Document.StructuralElements.Single(item => item.Id == steelBeam.Id).Cuts is { Count: 1 }, "Cope notches the end of the selected beam");
+                Answer("inicio 0.4 0.05 0.5");
+                Invoke("ExecuteApplicationCommand", "ParametricCope");
+                Check(session.Document.StructuralElements.Single(item => item.Id == steelBeam.Id).Cuts is { Count: 2 }, "Parametric Cope adds a notch across half the width");
+                Answer("2 0.2");
+                Invoke("ExecuteApplicationCommand", "CutThrough");
+                Check(session.Document.StructuralElements.Single(item => item.Id == steelBeam.Id).Cuts is { Count: 3 }, "Cut Through adds a slot across the beam");
+                Answer("1.2 -0.05 0.2 0.1");
+                Invoke("ExecuteApplicationCommand", "ContourCut");
+                Check(session.Document.StructuralElements.Single(item => item.Id == steelBeam.Id).Cuts is { Count: 4 }, "Contour Cut adds a hole through the beam");
+                Answer("final 0.2");
+                var lengthBeforeShortening = session.Document.StructuralElements.Single(item => item.Id == steelBeam.Id).Length;
+                Invoke("ExecuteApplicationCommand", "Shorten");
+                Check(Math.Abs(session.Document.StructuralElements.Single(item => item.Id == steelBeam.Id).Length - (lengthBeforeShortening - 0.2)) < 1e-9, "Shorten takes 20 cm off the end");
+                Answer("hola esto no vale");
+                Invoke("ExecuteApplicationCommand", "Cope");
+                Check(session.Document.StructuralElements.Single(item => item.Id == steelBeam.Id).Cuts is { Count: 4 }, "Values that make no sense change nothing");
+                Answer(crossingBeam.Name);
+                SetField("_selectedStructuralId", (Guid?)steelBeam.Id);
+                session.UpdateStructuralElement(crossingBeam.Id, crossingBeam.Name, 0.2, 3.0, -1.0, ElementStyle.Default);
+                Invoke("ExecuteApplicationCommand", "CutBy");
+                Check(session.Document.StructuralElements.Single(item => item.Id == steelBeam.Id).Cuts is { Count: 5 }, "Cut By cuts the selected beam where the named one passes through it");
+                Answer("nada");
+                SetField("_selectedStructuralId", (Guid?)steelBeam.Id);
+                Invoke("ExecuteApplicationCommand", "Miter");
+                Check(session.Document.StructuralElements.Single(item => item.Id == steelBeam.Id).Cuts is { Count: 5 }, "Mitring with a member that does not exist changes nothing");
+
+                Invoke("CreateStructuralFromTool", StructuralElementKind.Plate, new Point2(720, 700), new Point2(721, 700.6));
+                var steelPlate = session.Document.StructuralElements.Last();
+                SetField("_selectedStructuralId", (Guid?)steelPlate.Id);
+                Answer("1 0.1 0.1");
+                Invoke("ExecuteApplicationCommand", "CornerCut");
+                Check(session.Document.StructuralElements.Single(item => item.Id == steelPlate.Id).Cuts is { Count: 1 }, "Corner Cut clips a corner off the selected plate");
+                Invoke("RenderPlan");
+                Pump();
+
                 SetField("_viewSelection", null);
                 Pump();
                 tabs.SelectedIndex = 0;
