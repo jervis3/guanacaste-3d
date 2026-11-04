@@ -26,7 +26,12 @@ public static class MaterialBall
 
     private static Vector3 Environment(Vector3 d)
     {
-        var sky = Vector3.Lerp(new Vector3(0.05f, 0.055f, 0.06f), new Vector3(0.55f, 0.60f, 0.70f), Smooth(-0.25f, 0.55f, d.Y));
+        // Above the horizon a sky from pale haze to blue, below it a warm brown floor that darkens with depth; the line between
+        // them is crisp, which is what makes a polished metal read as polished.
+        var horizon = new Vector3(0.80f, 0.82f, 0.84f);
+        var above = Vector3.Lerp(horizon, new Vector3(0.24f, 0.40f, 0.72f), Smooth(0.0f, 0.75f, d.Y));
+        var below = Vector3.Lerp(new Vector3(0.34f, 0.26f, 0.19f), new Vector3(0.04f, 0.032f, 0.025f), Smooth(0.0f, 0.7f, -d.Y));
+        var sky = Vector3.Lerp(below, above, Smooth(-0.025f, 0.025f, d.Y));
         var key = 7f * Smooth(MathF.Cos(0.50f), MathF.Cos(0.34f), Vector3.Dot(d, Key));
         var strip = 3f * Smooth(0.12f, 0.03f, MathF.Abs(d.X - Strip.X)) * Smooth(0.0f, 0.15f, d.Z) * Smooth(-0.35f, -0.1f, d.Y) * Smooth(0.85f, 0.6f, d.Y);
         return sky + new Vector3(1f, 0.98f, 0.94f) * key + new Vector3(0.9f, 0.95f, 1f) * strip;

@@ -268,6 +268,25 @@ static class RenderLookChecks
             "Architectural filter catalog includes at least twenty uniquely identified looks");
         check(Enum.GetValues<MaterialFamily>().All(group => presets.Any(preset => preset.Group == group)),
             "Every material family has presets");
+        // Metals must be told apart on their balls: every pair of the common ones differs clearly, a mirror has a crisp horizon and a
+        // brushed metal shows streaks, which the plain ones do not.
+        var metalIds = new[] { "chrome", "metal-steel", "metal-iron", "metal-lead", "metal-pearl", "aluminium-natural", "copper", "brass", "metal-gold", "zinc", "steel-brushed" };
+        var balls = metalIds.ToDictionary(id => id, id => MaterialBall.Render(MaterialPresets.FromPath(MaterialPresets.Prefix + id)!.Material, 64));
+        double Gap(string a, string b)
+        {
+            double sum = 0;
+            var count = 0;
+            for (var i = 0; i < balls[a].Length; i += 4)
+            {
+                if (balls[a][i + 3] < 255 || balls[b][i + 3] < 255) continue;
+                sum += Math.Abs(balls[a][i] - balls[b][i]) + Math.Abs(balls[a][i + 1] - balls[b][i + 1]) + Math.Abs(balls[a][i + 2] - balls[b][i + 2]);
+                count++;
+            }
+            return sum / count / 3;
+        }
+        var closest = metalIds.SelectMany((a, i) => metalIds.Skip(i + 1).Select(b => (a, b, gap: Gap(a, b)))).OrderBy(pair => pair.gap).First();
+        check(closest.gap > 5,
+            $"The common metals look different on their balls: the two nearest ({closest.a} and {closest.b}) still differ by {closest.gap:0.0} levels");
         var oak = MaterialPresets.FromPath(MaterialPresets.Prefix + "oak-light")!;
         var chrome = MaterialPresets.FromPath(MaterialPresets.Prefix + "chrome")!;
         var texture = RenderTexture.FromRaster(new RasterImage(2, 2, [200, 150, 100, 200, 150, 100, 200, 150, 100, 200, 150, 100]));

@@ -138,15 +138,15 @@ public static class MaterialPresets
         new("ceramic-beige", "Cerámica beige", MaterialFamily.Floor, Matte("Cerámica beige", 0.58f, 0.50f, 0.40f, 0.3f, SurfacePattern.Tiles, 0.4f)),
 
         // Metals.
-        new("steel-brushed", "Acero inoxidable cepillado", MaterialFamily.Metal, Metal("Acero inoxidable cepillado", 0.62f, 0.62f, 0.63f, 0.3f)),
-        new("chrome", "Cromo pulido", MaterialFamily.Metal, Metal("Cromo pulido", 0.55f, 0.56f, 0.57f, 0.03f)),
+        new("steel-brushed", "Acero inoxidable cepillado", MaterialFamily.Metal, Metal("Acero inoxidable cepillado", 0.62f, 0.62f, 0.63f, 0.3f) with { Pattern = SurfacePattern.Brushed, PatternScale = 1 }),
+        new("chrome", "Cromo pulido", MaterialFamily.Metal, Metal("Cromo pulido", 0.96f, 0.96f, 0.97f, 0.015f)),
         new("aluminium-black", "Aluminio anodizado negro", MaterialFamily.Metal, Metal("Aluminio anodizado negro", 0.035f, 0.035f, 0.04f, 0.35f)),
-        new("aluminium-natural", "Aluminio natural", MaterialFamily.Metal, Metal("Aluminio natural", 0.91f, 0.92f, 0.92f, 0.28f)),
+        new("aluminium-natural", "Aluminio natural", MaterialFamily.Metal, Metal("Aluminio natural", 0.91f, 0.92f, 0.92f, 0.4f)),
         new("copper", "Cobre", MaterialFamily.Metal, Metal("Cobre", 0.95f, 0.64f, 0.54f, 0.22f)),
-        new("brass", "Latón", MaterialFamily.Metal, Metal("Latón", 0.91f, 0.78f, 0.42f, 0.25f)),
+        new("brass", "Latón", MaterialFamily.Metal, Metal("Latón", 0.80f, 0.68f, 0.36f, 0.34f)),
         new("bronze", "Bronce envejecido", MaterialFamily.Metal, Metal("Bronce envejecido", 0.45f, 0.30f, 0.17f, 0.45f)),
         new("corten", "Acero corten", MaterialFamily.Metal, Matte("Acero corten", 0.30f, 0.10f, 0.04f, 0.8f, SurfacePattern.Concrete, 0.6f)),
-        new("zinc", "Zinc", MaterialFamily.Metal, Metal("Zinc", 0.50f, 0.52f, 0.54f, 0.5f)),
+        new("zinc", "Zinc", MaterialFamily.Metal, Metal("Zinc", 0.50f, 0.52f, 0.54f, 0.5f) with { Pattern = SurfacePattern.Concrete, PatternScale = 0.45f }),
 
         // Glass.
         new("glass-clear", "Vidrio claro", MaterialFamily.Glass, Glass("Vidrio claro", new(0.86f, 0.92f, 0.94f))),
@@ -204,17 +204,17 @@ public static class MaterialPresets
             new(id, name, group, new RenderMaterial { Name = name, BaseColor = new(r, g, b), Roughness = roughness, Metallic = metallic, Pattern = pattern, PatternScale = scale });
 
         // Metals.
-        yield return Patterned("metal-steel", "Acero", MaterialFamily.Metal, .56f, .57f, .58f, .16f, 1, SurfacePattern.None);
-        yield return Patterned("metal-iron", "Hierro", MaterialFamily.Metal, .24f, .24f, .25f, .5f, 1, SurfacePattern.Patina, 2.5f);
+        yield return Patterned("metal-steel", "Acero", MaterialFamily.Metal, .50f, .53f, .58f, .24f, 1, SurfacePattern.None);
+        yield return Patterned("metal-iron", "Hierro fundido", MaterialFamily.Metal, .13f, .13f, .14f, .62f, 1, SurfacePattern.Concrete, .05f);
         yield return Patterned("metal-brushed", "Metal cepillado", MaterialFamily.Metal, .66f, .66f, .67f, .32f, 1, SurfacePattern.Brushed);
         yield return Patterned("metal-aluminium-brushed", "Aluminio cepillado", MaterialFamily.Metal, .88f, .89f, .9f, .3f, 1, SurfacePattern.Brushed, 1.5f);
         yield return Patterned("metal-galvanized-spangle", "Galvanizado", MaterialFamily.Metal, .50f, .53f, .56f, .42f, 1, SurfacePattern.Concrete, .15f);
-        yield return Patterned("metal-lead", "Plomo", MaterialFamily.Metal, .32f, .33f, .37f, .22f, 1, SurfacePattern.None);
+        yield return Patterned("metal-lead", "Plomo", MaterialFamily.Metal, .30f, .32f, .38f, .58f, 1, SurfacePattern.Concrete, .1f);
         yield return Patterned("metal-copper-dirty", "Cobre sucio", MaterialFamily.Metal, .85f, .5f, .4f, .38f, 1, SurfacePattern.Patina);
         yield return Patterned("metal-grill", "Rejilla metálica", MaterialFamily.Metal, .60f, .61f, .62f, .28f, 1, SurfacePattern.Perforated);
-        yield return Patterned("metal-pearl", "Perla decorativa", MaterialFamily.Metal, .86f, .86f, .88f, .07f, .75f, SurfacePattern.None);
+        yield return Patterned("metal-pearl", "Perla decorativa", MaterialFamily.Metal, .96f, .86f, .88f, .06f, .55f, SurfacePattern.None);
         yield return Patterned("metal-rust-paint", "Metal oxidado con pintura", MaterialFamily.Metal, .07f, .26f, .55f, .62f, .6f, SurfacePattern.RustPaint);
-        yield return Patterned("metal-gold", "Oro", MaterialFamily.Metal, .98f, .78f, .34f, .14f, 1, SurfacePattern.None);
+        yield return Patterned("metal-gold", "Oro", MaterialFamily.Metal, 1.0f, .72f, .20f, .09f, 1, SurfacePattern.None);
 
         // Plastics and rubbers.
         yield return Patterned("plastic-carbon-fiber", "Fibra de carbono", MaterialFamily.Plastic, .035f, .035f, .04f, .12f, 0, SurfacePattern.CarbonFiber);
