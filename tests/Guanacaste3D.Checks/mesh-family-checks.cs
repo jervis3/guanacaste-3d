@@ -161,6 +161,10 @@ static class MeshFamilyChecks
         check(sample.ComponentFamilies.Count >= 9 &&
               sample.StructuralElements.Count(element => element.FamilyId is not null) >= 70,
             "The saved breeze-block house opens with its jacarandas, cars, garden and indoor plants");
+        var sampleTree = sample.ComponentFamilies.Single(family => family.Name == BreezeBlockHouseShowcase.TreeFamily).Mesh!;
+        var sampleTrunk = sampleTree.Textures.Single(texture => texture.Name.Contains("trunk", StringComparison.OrdinalIgnoreCase));
+        check(sampleTrunk.Width == 2048 && sampleTrunk.Normal() is { Width: 2048, Height: 2048 },
+            "The saved house retains the detailed jacaranda trunk normal map");
         var fern = families.Single(family => family.Name == BreezeBlockHouseShowcase.FernFamily).Mesh!;
         check(fern.Textures.Count == 1 && fern.Textures[0].AlphaCutoff > 0 && fern.Decode().Uvs is not null &&
               fern.Decode().TriangleTextures!.All(texture => texture == 0),
