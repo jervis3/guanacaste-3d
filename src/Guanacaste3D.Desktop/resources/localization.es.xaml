@@ -870,6 +870,15 @@
   <sys:String x:Key="Fill.Metric.WindowRatio">Ventanas sobre el piso</sys:String>
   <sys:String x:Key="Fill.Metric.Perimeter">Perímetro</sys:String>
   <sys:String x:Key="Status.FillChanged">Relleno de resultados actualizado.</sys:String>
+  <sys:String x:Key="Steel.CutGeometry">Cortar geometría</sys:String>
+  <sys:String x:Key="Steel.CutProfile">Perfil de corte</sys:String>
+  <sys:String x:Key="Prompt.CutGeometry">Nombre del elemento que lo corta (por ejemplo Viga 2). En un muro, la parte de arriba sigue la cara inferior de ese elemento:</sys:String>
+  <sys:String x:Key="Prompt.CutProfile">Muesca que se quita del miembro: dónde empieza y dónde termina a lo largo, dónde empieza y dónde termina a lo ancho, y cuánto baja desde arriba (por ejemplo 0.5 1 -0.1 0.1 0.1):</sys:String>
+  <sys:String x:Key="Sketch.Title">Boceto 3D de una masa</sys:String>
+  <sys:String x:Key="Prompt.Sketch3D">Dos esquinas, la altura a la que empieza la masa sobre el nivel y su altura: x1 y1 x2 y2 elevación altura (por ejemplo 0 0 6 4 3 3):</sys:String>
+  <sys:String x:Key="Status.GeometryCut">Geometría cortada.</sys:String>
+  <sys:String x:Key="Status.NothingToCut">Seleccione primero un muro o un miembro para cortarlo.</sys:String>
+  <sys:String x:Key="Status.SketchMass">Masa creada a la elevación indicada.</sys:String>
   <sys:String x:Key="Status.NoViewForCategories">Abra una planta, un alzado, una sección o la vista 3D para cambiar sus categorías.</sys:String>
   <sys:String x:Key="Status.ViewCategoriesChanged">Categorías ocultas en esta vista: {0}.</sys:String>
   <sys:String x:Key="Status.SelectWallFirst">Seleccione primero un muro.</sys:String>

@@ -1100,6 +1100,53 @@ internal static partial class InteractionChecks
                 ClickIn("_fillWindow", "FillClose");
                 session.SetResultsMetric(ResultsMetric.None);
 
+                // Geometry tools: Cut Geometry on a wall and on a member, Cut Profile, and the 3D sketch of a mass.
+                var cutLevel = Field<Guid>("_activeLevelId");
+                var cutWall = session.AddWall(cutLevel, new Point2(800, 800), new Point2(810, 800), 0.2, 3);
+                Invoke("CreateStructuralFromTool", StructuralElementKind.Beam, new Point2(805, 798), new Point2(805, 802));
+                var lintel = session.Document.StructuralElements.Last();
+                session.UpdateStructuralElement(lintel.Id, "Dintel UI", lintel.Width, 0.6, 2.4, ElementStyle.Default);
+                SetField("_selectedStructuralId", (Guid?)null);
+                SetField("_selectedWallId", (Guid?)null);
+                Invoke("ExecuteApplicationCommand", "CutGeometry");
+                Check(!string.IsNullOrWhiteSpace(((System.Windows.Controls.TextBlock)opened.FindName("StatusText")).Text), "Cut Geometry with nothing selected says what is missing");
+                SetField("_selectedWallId", (Guid?)cutWall);
+                Answer("Dintel UI");
+                Invoke("ExecuteApplicationCommand", "CutGeometry");
+                var cutResult = session.Document.Walls.Single(wall => wall.Id == cutWall);
+                Check(cutResult.TopProfile is not null && Math.Abs(cutResult.TopHeightAt(5) - 2.4) < 1e-6 && Math.Abs(cutResult.TopHeightAt(1) - 3) < 1e-6, "Cut Geometry brings the top of the selected wall down to the underside of the beam named: " + ((System.Windows.Controls.TextBlock)opened.FindName("StatusText")).Text);
+                SetField("_selectedWallId", (Guid?)cutWall);
+                Answer("No existe");
+                var profileBefore = session.Document.Walls.Single(wall => wall.Id == cutWall).TopProfile!.Count;
+                Invoke("ExecuteApplicationCommand", "CutGeometry");
+                Check(session.Document.Walls.Single(wall => wall.Id == cutWall).TopProfile!.Count == profileBefore, "A name that matches no element cuts nothing");
+
+                Invoke("ExecuteApplicationCommand", "CutProfile");
+                Pump();
+                Check(Field<System.Windows.Window?>("_profileWindow") is { } profileWindow && profileWindow.IsVisible, "Cut Profile on a wall opens the wall profile editor");
+                Field<System.Windows.Window>("_profileWindow").Close();
+
+                Invoke("CreateStructuralFromTool", StructuralElementKind.Beam, new Point2(820, 800), new Point2(826, 800));
+                var notched = session.Document.StructuralElements.Last();
+                SetField("_selectedWallId", (Guid?)null);
+                SetField("_selectedStructuralId", (Guid?)notched.Id);
+                Answer("1 2 -0.1 0.1 0.1");
+                Invoke("ExecuteApplicationCommand", "CutProfile");
+                Check(session.Document.StructuralElements.Single(item => item.Id == notched.Id).Cuts is { Count: 1 }, "Cut Profile on a beam takes a notch out of it");
+                Answer("1 2 0.5 0.1 0.1");
+                Invoke("ExecuteApplicationCommand", "CutProfile");
+                Check(session.Document.StructuralElements.Single(item => item.Id == notched.Id).Cuts is { Count: 1 }, "A notch that ends before it starts is refused");
+
+                var massesAtStart = session.Document.StructuralElements.Count(item => item.Kind == StructuralElementKind.Mass);
+                Answer("830 830 836 834 3 2.5");
+                Invoke("ExecuteApplicationCommand", "Sketch3D");
+                var floatingMass = session.Document.StructuralElements.Where(item => item.Kind == StructuralElementKind.Mass).Skip(massesAtStart).SingleOrDefault();
+                Check(floatingMass is not null && Math.Abs(floatingMass.Offset - 3) < 1e-6 && Math.Abs(floatingMass.Height - 2.5) < 1e-6 && Field<Guid?>("_selectedStructuralId") == floatingMass.Id,
+                    "Sketch 3D makes a mass 3 m above the level and 2.5 m tall, and selects it");
+                Answer("0 0 0 4 3 3");
+                Invoke("ExecuteApplicationCommand", "Sketch3D");
+                Check(session.Document.StructuralElements.Count(item => item.Kind == StructuralElementKind.Mass) == massesAtStart + 1, "A sketch with a side of no length makes nothing");
+
                 SetField("_viewSelection", null);
                 Pump();
                 tabs.SelectedIndex = 0;

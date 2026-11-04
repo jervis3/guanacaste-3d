@@ -132,6 +132,10 @@
   <sys:String x:Key="Error.The zone does not exist.">La zona no existe.</sys:String>
   <sys:String x:Key="Error.The metric is invalid.">La medida no es válida.</sys:String>
   <sys:String x:Key="Error.The proportions are invalid.">Las proporciones deben ser de 1 a 10, hasta 8 distintas.</sys:String>
+  <sys:String x:Key="Error.The cutter does not touch the wall.">El elemento que corta no toca el muro.</sys:String>
+  <sys:String x:Key="Error.The cutter does not reach the top of the wall.">El elemento que corta debe llegar hasta la parte de arriba del muro.</sys:String>
+  <sys:String x:Key="Error.The cutter leaves the wall too low.">El elemento que corta dejaría el muro demasiado bajo.</sys:String>
+  <sys:String x:Key="Error.The sketch is invalid.">El boceto no es válido: revise las esquinas, la elevación y la altura.</sys:String>
   <sys:String x:Key="Error.The render scene does not exist.">La escena seleccionada ya no existe.</sys:String>
   <sys:String x:Key="Error.The render scene preview is too large.">La miniatura de la foto es demasiado grande.</sys:String>
   <sys:String x:Key="Error.The render scene collection is invalid.">La colección de escenas del proyecto no es válida.</sys:String>
