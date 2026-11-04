@@ -29,6 +29,15 @@ internal sealed class CarTemplate
     public int[] Indices { get; }
     public SurfaceKind[] Kinds { get; }
 
+    /// <summary>Each wheel's axle: where it crosses the car's side (Y and Z in the car's own frame) and its radius.</summary>
+    public IReadOnlyList<(float Y, float Z, float Radius)> Wheels => _wheels;
+
+    private readonly (float Y, float Z, float Radius)[] _wheels;
+    private readonly sbyte[] _wheelOfVertex;
+
+    /// <summary>The wheel a vertex turns with (0–3), or −1 for the body.</summary>
+    public int WheelOf(int vertex) => _wheelOfVertex[vertex];
+
     public CarTemplate(FamilyMesh.Decoded mesh)
     {
         var centre = new Vector3((mesh.Min.X + mesh.Max.X) / 2, (mesh.Min.Y + mesh.Max.Y) / 2, mesh.Min.Z);
@@ -36,6 +45,73 @@ internal sealed class CarTemplate
         Normals = mesh.Normals ?? new Vector3[mesh.Positions.Length];
         Indices = mesh.Indices;
         Kinds = mesh.Kinds;
+        (_wheels, _wheelOfVertex) = FindWheels();
+    }
+
+    /// <summary>
+    /// Finds the wheels so they can turn: a tyre is a large connected piece of rubber that touches the ground and is about as tall as
+    /// a wheel; every vertex of rubber or metal inside the cylinder of a tyre (its rim, hub and cap) turns with it. A vertex that
+    /// also belongs to a triangle of the body is left out, so the body never tears. Returns no wheels unless exactly four are found.
+    /// </summary>
+    private ((float Y, float Z, float Radius)[] Wheels, sbyte[] Owner) FindWheels()
+    {
+        var noOwner = Enumerable.Repeat((sbyte)-1, Positions.Length).ToArray();
+        var parent = Enumerable.Range(0, Positions.Length).ToArray();
+        int Find(int vertex)
+        {
+            while (parent[vertex] != vertex) { parent[vertex] = parent[parent[vertex]]; vertex = parent[vertex]; }
+            return vertex;
+        }
+        var shared = new bool[Positions.Length];
+        var wheelKind = new bool[Positions.Length];
+        for (var triangle = 0; triangle < Kinds.Length; triangle++)
+        {
+            var rubberOrMetal = Kinds[triangle] is SurfaceKind.Rubber or SurfaceKind.Metal;
+            for (var corner = 0; corner < 3; corner++)
+            {
+                var vertex = Indices[triangle * 3 + corner];
+                if (rubberOrMetal) wheelKind[vertex] = true; else shared[vertex] = true;
+            }
+            if (Kinds[triangle] == SurfaceKind.Rubber)
+            {
+                parent[Find(Indices[triangle * 3])] = Find(Indices[triangle * 3 + 1]);
+                parent[Find(Indices[triangle * 3])] = Find(Indices[triangle * 3 + 2]);
+            }
+        }
+        var pieces = new Dictionary<int, (int Triangles, Vector3 Min, Vector3 Max)>();
+        for (var triangle = 0; triangle < Kinds.Length; triangle++)
+        {
+            if (Kinds[triangle] != SurfaceKind.Rubber) continue;
+            var root = Find(Indices[triangle * 3]);
+            var (count, min, max) = pieces.TryGetValue(root, out var known) ? known : (0, new Vector3(float.MaxValue), new Vector3(float.MinValue));
+            for (var corner = 0; corner < 3; corner++)
+            {
+                var point = Positions[Indices[triangle * 3 + corner]];
+                (min, max) = (Vector3.Min(min, point), Vector3.Max(max, point));
+            }
+            pieces[root] = (count + 1, min, max);
+        }
+        var tyres = pieces.Values.Where(piece => piece.Triangles >= 600 && piece.Min.Z < 0.06f && piece.Max.Z - piece.Min.Z is > 0.4f and < 1.1f &&
+                                                 piece.Max.X - piece.Min.X < 0.5f).ToArray();
+        if (tyres.Length != 4) return (Array.Empty<(float, float, float)>(), noOwner);
+        var wheels = tyres.Select(tyre => ((tyre.Min.Y + tyre.Max.Y) / 2, (tyre.Min.Z + tyre.Max.Z) / 2, (tyre.Max.Z - tyre.Min.Z) / 2)).ToArray();
+        var owner = noOwner;
+        for (var vertex = 0; vertex < Positions.Length; vertex++)
+        {
+            if (!wheelKind[vertex] || shared[vertex]) continue;
+            var point = Positions[vertex];
+            for (var index = 0; index < 4; index++)
+            {
+                var (y, z, radius) = wheels[index];
+                if (point.X >= tyres[index].Min.X - 0.12f && point.X <= tyres[index].Max.X + 0.12f &&
+                    (point.Y - y) * (point.Y - y) + (point.Z - z) * (point.Z - z) <= radius * radius * 1.06f)
+                {
+                    owner[vertex] = (sbyte)index;
+                    break;
+                }
+            }
+        }
+        return (wheels, owner);
     }
 
     /// <summary>The materials of a look, one for each surface kind the model uses (in the order of <see cref="KindOrder"/>).</summary>
@@ -56,9 +132,19 @@ internal sealed class CarTemplate
     {
         var yaw = state.Heading - Forward * MathF.PI / 2;
         float cos = MathF.Cos(yaw), sin = MathF.Sin(yaw);
+        // A wheel that rolls without slipping turns by the distance covered over its radius, about the axle across the car; the
+        // top of the tyre goes the way the car goes.
+        var spin = _wheels.Select(wheel => -Forward * state.Distance / wheel.Radius).ToArray();
         for (var index = 0; index < Positions.Length; index++)
         {
             var (local, normal) = (Positions[index], Normals[index]);
+            if (_wheelOfVertex[index] is var wheelIndex and >= 0)
+            {
+                var (wheelY, wheelZ, _) = _wheels[wheelIndex];
+                float c = MathF.Cos(spin[wheelIndex]), s = MathF.Sin(spin[wheelIndex]);
+                local = new Vector3(local.X, wheelY + (local.Y - wheelY) * c - (local.Z - wheelZ) * s, wheelZ + (local.Y - wheelY) * s + (local.Z - wheelZ) * c);
+                normal = new Vector3(normal.X, normal.Y * c - normal.Z * s, normal.Y * s + normal.Z * c);
+            }
             positions[index] = state.Position + new Vector3(local.X * cos - local.Y * sin, local.X * sin + local.Y * cos, local.Z);
             normals[index] = new Vector3(normal.X * cos - normal.Y * sin, normal.X * sin + normal.Y * cos, normal.Z);
         }

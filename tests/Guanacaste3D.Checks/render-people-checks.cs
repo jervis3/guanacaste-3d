@@ -147,6 +147,34 @@ static class RenderPeopleChecks
             check(carRed.Any(material => material.BaseColor == new Vector3(0.42f, 0.025f, 0.025f)) &&
                   carSilver.Any(material => material.BaseColor == MaterialLibrary.ForKind(SurfaceKind.CarPaintSilver).BaseColor),
                 "A look repaints the car, and the silver coupé keeps its own paint");
+            // Wheels: four are found on each model, they turn with the distance covered and the body does not.
+            foreach (var model in new[] { 0, 1 })
+            {
+                var template = new CarTemplate(Model(model)!);
+                var spinning = Enumerable.Range(0, template.Positions.Length).Where(vertex => template.WheelOf(vertex) >= 0).ToArray();
+                check(template.Wheels.Count == 4 && template.Wheels.All(wheel => wheel.Radius is > 0.28f and < 0.40f) &&
+                      Enumerable.Range(0, 4).All(wheel => spinning.Count(vertex => template.WheelOf(vertex) == wheel) > 1500),
+                    $"The {(model == 0 ? "sedan" : "coupé")} has four wheels of about {template.Wheels[0].Radius:0.00} m radius, each with its tyre, rim and hub ({spinning.Length} vertices)");
+                var (standingPose, turnedPose, oneTurnPose) = (new Vector3[template.Positions.Length], new Vector3[template.Positions.Length], new Vector3[template.Positions.Length]);
+                var (spare, turnedNormals) = (new Vector3[template.Positions.Length], new Vector3[template.Positions.Length]);
+                var origin = new ActorState(Vector3.Zero, 0, 0, true);
+                template.Pose(origin, standingPose, spare);
+                template.Pose(origin with { Distance = 3.3f }, turnedPose, turnedNormals);
+                template.Pose(origin with { Distance = 2 * MathF.PI * template.Wheels[0].Radius }, oneTurnPose, spare);
+                var body = Enumerable.Range(0, standingPose.Length).Where(vertex => template.WheelOf(vertex) < 0).ToArray();
+                var wheelMoved = spinning.Count(vertex => Vector3.Distance(standingPose[vertex], turnedPose[vertex]) > 0.02f);
+                var wheelBack = spinning.Where(vertex => template.WheelOf(vertex) == 0).All(vertex => Vector3.Distance(standingPose[vertex], oneTurnPose[vertex]) < 2e-3f);
+                check(body.All(vertex => standingPose[vertex] == turnedPose[vertex]) && wheelMoved > spinning.Length / 2 && wheelBack,
+                    $"The wheels turn with the distance and are back where they were after one turn, and the body does not move ({wheelMoved} wheel vertices moved)");
+                var top = spinning.Where(vertex => template.WheelOf(vertex) == 0).OrderByDescending(vertex => template.Positions[vertex].Z).First();
+                var small = new Vector3[template.Positions.Length];
+                template.Pose(origin with { Distance = 0.05f }, small, spare);
+                check(small[top].X > standingPose[top].X, "The top of a wheel goes the way the car goes, so it rolls forward and not backward");
+            }
+            var runOnce = Car(0, new ActorPoint(0, 0, 0), new ActorPoint(10, 0, 0)) with { Speed = 5 };
+            check(Math.Abs(Actors.At(runOnce, 3).Distance - 10) < 1e-3f && Actors.At(runOnce, 30).Distance == Actors.At(runOnce, 3).Distance && !Actors.At(runOnce, 30).Walking &&
+                  Actors.At(runOnce with { Loop = true }, 30).Distance > 100,
+                "A car parked at the end of its route stops turning its wheels, and one that goes back and forth keeps driving forward");
             (float X, float Y) Span(Actor actor, double seconds)
             {
                 var points = ActorRig.From([actor], Model)!.Positions(seconds);

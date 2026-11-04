@@ -72,12 +72,15 @@ public static class Actors
             moving = walked > 0 && walked < length;
         }
 
+        // The distance covered: it keeps growing for an actor that goes back and forth (it always drives forward), but stops at the end
+        // of a route that is followed once, so a parked car's wheels stand still.
+        var covered = actor.Loop ? walked : along;
         var position = PointAt(route, along);
         var (ahead, behind) = (PointAt(route, Math.Min(length, along + 1.2)), PointAt(route, Math.Max(0, along - 1.2)));
         var heading = (float)Math.Atan2(ahead.Y - behind.Y, ahead.X - behind.X);
         if (Math.Abs(ahead.X - behind.X) + Math.Abs(ahead.Y - behind.Y) < 1e-6) heading = HeadingAt(route, along);
         if (reversed) heading += MathF.PI;
-        return new ActorState(position, heading, (float)walked, moving);
+        return new ActorState(position, heading, (float)covered, moving);
     }
 
     private static double Flat(ActorPoint a, ActorPoint b) => Math.Sqrt((b.X - a.X) * (b.X - a.X) + (b.Y - a.Y) * (b.Y - a.Y));
