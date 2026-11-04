@@ -167,12 +167,15 @@ public static class QualityPlanner
     {
         var gigabytes = hardware.AvailableMemoryBytes / 1073741824.0;
 
-        // TODO(human): decide how AUTO should weigh the machine. Today it counts logical cores and free memory, which is
-        // a proxy: two 16-thread laptops can differ 3x in speed. HardwareProfile.MicrobenchmarkMegaTests holds a measured
-        // throughput (0 when not yet calibrated; about ReferenceMegaTests = 1 900 on the development machine in Release,
-        // ~70 in Debug). The panel now calibrates at startup, so in the app it is normally > 0. Replace or combine the
-        // thresholds below so AUTO reflects real speed, and keep tests/.../render-infrastructure-checks.cs
-        // ("AUTO picks High … Standard … Draft") passing, or update it to your new rule.
+        var throughput = hardware.MicrobenchmarkMegaTests;
+        if (double.IsFinite(throughput) && throughput > 0)
+        {
+            if (throughput >= ReferenceMegaTests && gigabytes >= 8) return RenderQuality.High;
+            if (throughput >= ReferenceMegaTests / 3 && gigabytes >= 4) return RenderQuality.Standard;
+            return RenderQuality.Draft;
+        }
+
+        // Fall back to hardware proxies until a usable measurement is available.
         if (hardware.LogicalCores >= 12 && gigabytes >= 8) return RenderQuality.High;
         if (hardware.LogicalCores >= 6 && gigabytes >= 4) return RenderQuality.Standard;
         return RenderQuality.Draft;

@@ -13,6 +13,7 @@ static class RenderInfrastructureChecks
         PngAndMetrics(check);
         Hardware(check);
         Planning(check);
+        AutomaticQualityChecks.Run(check);
         Photometry(check);
         Portals(check);
         PortalsInTracer(check);
