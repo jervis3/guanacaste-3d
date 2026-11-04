@@ -37,7 +37,9 @@ static class RenderFxChecks
             "A style file with the wrong shape, version or unknown effects is rejected");
 
         check(FxStyle.TryParse("""{"Version":1,"Name":"x","Effects":["fog","fog"],"Values":{"FogSlider":0.3}}""") is null &&
-              FxStyle.TryParse("""{"Version":1,"Name":"x","Effects":["highlight"],"Values":{}}""") is null &&
+              FxStyle.TryParse("""{"Version":1,"Name":"x","Effects":["layers"],"Values":{}}""") is null &&
+              FxStyle.TryParse("""{"Version":1,"Name":"x","Effects":["highlight"],"Values":{"HighlightPicker":2}}""") is null &&
+              FxStyle.TryParse("""{"Version":1,"Name":"x","Effects":["highlight"],"Values":{"HighlightDimSlider":0.5}}""") is not null &&
               FxStyle.TryParse("""{"Version":1,"Name":"x","Effects":["sun"],"Values":{"HourSlider":12}}""") is null,
             "An imported FX style rejects duplicate, unimplemented and scene-only effects");
         check(FxStyle.TryParse("""{"Version":1,"Name":"x","Effects":["fog"],"Values":{"GlareSlider":0.5}}""") is null &&

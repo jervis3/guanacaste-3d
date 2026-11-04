@@ -44,6 +44,7 @@ public partial class RenderPanel
     {
         Slider slider => slider.Value,
         CheckBox box => box.IsChecked == true ? 1 : 0,
+        ComboBox list => Math.Max(0, list.SelectedIndex),
         _ => null
     };
 
@@ -53,6 +54,7 @@ public partial class RenderPanel
         {
             case Slider slider: slider.Value = Math.Clamp(value, slider.Minimum, slider.Maximum); break;
             case CheckBox box: box.IsChecked = value >= 0.5; break;
+            case ComboBox { Items.Count: > 0 } list: list.SelectedIndex = Math.Clamp((int)Math.Round(value), 0, list.Items.Count - 1); break;
         }
     }
 
@@ -175,6 +177,17 @@ public partial class RenderPanel
                 var panel = new StackPanel { Margin = new Thickness(0, 0, 0, 4) };
                 panel.Children.Add(new TextBlock { Text = control.Label, Style = (Style)FindResource("PanelLabel"), Margin = new Thickness(0, 6, 0, 2) });
                 panel.Children.Add(row);
+                return panel;
+            }
+            case ComboBox source:
+            {
+                // The list is the very one in the panel: same entries, same selection, so the two can never disagree.
+                var list = new ComboBox { ItemsSource = source.Items };
+                list.SetBinding(Selector.SelectedIndexProperty,
+                    new Binding(nameof(ComboBox.SelectedIndex)) { Source = source, Mode = BindingMode.TwoWay });
+                var panel = new StackPanel { Margin = new Thickness(0, 0, 0, 4) };
+                panel.Children.Add(new TextBlock { Text = control.Label, Style = (Style)FindResource("PanelLabel"), Margin = new Thickness(0, 6, 0, 2) });
+                panel.Children.Add(list);
                 return panel;
             }
             case CheckBox source:
@@ -383,7 +396,7 @@ public partial class RenderPanel
         var effects = RenderFx.All.Where(item => item.Removable && _fxActive.Contains(item.Id) && !_fxMuted.ContainsKey(item.Id)).ToList();
         var dialog = new SaveFileDialog { Title = "Guardar estilo de efectos", Filter = "Estilo de efectos (*.g3dfx)|*.g3dfx", FileName = "Mi estilo" };
         if (dialog.ShowDialog() != true) return;
-        var values = effects.SelectMany(effect => effect.Controls).ToDictionary(control => control.Key, control => FxRead(control.Key) ?? control.Neutral);
+        var values = effects.SelectMany(effect => effect.Controls).Where(control => control.Kind != FxControlKind.Choice).ToDictionary(control => control.Key, control => FxRead(control.Key) ?? control.Neutral);
         var style = new FxStyle(Path.GetFileNameWithoutExtension(dialog.FileName), effects.Select(effect => effect.Id).ToList(), values);
         try
         {
@@ -421,7 +434,7 @@ public partial class RenderPanel
         {
             _fxActive.Add(effect.Id);
             foreach (var control in effect.Controls)
-                if (style.Values.TryGetValue(control.Key, out var value)) FxWrite(control.Key, value);
+                if (control.Kind != FxControlKind.Choice && style.Values.TryGetValue(control.Key, out var value)) FxWrite(control.Key, value);
         }
         RefreshFxStack();
         StatusText.Text = $"Estilo «{style.Name}» aplicado.";

@@ -32,6 +32,8 @@ public static partial class ImageProcessor
         var exposed = new Vector3[linear.Length];
         var balance = WhiteBalance(finish.Temperature) * TintBalance(finish.Tint);
         var depth = finish.Fog > 0.001f ? Features()?.Depth : null;
+        var highlight = finish.HighlightDim > 0.001f && !string.IsNullOrWhiteSpace(finish.HighlightMaterial)
+            ? BuildHighlight(Features(), finish, width, height) : null;
         Parallel.For(0, height, row =>
         {
             for (var column = 0; column < width; column++)
@@ -71,6 +73,7 @@ public static partial class ImageProcessor
                 }
                 if (finish.Lut is { } lut && finish.LutStrength > 0.001f)
                     color = Vector3.Lerp(color, lut.Sample(color), Math.Clamp(finish.LutStrength, 0f, 1f));
+                if (highlight is not null) color = ApplyHighlight(color, highlight, index, finish.HighlightDim);
                 if (vignette > 0)
                 {
                     var dx = (column + 0.5f) / width * 2 - 1;

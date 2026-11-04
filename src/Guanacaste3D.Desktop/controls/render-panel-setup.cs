@@ -65,6 +65,8 @@ public partial class RenderPanel
         AberrationSlider.Value = setup.ChromaticAberration;
         GrainSlider.Value = setup.FilmGrain;
         MonochromeCheck.IsChecked = setup.Monochrome;
+        HighlightDimSlider.Value = setup.HighlightDim;
+        SelectHighlight(setup.HighlightMaterial);
         Select(LutPicker, setup.LutPresetId);
         LutStrengthSlider.Value = setup.LutStrength;
         RestoreLutForProject(RenderSetup.SelectedCustomLutPath(setup.LutPresetId, setup.LutPath), projectFile);
@@ -115,6 +117,7 @@ public partial class RenderPanel
             Vibrance = VibranceSlider.Value, Tint = TintSlider.Value, Glare = GlareSlider.Value, Fog = FogSlider.Value,
             Sharpen = SharpenSlider.Value, ChromaticAberration = AberrationSlider.Value, FilmGrain = GrainSlider.Value,
             Monochrome = MonochromeCheck.IsChecked == true,
+            HighlightMaterial = SelectedHighlight(), HighlightDim = HighlightDimSlider.Value,
             LutPresetId = Mode(LutPicker) is { Length: > 0 } lutId ? lutId : "none",
             LutPath = RenderSetup.SelectedCustomLutPath(Mode(LutPicker), _lutFilePath),
             LutStrength = LutStrengthSlider.Value

@@ -387,7 +387,7 @@ public sealed partial class PathTracer
     public FeatureBuffer CaptureFeatures()
     {
         if (_features is not null) return _features;
-        var features = new FeatureBuffer(Width, Height);
+        var features = new FeatureBuffer(Width, Height) { MaterialNames = _scene.Materials.Select(material => material.Name).ToArray() };
         var basis = Basis();
         Parallel.For(0, Height, row =>
         {
@@ -417,6 +417,7 @@ public sealed partial class PathTracer
                     features.Normal[index] = point.Normal;
                     features.Albedo[index] = point.Diffuse;
                     features.Depth[index] = travelled;
+                    features.Material[index] = (ushort)Math.Min(_scene.TriangleMaterial[hit.Triangle], FeatureBuffer.NoMaterial - 1);
                     found = true;
                     break;
                 }

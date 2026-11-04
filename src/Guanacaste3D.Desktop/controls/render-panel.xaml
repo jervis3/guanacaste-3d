@@ -519,6 +519,14 @@
                   </DockPanel>
                   <CheckBox x:Name="MonochromeCheck" Style="{StaticResource PanelCheck}" IsChecked="False" Margin="0,12,0,0"
                             Content="{DynamicResource RenderPanel.Monochrome}" Checked="Finish_Changed" Unchecked="Finish_Changed"/>
+                  <TextBlock Style="{StaticResource PanelLabel}" Margin="0,12,0,0" Text="{DynamicResource RenderPanel.HighlightMaterial}"/>
+                  <ComboBox x:Name="HighlightPicker" SelectedIndex="0" SelectionChanged="Highlight_Changed"/>
+                  <TextBlock Style="{StaticResource PanelLabel}" Text="{DynamicResource RenderPanel.HighlightDim}"/>
+                  <DockPanel>
+                    <TextBlock Style="{StaticResource SliderValue}" Text="{Binding Value, ElementName=HighlightDimSlider, StringFormat={}{0:0%}}"/>
+                    <Slider x:Name="HighlightDimSlider" Minimum="0" Maximum="1" Value="0" TickFrequency="0.05"
+                            IsSnapToTickEnabled="True" ValueChanged="Finish_SliderChanged"/>
+                  </DockPanel>
                 </StackPanel>
               </Border>
             </StackPanel>

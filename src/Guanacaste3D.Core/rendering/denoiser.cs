@@ -91,6 +91,18 @@ public sealed class FeatureBuffer(int width, int height)
     public Vector3[] Albedo { get; } = new Vector3[width * height];
     /// <summary>Camera distance of the first hit; +∞ for sky.</summary>
     public float[] Depth { get; } = new float[width * height];
+    /// <summary>Index into <see cref="MaterialNames"/> of the surface at each pixel; <see cref="NoMaterial"/> for sky.</summary>
+    public ushort[] Material { get; } = Filled(width * height);
+    /// <summary>Name of each material of the scene, so an effect can pick a surface by the name the person sees.</summary>
+    public string[] MaterialNames { get; init; } = [];
+    public const ushort NoMaterial = ushort.MaxValue;
+
+    private static ushort[] Filled(int count)
+    {
+        var values = new ushort[count];
+        Array.Fill(values, NoMaterial);
+        return values;
+    }
 }
 
 /// <summary>

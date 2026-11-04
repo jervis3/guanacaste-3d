@@ -16,6 +16,7 @@ public static class RenderPhotoEffects
         Vibrance = source.Vibrance, Tint = source.Tint, Glare = source.Glare, Fog = source.Fog,
         Sharpen = source.Sharpen, ChromaticAberration = source.ChromaticAberration,
         FilmGrain = source.FilmGrain, Monochrome = source.Monochrome,
+        HighlightMaterial = source.HighlightMaterial, HighlightDim = source.HighlightDim,
         LutPresetId = source.LutPresetId, LutPath = source.LutPath, LutStrength = source.LutStrength
     };
 }

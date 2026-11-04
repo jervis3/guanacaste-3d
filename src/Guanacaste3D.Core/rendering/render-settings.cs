@@ -203,6 +203,10 @@ public sealed record ImageFinish
     public float FilmGrain { get; init; }
     /// <summary>Renders in black and white, keeping the tonal balance of the colour image.</summary>
     public bool Monochrome { get; init; }
+    /// <summary>Name of the material the Highlight effect picks out; null or empty leaves every surface alone.</summary>
+    public string? HighlightMaterial { get; init; }
+    /// <summary>How far the rest of the picture is muted so <see cref="HighlightMaterial"/> stands out, 0–1 (0 is off).</summary>
+    public float HighlightDim { get; init; }
     /// <summary>Optional 3D color lookup table applied after tone mapping and prior to lens effects.</summary>
     public ColorLookupTable? Lut { get; init; }
     /// <summary>Blend from unmodified color to LUT-graded color, between zero and one.</summary>

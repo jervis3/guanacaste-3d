@@ -122,6 +122,9 @@ public sealed record RenderSetup
     public double ChromaticAberration { get; init; }
     public double FilmGrain { get; init; }
     public bool Monochrome { get; init; }
+    /// <summary>Material picked out by the Highlight effect (null for none) and how far the rest is muted, 0–1.</summary>
+    public string? HighlightMaterial { get; init; }
+    public double HighlightDim { get; init; }
     /// <summary>Built-in photo LUT or custom to load a .cube file (none is neutral).</summary>
     public string LutPresetId { get; init; } = "none";
     /// <summary>Optional custom .cube path, relative to the .g3d when bundled with the project.</summary>
@@ -157,7 +160,8 @@ public sealed record RenderSetup
             ContrastAdjust is < -1 or > 1 || SaturationAdjust is < -1 or > 1 ||
             SunStrength is < 0 or > 2 || SkyStrength is < 0 or > 2 ||
             (SkyPresetId is not null && RenderLooks.Skies.All(sky => sky.Id != SkyPresetId)) ||
-            LutStrength is < 0 or > 1 ||
+            LutStrength is < 0 or > 1 || HighlightDim is < 0 or > 1 || !double.IsFinite(HighlightDim) ||
+            (HighlightMaterial is { Length: > 120 }) ||
             (LutPresetId != "custom" && ColorLutPresets.All.All(preset => preset.Id != LutPresetId)) ||
             (LutPath is not null && (string.IsNullOrWhiteSpace(LutPath) || LutPath.Length > 1024)) ||
             (EnvironmentPath is not null && (string.IsNullOrWhiteSpace(EnvironmentPath) || EnvironmentPath.Length > 1024)) ||

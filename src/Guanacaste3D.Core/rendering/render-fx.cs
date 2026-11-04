@@ -5,7 +5,7 @@ namespace Guanacaste3D.Core.Rendering;
 /// <summary>The groups of the effect picker, in the order Lumion lists them.</summary>
 public enum FxCategory { Featured, Sun, Weather, Sky, Objects, Camera, Animation, Artistic1, Artistic2, Advanced }
 
-public enum FxControlKind { Slider, Toggle }
+public enum FxControlKind { Slider, Toggle, Choice }
 
 /// <summary>
 /// One setting of an effect. <see cref="Key"/> is the <c>x:Name</c> of the Render panel control that holds the value, so the
@@ -36,6 +36,10 @@ public static class RenderFx
 {
     private static FxControl Slider(string key, string label, double neutral = 0, double? start = null) =>
         new(key, label, FxControlKind.Slider, neutral, start);
+
+    /// <summary>A list pick; the value is the position in the list, and 0 is the entry that does nothing.</summary>
+    private static FxControl Choice(string key, string label, double start = 0) =>
+        new(key, label, FxControlKind.Choice, 0, start);
 
     private static FxControl Toggle(string key, string label, bool neutral) =>
         new(key, label, FxControlKind.Toggle, neutral ? 1 : 0, 1);
@@ -73,7 +77,8 @@ public static class RenderFx
             [Slider("CloudSlider", "Cobertura (%)", 30), Slider("CloudDirectionSlider", "Dirección"), Slider("TurbiditySlider", "Turbidez", 2.8)],
             Removable: false, Featured: true),
 
-        new("highlight", "Resaltar material", "Destaca un material y atenúa el resto", FxCategory.Objects, "", [], Planned: true),
+        new("highlight", "Resaltar material", "Destaca un material con un contorno y atenúa el resto de la imagen", FxCategory.Objects, "",
+            [Choice("HighlightPicker", "Material", start: 1), Slider("HighlightDimSlider", "Atenuar el resto", start: 0.6)], Featured: true),
         new("layers", "Animación de capas", "Muestra u oculta capas a lo largo de la película", FxCategory.Animation, "", [], Planned: true)
     ];
 
@@ -127,7 +132,8 @@ public sealed record FxStyle(string Name, List<string> Effects, Dictionary<strin
                 // unimplemented effects must not masquerade as a loaded style.
                 if (effect is null || effect.Planned || !effect.Removable || !uniqueEffects.Add(id)) return null;
                 effects.Add(id);
-                foreach (var control in effect.Controls) allowedKeys.Add(control.Key);
+                // A list pick is a position in this scene's list of materials, so a shared style never carries it.
+                foreach (var control in effect.Controls.Where(item => item.Kind != FxControlKind.Choice)) allowedKeys.Add(control.Key);
             }
 
             var values = new Dictionary<string, double>(StringComparer.Ordinal);

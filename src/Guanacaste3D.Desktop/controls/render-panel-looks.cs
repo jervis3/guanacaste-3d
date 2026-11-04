@@ -135,6 +135,8 @@ public partial class RenderPanel
         ChromaticAberration = (float)AberrationSlider.Value,
         FilmGrain = (float)GrainSlider.Value,
         Monochrome = MonochromeCheck.IsChecked == true,
+        HighlightMaterial = SelectedHighlight(),
+        HighlightDim = (float)HighlightDimSlider.Value,
         Lut = SelectedLut(),
         LutStrength = (float)LutStrengthSlider.Value
     };

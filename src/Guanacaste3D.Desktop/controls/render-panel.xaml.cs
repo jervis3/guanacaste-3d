@@ -248,6 +248,7 @@ public partial class RenderPanel : UserControl
     /// <summary>Applies an asynchronously built scene only after returning to its owning UI dispatcher.</summary>
     private void ApplyPreviewScene(RenderScene? scene)
     {
+        RefreshHighlightPicker(scene);
         if (scene is null)
         {
             _sceneTriangles = 0;
