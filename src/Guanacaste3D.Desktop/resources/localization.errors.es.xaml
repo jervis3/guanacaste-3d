@@ -80,6 +80,11 @@
   <sys:String x:Key="Error.Choose at least one format.">Elija al menos un formato.</sys:String>
   <sys:String x:Key="Error.Choose at least one sheet.">Elija al menos una hoja.</sys:String>
   <sys:String x:Key="Error.The publish settings are invalid.">La configuración de publicación no es válida.</sys:String>
+  <sys:String x:Key="Error.The table has no rows.">La tabla no tiene filas.</sys:String>
+  <sys:String x:Key="Error.The first column of the table must be Id.">La primera columna de la tabla debe llamarse Id.</sys:String>
+  <sys:String x:Key="Error.None of the columns is a project parameter.">Ninguna columna de la tabla es un parámetro del proyecto.</sys:String>
+  <sys:String x:Key="Error.The table has no review marks.">La tabla no tiene marcas de revisión (formato: x;y;comentario).</sys:String>
+  <sys:String x:Key="Error.The table has too many review marks.">La tabla tiene demasiadas marcas de revisión (máximo 2000).</sys:String>
   <sys:String x:Key="Error.The render scene does not exist.">La escena seleccionada ya no existe.</sys:String>
   <sys:String x:Key="Error.The render scene preview is too large.">La miniatura de la foto es demasiado grande.</sys:String>
   <sys:String x:Key="Error.The render scene collection is invalid.">La colección de escenas del proyecto no es válida.</sys:String>

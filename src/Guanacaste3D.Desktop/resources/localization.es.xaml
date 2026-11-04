@@ -715,6 +715,10 @@
   <sys:String x:Key="SharedModels.Forget">Olvidar</sys:String>
   <sys:String x:Key="SharedModels.Missing">(el archivo ya no existe)</sys:String>
   <sys:String x:Key="Status.SharedModelMissing">El archivo de ese modelo central ya no existe.</sys:String>
+  <sys:String x:Key="TableImport.Filter">Tablas de texto (*.csv;*.txt;*.tsv)|*.csv;*.txt;*.tsv|Todos los archivos (*.*)|*.*</sys:String>
+  <sys:String x:Key="Status.ParameterValuesImported">Valores aplicados: {0}. Rechazados: {1}. Filas sin elemento conocido: {2}.</sys:String>
+  <sys:String x:Key="Status.ParameterColumnsUnknown">Columnas que no son parámetros del proyecto: {0}.</sys:String>
+  <sys:String x:Key="Status.ReviewMarksImported">Marcas de revisión creadas: {0} (líneas que no se pudieron leer: {1}).</sys:String>
   <sys:String x:Key="Status.NoViewForCategories">Abra una planta, un alzado, una sección o la vista 3D para cambiar sus categorías.</sys:String>
   <sys:String x:Key="Status.ViewCategoriesChanged">Categorías ocultas en esta vista: {0}.</sys:String>
   <sys:String x:Key="Status.SelectWallFirst">Seleccione primero un muro.</sys:String>

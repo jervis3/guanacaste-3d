@@ -70,6 +70,7 @@ public partial class MainWindow
             case "LinkCad":
             case "LinkIfc":
             case "LinkNativeProject":
+            case "CoordinationModel":
             case "InsertFromFile": ImportModel_Click(this, eventArguments); return true;
             case "ManageLinks": LinkedModels_Click(this, eventArguments); return true;
             case "AiAssistant": OpenAiAssistant(); return true;
@@ -87,7 +88,7 @@ public partial class MainWindow
             case "About": About_Click(this, eventArguments); return true;
             default: return TryExecutePresentationCommand(commandId) || TryExecuteWallJoinCommand(commandId) ||
                             TryExecuteWallEditCommand(commandId) || TryExecuteViewCategoryCommand(commandId) || TryExecuteManageCommand(commandId) || TryExecuteView3DCommand(commandId) || TryExecuteBulkCommand(commandId) ||
-                            TryExecuteStagesCommand(commandId) || TryExecuteWallProfileCommand(commandId) || TryExecuteUnitsCommand(commandId) || TryExecuteGroupCommand(commandId) || TryExecuteSiteCommand(commandId) || TryExecuteMassCommand(commandId) || TryExecuteSheetAidCommand(commandId) || TryExecuteMarkCommand(commandId) || TryExecuteSiteImportCommand(commandId) || TryExecuteCollaborationCommand(commandId) || TryExecuteCoordinationCommand(commandId) || TryExecuteStructuralCommand(commandId);
+                            TryExecuteStagesCommand(commandId) || TryExecuteWallProfileCommand(commandId) || TryExecuteUnitsCommand(commandId) || TryExecuteGroupCommand(commandId) || TryExecuteSiteCommand(commandId) || TryExecuteMassCommand(commandId) || TryExecuteSheetAidCommand(commandId) || TryExecuteMarkCommand(commandId) || TryExecuteSiteImportCommand(commandId) || TryExecuteCollaborationCommand(commandId) || TryExecuteCoordinationCommand(commandId) || TryExecuteTableImportCommand(commandId) || TryExecuteStructuralCommand(commandId);
         }
     }
 

@@ -817,6 +817,21 @@ internal static partial class InteractionChecks
                 Environment.SetEnvironmentVariable("G3D_CENTRAL_DIR", null);
                 try { System.IO.Directory.Delete(outFolder, true); } catch (System.IO.IOException) { }
 
+                // Table imports: parameter values by element id, and review marks.
+                var tableWall = session.Document.Walls[3].Id;
+                var tableParameter = session.AddParameter("Etiqueta de obra", ParameterSpec.Text, ParameterBinding.Instance, [ElementCategory.Walls]);
+                var tableFile = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"valores-{Guid.NewGuid():N}.csv");
+                System.IO.File.WriteAllText(tableFile, $"Id;Etiqueta de obra{Environment.NewLine}{tableWall};Muro de cobogó norte{Environment.NewLine}");
+                Check((bool)Invoke("ImportParameterValuesFile", tableFile)! && session.Document.ParameterValues.Any(value => value.OwnerId == tableWall && value.DefinitionId == tableParameter && value.Text == "Muro de cobogó norte"),
+                    "Extended Properties fills a parameter on the wall named by the table");
+                System.IO.File.WriteAllText(tableFile, "esto no es una tabla");
+                Check(!(bool)Invoke("ImportParameterValuesFile", tableFile)!, "A file that is not a table imports nothing");
+                System.IO.File.WriteAllText(tableFile, "# marcas" + Environment.NewLine + "605;605;Revisar el cobogó" + Environment.NewLine);
+                var textsBefore = session.Document.StructuralElements.Count(item => item.Kind == StructuralElementKind.ModelText);
+                Check((bool)Invoke("ImportReviewMarksFile", tableFile)! && session.Document.StructuralElements.Count(item => item.Kind == StructuralElementKind.ModelText) == textsBefore + 1,
+                    "Markups brings a review mark into the active level, as a note with a cloud");
+                System.IO.File.Delete(tableFile);
+
                 SetField("_viewSelection", null);
                 Pump();
                 tabs.SelectedIndex = 0;
