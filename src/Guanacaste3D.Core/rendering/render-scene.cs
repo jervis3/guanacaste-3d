@@ -232,13 +232,15 @@ public sealed class RenderSceneBuilder
     /// the last geometry added, and can be added once: the scene remembers where it is, and a tracer is given new vertex
     /// positions for it with <see cref="PathTracer.MoveActors"/>. Triangle numbers are relative to the block's own vertices.
     /// </summary>
-    public RenderSceneBuilder AddDynamic(Vector3[] positions, int[] indices, int[] triangleMaterial, RenderMaterial[] materials)
+    public RenderSceneBuilder AddDynamic(Vector3[] positions, int[] indices, int[] triangleMaterial, RenderMaterial[] materials,
+        Vector3[]? normals = null)
     {
         ArgumentNullException.ThrowIfNull(positions);
         ArgumentNullException.ThrowIfNull(indices);
         ArgumentNullException.ThrowIfNull(triangleMaterial);
         ArgumentNullException.ThrowIfNull(materials);
         if (_dynamicTriangleCount > 0) throw new InvalidOperationException("Moving geometry can be added only once.");
+        if (normals is not null && normals.Length != positions.Length) throw new ArgumentException("There must be one normal for each position.", nameof(normals));
         if (indices.Length % 3 != 0 || triangleMaterial.Length != indices.Length / 3 || indices.Any(index => (uint)index >= (uint)positions.Length) ||
             triangleMaterial.Any(material => (uint)material >= (uint)materials.Length))
             throw new ArgumentException("The moving geometry is not consistent.");
@@ -247,6 +249,14 @@ public sealed class RenderSceneBuilder
         _dynamicVertexStart = start;
         _dynamicTriangleStart = _triangleMaterial.Count;
         _positions.AddRange(positions);
+        if (normals is not null)
+        {
+            // Smooth normals turn with a moving car, so the tracer keeps its own copy and rotates it per frame; the scene
+            // holds the starting ones.
+            _anyNormals = true;
+            PadNormals(start);
+            foreach (var normal in normals) _normals.Add(normal.LengthSquared() > 1e-12f ? Vector3.Normalize(normal) : Vector3.Zero);
+        }
         var remap = materials.Select(MaterialIndex).ToArray();
         for (var triangle = 0; triangle < triangleMaterial.Length; triangle++)
         {

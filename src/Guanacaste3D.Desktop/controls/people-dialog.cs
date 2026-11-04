@@ -6,8 +6,8 @@ using Guanacaste3D.Core.Rendering;
 namespace Guanacaste3D.Desktop.Controls;
 
 /// <summary>
-/// The people of the render, after Lumion's animated people: place a person where the view is looking, add the points of the
-/// route it walks, choose its look, speed and the second it sets off. The window stays open beside the view, so the camera
+/// The people and cars of the render, after Lumion's animated people and vehicles: place one where the view is looking, add
+/// the points of the route it follows, choose its look, speed and the second it sets off. The window stays open beside the view, so the camera
 /// can be moved between points; changes wait here until "Aplicar" (or closing) saves them, because each save rebuilds the
 /// render scene.
 /// </summary>
@@ -30,7 +30,7 @@ internal sealed class PeopleDialog : Window
         _actors = [.. actors];
         _pointUnderView = pointUnderView;
         _apply = apply;
-        Title = "Personas";
+        Title = "Personas y coches";
         Width = 440;
         SizeToContent = SizeToContent.Height;
         MaxHeight = 820;
@@ -41,22 +41,21 @@ internal sealed class PeopleDialog : Window
         SetResourceReference(ForegroundProperty, "PrimaryTextBrush");
 
         var root = new StackPanel { Margin = new Thickness(18, 14, 18, 14) };
-        root.Children.Add(new TextBlock { Text = "Personas", FontSize = 18, FontWeight = FontWeights.SemiBold });
+        root.Children.Add(new TextBlock { Text = "Personas y coches", FontSize = 18, FontWeight = FontWeights.SemiBold });
         root.Children.Add(new TextBlock
         {
-            Text = "Mira al suelo donde quieras una persona y pulsa «Añadir persona aquí». Mueve la vista y pulsa «Añadir punto de ruta» para " +
-                   "que camine hasta allí. Se ven en el render y caminan en la película.",
+            Text = "Mira al suelo donde quieras una persona o un coche y pulsa «Añadir…». Mueve la vista y pulsa «Añadir punto de ruta» para " +
+                   "que vaya hasta allí. Se ven en el render y se mueven en la película.",
             TextWrapping = TextWrapping.Wrap, Opacity = 0.75, FontSize = 12, Margin = new Thickness(0, 4, 0, 6)
         });
         root.Children.Add(_list);
-        root.Children.Add(Row(Button("Añadir persona aquí", AddPerson), Button("Añadir punto de ruta", AddPoint)));
-        root.Children.Add(Row(Button("Quitar último punto", RemovePoint), Button("Quitar persona", RemovePerson)));
+        root.Children.Add(Row(Button("Añadir persona aquí", (_, _) => AddActor(ActorKind.Person)), Button("Añadir coche aquí", (_, _) => AddActor(ActorKind.Car))));
+        root.Children.Add(Row(Button("Añadir punto de ruta", AddPoint), Button("Quitar último punto", RemovePoint), Button("Quitar", RemovePerson)));
 
-        for (var look = 0; look < Actor.Looks; look++) _look.Items.Add($"Aspecto {look + 1}");
         var form = new Grid { Margin = new Thickness(0, 10, 0, 0) };
         form.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(170) });
         form.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        var rows = new (string Label, FrameworkElement Field)[] { ("Aspecto", _look), ("Velocidad (m/s)", _speed), ("Sale en el segundo", _start) };
+        var rows = new (string Label, FrameworkElement Field)[] { ("Aspecto o modelo", _look), ("Velocidad (m/s)", _speed), ("Sale en el segundo", _start) };
         for (var row = 0; row < rows.Length; row++)
         {
             form.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
@@ -113,8 +112,8 @@ internal sealed class PeopleDialog : Window
             var item = new ListBoxItem
             {
                 Tag = actor.Id,
-                Content = $"{actor.Name} · aspecto {actor.Look + 1} · {actor.Speed.ToString("0.0", CultureInfo.InvariantCulture)} m/s · " +
-                          (actor.Route.Count == 1 ? "quieta" : $"{actor.Route.Count} puntos")
+                Content = $"{actor.Name} · {LookName(actor.Kind, actor.Look)} · {actor.Speed.ToString("0.0", CultureInfo.InvariantCulture)} m/s · " +
+                          (actor.Route.Count == 1 ? "parado" : $"{actor.Route.Count} puntos")
             };
             _list.Items.Add(item);
             if (select == actor.Id) _list.SelectedItem = item;
@@ -131,6 +130,9 @@ internal sealed class PeopleDialog : Window
             var actor = Selected;
             _look.IsEnabled = _speed.IsEnabled = _start.IsEnabled = _loop.IsEnabled = actor is not null;
             if (actor is null) return;
+            // The list of looks is the person's or the car's, whichever is selected.
+            _look.Items.Clear();
+            for (var look = 0; look < Actor.Looks; look++) _look.Items.Add(LookName(actor.Kind, look));
             _look.SelectedIndex = actor.Look;
             _speed.Text = actor.Speed.ToString("0.##", CultureInfo.InvariantCulture);
             _start.Text = actor.Start.ToString("0.##", CultureInfo.InvariantCulture);
@@ -148,7 +150,7 @@ internal sealed class PeopleDialog : Window
         var edited = actor with
         {
             Look = Math.Clamp(_look.SelectedIndex, 0, Actor.Looks - 1),
-            Speed = TryNumber(_speed.Text, out var speed) ? Math.Clamp(speed, 0.1, 5) : actor.Speed,
+            Speed = TryNumber(_speed.Text, out var speed) ? Math.Clamp(speed, actor.Kind == ActorKind.Car ? 0.5 : 0.1, actor.Kind == ActorKind.Car ? Actor.MaximumSpeed : 5) : actor.Speed,
             Start = TryNumber(_start.Text, out var start) ? Math.Clamp(start, 0, 36000) : actor.Start,
             Loop = _loop.IsChecked == true
         };
@@ -158,15 +160,21 @@ internal sealed class PeopleDialog : Window
         RefreshList(edited.Id);
     }
 
-    private void AddPerson(object sender, RoutedEventArgs e)
+    private static string LookName(ActorKind kind, int look) => kind == ActorKind.Car
+        ? new[] { "Sedán gris claro", "Sedán negro", "Sedán rojo", "Coupé plateado", "Coupé azul", "Sedán verde" }[Math.Clamp(look, 0, Actor.Looks - 1)]
+        : $"Aspecto {look + 1}";
+
+    private void AddActor(ActorKind kind)
     {
-        if (_actors.Count >= Actors.Maximum) { _message.Text = $"Un proyecto admite hasta {Actors.Maximum} personas."; return; }
+        if (_actors.Count >= Actors.Maximum) { _message.Text = $"Un proyecto admite hasta {Actors.Maximum} personas y coches."; return; }
         if (_pointUnderView() is not { } point) { _message.Text = "Mira hacia el suelo: no hay nada bajo el centro de la vista."; return; }
-        var actor = new Actor(Guid.NewGuid(), $"Persona {_actors.Count + 1}", _actors.Count % Actor.Looks, 1.2, true, 0, [point]);
+        var car = kind == ActorKind.Car;
+        var actor = new Actor(Guid.NewGuid(), $"{(car ? "Coche" : "Persona")} {_actors.Count + 1}", _actors.Count % Actor.Looks, car ? 8 : 1.2, true, 0, [point], kind);
         _actors.Add(actor);
         _changed = true;
         RefreshList(actor.Id);
-        _message.Text = "Persona colocada. Mueve la vista y añade puntos de ruta para que camine.";
+        _message.Text = car ? "Coche colocado. Mueve la vista y añade puntos de ruta para que circule (8 m/s son unos 30 km/h)."
+                            : "Persona colocada. Mueve la vista y añade puntos de ruta para que camine.";
     }
 
     private void AddPoint(object sender, RoutedEventArgs e)
@@ -201,6 +209,6 @@ internal sealed class PeopleDialog : Window
     {
         _changed = false;
         _apply(_actors);
-        _message.Text = _actors.Count == 0 ? "No hay personas en el proyecto." : $"{_actors.Count} persona(s) aplicadas: se ven en el render y caminan en la película.";
+        _message.Text = _actors.Count == 0 ? "No hay personas ni coches en el proyecto." : $"{_actors.Count} aplicados: se ven en el render y se mueven en la película.";
     }
 }

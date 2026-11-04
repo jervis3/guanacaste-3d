@@ -22,7 +22,7 @@ public partial class RenderPanel
         _peopleWindow = new PeopleDialog(source.GetActors(), PointUnderView, actors =>
         {
             source.SetActors(actors);
-            StatusText.Text = actors.Count == 0 ? "No hay personas en el proyecto." : $"{actors.Count} persona(s) en el proyecto; el render se actualiza.";
+            StatusText.Text = actors.Count == 0 ? "No hay personas ni coches en el proyecto." : $"{actors.Count} personas y coches en el proyecto; el render se actualiza.";
         })
         {
             Owner = Window.GetWindow(this)

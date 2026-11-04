@@ -120,6 +120,73 @@ static class RenderPeopleChecks
             if (Directory.Exists(folder)) Directory.Delete(folder, recursive: true);
         }
 
+        // Cars: the shipped sedan and coupé drive a route, turn smoothly at corners and keep their smooth normals turned with them.
+        string? root = null;
+        for (var directory = new DirectoryInfo(AppContext.BaseDirectory); directory is not null; directory = directory.Parent)
+            if (File.Exists(Path.Combine(directory.FullName, "Guanacaste3D.slnx"))) { root = directory.FullName; break; }
+        if (root is not null)
+        {
+            var carFiles = new[] { "sedan-car", "coupe-car-silver" };
+            var meshes = new Dictionary<int, FamilyMesh.Decoded?>();
+            FamilyMesh.Decoded? Model(int model) => meshes.TryGetValue(model, out var decoded) ? decoded : meshes[model] =
+                NativeDocumentStore.LoadFamily(Path.Combine(root, "src", "Guanacaste3D.Desktop", "resources", "families", carFiles[model] + ".g3df")).Mesh!.Decode();
+            Actor Car(int look, params ActorPoint[] route) => new(Guid.NewGuid(), "Coche", look, 8, false, 0, route, ActorKind.Car);
+            var drive = Car(2, new ActorPoint(0, 0, 0), new ActorPoint(40, 0, 0));
+            check(ActorRig.From([drive]) is null && ActorRig.From([drive, standingAtOrigin]) is { Count: 1 },
+                "Cars need their meshes: without them a car is left out, and the people are still drawn");
+            var carRig = ActorRig.From([drive, Car(3, new ActorPoint(0, 10, 0), new ActorPoint(0, 30, 0))], Model)!;
+            check(carRig.Count == 2 && carRig.Indices.Length / 3 > 40000 && carRig.HasNormals && carRig.Materials.Length >= 6 &&
+                  carRig.TriangleMaterial.Max() < carRig.Materials.Length,
+                $"A car is a few thousand triangles of its own with paint, rubber, metal and glass ({carRig.Indices.Length / 3} for two)");
+            var (carPositions, carNormals) = carRig.Frame(2);
+            var firstCar = carPositions.Take(carPositions.Length / 2 - 0).ToArray();
+            check(carNormals.Take(1000).All(normal => normal == Vector3.Zero || Math.Abs(normal.Length() - 1) < 1e-3f) && carNormals.Any(normal => normal != Vector3.Zero),
+                "The cars' smooth normals stay unit length when the car is turned");
+            var carRed = ActorRig.From([Car(2, new ActorPoint(0, 0, 0))], Model)!.Materials;
+            var carSilver = ActorRig.From([Car(3, new ActorPoint(0, 0, 0))], Model)!.Materials;
+            check(carRed.Any(material => material.BaseColor == new Vector3(0.42f, 0.025f, 0.025f)) &&
+                  carSilver.Any(material => material.BaseColor == MaterialLibrary.ForKind(SurfaceKind.CarPaintSilver).BaseColor),
+                "A look repaints the car, and the silver coupé keeps its own paint");
+            (float X, float Y) Span(Actor actor, double seconds)
+            {
+                var points = ActorRig.From([actor], Model)!.Positions(seconds);
+                return (points.Max(p => p.X) - points.Min(p => p.X), points.Max(p => p.Y) - points.Min(p => p.Y));
+            }
+            var alongX = Span(Car(0, new ActorPoint(0, 0, 0), new ActorPoint(30, 0, 0)), 1);
+            var alongY = Span(Car(0, new ActorPoint(0, 0, 0), new ActorPoint(0, 30, 0)), 1);
+            check(alongX.X > 4 && alongX.Y < 2.3 && alongY.Y > 4 && alongY.X < 2.3, $"A car is about 4.7 m long and 1.9 m wide and drives lengthways along its route ({alongX.X:0.0} x {alongX.Y:0.0})");
+
+            // A corner: the car's heading turns over the stretch round it and never jumps.
+            var cornering = Walker(false, 0, new ActorPoint(0, 0, 0), new ActorPoint(10, 0, 0), new ActorPoint(10, 10, 0));
+            var headings = Enumerable.Range(0, 101).Select(step => Actors.At(cornering, step * 0.1).Heading).ToArray();
+            var biggestStep = Enumerable.Range(1, 100).Max(index => Math.Abs(headings[index] - headings[index - 1]));
+            check(biggestStep < 0.35 && Math.Abs(Actors.At(cornering, 5).Heading - Math.PI / 4) < 0.1 && Math.Abs(headings[0]) < 1e-4 && Math.Abs(headings[^1] - Math.PI / 2) < 1e-4,
+                $"Round a corner the heading turns over a short stretch (biggest step {biggestStep:0.00} rad), not all at once");
+
+            // The tracer moves a car and its normals together: the picture changes and stays valid.
+            var carScene = new RenderSceneBuilder().AddBuilding(ground);
+            var (startPositions, startNormals) = carRig.Frame(0);
+            var withCars = carScene.AddDynamic(startPositions, carRig.Indices, carRig.TriangleMaterial, carRig.Materials, startNormals).Build();
+            var carCamera = new RenderCamera(new Vector3(20, -22, 4), new Vector3(20, 0, 0.8f), 55);
+            byte[] CarShot(double seconds)
+            {
+                var tracer = new PathTracer(withCars, 96, 64, carCamera, settings);
+                var (positions, normals) = carRig.Frame(seconds);
+                tracer.MoveActors(positions, normals);
+                for (var pass = 0; pass < 3; pass++) tracer.RenderPass();
+                return tracer.ToBgra32(finish: ImageProcessor.Plain);
+            }
+            var firstShot = CarShot(0.5);
+            var secondShot = CarShot(4);
+            check(Difference(firstShot, secondShot) > 100 && withCars.DynamicTriangleCount == carRig.Indices.Length / 3,
+                $"A car drives across the picture: {Difference(firstShot, secondShot)} pixels differ between two instants");
+        }
+
+        // Projects saved before cars existed hold people only.
+        check(Actors.TryParse("""{"V":1,"Items":[{"Id":"11111111-1111-1111-1111-111111111111","Name":"Vieja","Look":1,"Speed":1.2,"Loop":true,"Start":0,"Route":[[0,0,0]]}]}""") is { Count: 1 } old &&
+              old[0].Kind == ActorKind.Person && Actors.TryParse(Actors.Serialize([standingAtOrigin with { Kind = ActorKind.Car }]))![0].Kind == ActorKind.Car,
+            "A project saved before cars existed reads as people, and a car keeps its kind");
+
         // The cobogó house keeps working with people in it, and reads none from a project without them.
         var house = BreezeBlockHouseShowcase.Create();
         check(ActorRig.Of(house) is null, "A project without people has no rig");

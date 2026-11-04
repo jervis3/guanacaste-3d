@@ -351,7 +351,11 @@ public partial class MainWindow
                 (id, kind) => kind == SurfaceKind.Ocean ? Ocean.Material(sea) : perElement(id, kind));
             foreach (var (link, loaded) in links) builder.AddModel(loaded.Model, link.Placement);
             // The people go in last: they are the one block the movie moves, from the place they start at.
-            if (ActorRig.Of(document) is { } people) builder.AddDynamic(people.Positions(0), people.Indices, people.TriangleMaterial, people.Materials);
+            if (ActorRig.Of(document, CarLibrary.Load) is { } people)
+            {
+                var (start, startNormals) = people.Frame(0);
+                builder.AddDynamic(start, people.Indices, people.TriangleMaterial, people.Materials, people.HasNormals ? startNormals : null);
+            }
             var scene = builder.Build();
             if (clay) scene = RenderSceneStyles.Clay(scene);
             MemoryTrim.AfterHeavyBuild();

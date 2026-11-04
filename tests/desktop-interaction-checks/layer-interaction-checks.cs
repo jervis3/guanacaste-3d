@@ -219,21 +219,26 @@ internal static partial class InteractionChecks
             var people = new List<Actor>
             {
                 new(Guid.NewGuid(), "Ana", 0, 1.2, true, 0, [start, start with { X = start.X + 5 }]),
-                new(Guid.NewGuid(), "Luis", 3, 1.0, false, 2, [start with { Y = start.Y - 1 }])
+                new(Guid.NewGuid(), "Luis", 3, 1.0, false, 2, [start with { Y = start.Y - 1 }]),
+                new(Guid.NewGuid(), "Coche", 2, 8, true, 0, [start with { Y = start.Y - 6 }, start with { X = start.X + 12, Y = start.Y - 6 }], ActorKind.Car)
             };
             savePeople.Invoke(host, [people]);
-            Check(session.GetExtension(Actors.Key) is { Length: > 50 } && ((IReadOnlyList<Actor>)readPeople.Invoke(host, null)!).Count == 2,
+            Check(session.GetExtension(Actors.Key) is { Length: > 50 } && ((IReadOnlyList<Actor>)readPeople.Invoke(host, null)!).Count == 3,
                 "Saving people keeps them, with their routes, in the project");
 
             // ONE rebuild: the scene now has the sea, the decal and the people together.
             var after = Await(Scene())!;
             Check(HasSea(after), "Switching the ocean on puts the sea in the render scene");
-            Check(after.DynamicTriangleCount > 400 && after.DynamicTriangleCount % 2 == 0 &&
+            Check(after.DynamicTriangleCount > 30000 &&
                   after.TriangleCount == before.TriangleCount + 2 + after.DynamicTriangleCount,
-                $"The render scene holds the decal's two triangles and the two people as a block of moving triangles ({after.DynamicTriangleCount}) after everything else ({before.TriangleCount} -> {after.TriangleCount})");
+                $"The render scene holds the decal's two triangles and the two people and the car as a block of moving triangles ({after.DynamicTriangleCount}) after everything else ({before.TriangleCount} -> {after.TriangleCount})");
             var tracer = new PathTracer(after, 16, 16, new RenderCamera(new System.Numerics.Vector3(0, -8, 2), System.Numerics.Vector3.Zero, 45));
-            var rig = ActorRig.From(people)!;
-            tracer.MoveActors(rig.Positions(3));
+            // The window's own loader of car meshes, as the program reads them from its resources folder.
+            FamilyMesh.Decoded? CarMesh(int model) => NativeDocumentStore.LoadFamily(Path.Combine(AppContext.BaseDirectory, "resources", "families",
+                (model == 0 ? "sedan-car" : "coupe-car-silver") + ".g3df")).Mesh!.Decode();
+            var rig = ActorRig.From(people, CarMesh)!;
+            var (movedPositions, movedNormals) = rig.Frame(3);
+            tracer.MoveActors(movedPositions, movedNormals);
             Check(tracer.HasActors && rig.VertexCount == after.DynamicVertexCount, "A tracer of the house's scene can move the people frame by frame");
 
             // Removals, checked in the project (each would otherwise cost another rebuild).

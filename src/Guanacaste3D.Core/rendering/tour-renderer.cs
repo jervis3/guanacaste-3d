@@ -77,7 +77,10 @@ public static class TourRenderer
                 }
                 // People walk with the movie: the same instant of the movie that places the camera places them.
                 if (actors is not null && tracer.HasActors)
-                    tracer.MoveActors(actors.Positions(total <= 1 ? 0 : path.Duration * frame / (total - 1)));
+                {
+                    var (positions, normals) = actors.Frame(total <= 1 ? 0 : path.Duration * frame / (total - 1));
+                    tracer.MoveActors(positions, normals);
+                }
                 tracer.SetCamera(new RenderCamera(position, target, fieldOfView));
                 for (var sample = 0; sample < samplesPerFrame; sample++)
                 {

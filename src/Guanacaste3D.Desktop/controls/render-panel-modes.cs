@@ -182,7 +182,7 @@ public partial class RenderPanel
         left.Children.Add(fromPhotos);
         left.Children.Add(clear);
         left.Children.Add(layersButton);
-        left.Children.Add(Small("", "Personas", "Coloca personas que caminan por rutas: se ven en el render y en la película",
+        left.Children.Add(Small("", "Personas y coches", "Coloca personas que caminan y coches que circulan por rutas: se ven en el render y en la película",
             (_, _) => ShowPeopleWindow(), out _));
 
         _timeText = new TextBlock { Foreground = Frozen(Color.FromRgb(0x8F, 0xA6, 0xB9)), FontSize = 11.5, Margin = new Thickness(0, 10, 0, 4) };

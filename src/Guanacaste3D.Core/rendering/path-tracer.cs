@@ -34,7 +34,9 @@ public sealed partial class PathTracer
     private Bvh? _dynamic;
     private Vector3[]? _dynamicPositions;
     private int[]? _dynamicIndices;
+    private Vector3[]? _dynamicNormals;
     private readonly int _dynamicTriangleStart;
+    private readonly int _dynamicTriangleCount;
     private readonly SurfaceData[] _surfaces;
     private readonly float _rayEpsilon;
     private RenderSettings _settings;
@@ -137,6 +139,7 @@ public sealed partial class PathTracer
         var opaqueTriangles = new List<int>(scene.TriangleCount);
         var glassTriangles = new List<int>();
         _dynamicTriangleStart = scene.DynamicTriangleStart;
+        _dynamicTriangleCount = scene.DynamicTriangleCount;
         var dynamicEnd = scene.DynamicTriangleCount == 0 ? 0 : scene.DynamicTriangleStart + scene.DynamicTriangleCount;
         for (var triangle = 0; triangle < scene.TriangleCount; triangle++)
         {
@@ -155,6 +158,8 @@ public sealed partial class PathTracer
             for (var index = 0; index < _dynamicIndices.Length; index++)
                 _dynamicIndices[index] = scene.Indices[scene.DynamicTriangleStart * 3 + index] - scene.DynamicVertexStart;
             _dynamic = new Bvh(_dynamicPositions, _dynamicIndices, null);
+            if (scene.Normals is { } sceneNormals)
+                _dynamicNormals = sceneNormals.AsSpan(scene.DynamicVertexStart, scene.DynamicVertexCount).ToArray();
         }
 
         var (min, max) = scene.Bounds();
@@ -302,13 +307,15 @@ public sealed partial class PathTracer
     /// <see cref="ActorRig.Positions"/> gives them) and replace the ones the tracer holds. Only their small hierarchy is
     /// rebuilt, and the picture starts over, as it does when the camera moves.
     /// </summary>
-    public void MoveActors(ReadOnlySpan<Vector3> positions)
+    public void MoveActors(ReadOnlySpan<Vector3> positions, ReadOnlySpan<Vector3> normals = default)
     {
         if (_dynamicPositions is null || _dynamicIndices is null)
             throw new InvalidOperationException("The scene has no moving geometry.");
         if (positions.Length != _dynamicPositions.Length)
             throw new ArgumentException("The positions do not match the scene's moving geometry.", nameof(positions));
         positions.CopyTo(_dynamicPositions);
+        // The smooth normals of cars turn with them; people have none, and their zeros stay.
+        if (_dynamicNormals is not null && normals.Length == positions.Length) normals.CopyTo(_dynamicNormals);
         _dynamic = new Bvh(_dynamicPositions, _dynamicIndices, null);
         _primary = null;
         Reset();
@@ -1025,16 +1032,24 @@ public sealed partial class PathTracer
         var material = _scene.TriangleMaterial[triangle];
         var geometric = bvh.Normal(in hit);
         var normal = geometric;
-        if (_scene.Normals is { } normals)
+        var smooth = Vector3.Zero;
+        if (_dynamicNormals is not null && triangle >= _dynamicTriangleStart && triangle < _dynamicTriangleStart + _dynamicTriangleCount)
+        {
+            // A moving car: its smooth normals live in this tracer's own copy, turned with the car.
+            var i = (triangle - _dynamicTriangleStart) * 3;
+            smooth = _dynamicNormals[_dynamicIndices![i]] * (1 - hit.U - hit.V) + _dynamicNormals[_dynamicIndices[i + 1]] * hit.U +
+                     _dynamicNormals[_dynamicIndices[i + 2]] * hit.V;
+        }
+        else if (_scene.Normals is { } normals)
         {
             var i = triangle * 3;
-            var smooth = normals[_scene.Indices[i]] * (1 - hit.U - hit.V) + normals[_scene.Indices[i + 1]] * hit.U +
-                         normals[_scene.Indices[i + 2]] * hit.V;
-            if (smooth.LengthSquared() > 1e-6f)
-            {
-                smooth = Vector3.Normalize(smooth);
-                normal = Vector3.Dot(smooth, geometric) < 0 ? -smooth : smooth;
-            }
+            smooth = normals[_scene.Indices[i]] * (1 - hit.U - hit.V) + normals[_scene.Indices[i + 1]] * hit.U +
+                     normals[_scene.Indices[i + 2]] * hit.V;
+        }
+        if (smooth.LengthSquared() > 1e-6f)
+        {
+            smooth = Vector3.Normalize(smooth);
+            normal = Vector3.Dot(smooth, geometric) < 0 ? -smooth : smooth;
         }
         if (Vector3.Dot(geometric, direction) > 0)
         {
