@@ -176,6 +176,13 @@
   <sys:String x:Key="Transaction.SetResultsMetric">Cambiar el relleno de resultados</sys:String>
   <sys:String x:Key="Transaction.GenerateMassVariants">Crear formas alternativas de una masa</sys:String>
   <sys:String x:Key="Transaction.AddMassAtElevation">Crear una masa a una elevación</sys:String>
+  <sys:String x:Key="Transaction.AddStudy">Crear un estudio de diseño</sys:String>
+  <sys:String x:Key="Transaction.RemoveStudy">Quitar un estudio de diseño</sys:String>
+  <sys:String x:Key="Transaction.ApplyStudyOutcome">Aplicar un resultado de estudio a una masa</sys:String>
+  <sys:String x:Key="Transaction.AddStudyOutcomesAsOptions">Dejar resultados de estudio como opciones de diseño</sys:String>
+  <sys:String x:Key="Transaction.SaveAutomation">Guardar un guion de automatización</sys:String>
+  <sys:String x:Key="Transaction.RemoveAutomation">Quitar un guion de automatización</sys:String>
+  <sys:String x:Key="Transaction.RunAutomation">Reproducir un guion de automatización</sys:String>
   <sys:String x:Key="Transaction.SetViewCategories">Cambiar categorías visibles de la vista</sys:String>
   <sys:String x:Key="Transaction.PasteWalls">Pegar muros</sys:String>
   <sys:String x:Key="Transaction.AddArcWall">Crear muro curvo</sys:String>

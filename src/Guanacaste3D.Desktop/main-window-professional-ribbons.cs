@@ -24,6 +24,7 @@ public partial class MainWindow
     /// </summary>
     private bool ExecuteApplicationCommand(string commandId)
     {
+        RecordAutomationStep(commandId);
         var eventArguments = new RoutedEventArgs();
         CancelStructuralTool();
         switch (commandId)
@@ -88,7 +89,7 @@ public partial class MainWindow
             case "About": About_Click(this, eventArguments); return true;
             default: return TryExecutePresentationCommand(commandId) || TryExecuteWallJoinCommand(commandId) ||
                             TryExecuteWallEditCommand(commandId) || TryExecuteViewCategoryCommand(commandId) || TryExecuteManageCommand(commandId) || TryExecuteView3DCommand(commandId) || TryExecuteBulkCommand(commandId) ||
-                            TryExecuteStagesCommand(commandId) || TryExecuteWallProfileCommand(commandId) || TryExecuteUnitsCommand(commandId) || TryExecuteGroupCommand(commandId) || TryExecuteSiteCommand(commandId) || TryExecuteMassCommand(commandId) || TryExecuteSheetAidCommand(commandId) || TryExecuteMarkCommand(commandId) || TryExecuteSiteImportCommand(commandId) || TryExecuteCollaborationCommand(commandId) || TryExecuteCoordinationCommand(commandId) || TryExecuteTableImportCommand(commandId) || TryExecuteMepCommand(commandId) || TryExecuteSteelCommand(commandId) || TryExecuteConcreteCommand(commandId) || TryExecuteAnalysisCommand(commandId) || TryExecuteGeometryToolCommand(commandId) || TryExecuteAddInsCommand(commandId) || TryExecuteStructuralCommand(commandId);
+                            TryExecuteStagesCommand(commandId) || TryExecuteWallProfileCommand(commandId) || TryExecuteUnitsCommand(commandId) || TryExecuteGroupCommand(commandId) || TryExecuteSiteCommand(commandId) || TryExecuteMassCommand(commandId) || TryExecuteSheetAidCommand(commandId) || TryExecuteMarkCommand(commandId) || TryExecuteSiteImportCommand(commandId) || TryExecuteCollaborationCommand(commandId) || TryExecuteCoordinationCommand(commandId) || TryExecuteTableImportCommand(commandId) || TryExecuteMepCommand(commandId) || TryExecuteSteelCommand(commandId) || TryExecuteConcreteCommand(commandId) || TryExecuteAnalysisCommand(commandId) || TryExecuteGeometryToolCommand(commandId) || TryExecuteAddInsCommand(commandId) || TryExecuteStudyCommand(commandId) || TryExecuteAutomationCommand(commandId) || TryExecuteStructuralCommand(commandId);
         }
     }
 

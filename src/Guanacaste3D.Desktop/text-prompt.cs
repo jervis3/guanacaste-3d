@@ -9,11 +9,19 @@ internal static class TextPrompt
     /// <summary>Answers instead of the dialog, for non-interactive WPF checks. Real users always see the dialog.</summary>
     internal static Func<string, string?>? Responder;
 
+    /// <summary>Told every answer given, so the automation recorder can keep what a command asked.</summary>
+    internal static Action<string>? Recorder;
+
     /// <summary>Returns the trimmed text, or null when the user cancels or leaves the field blank.</summary>
     public static string? Ask(Window owner, string title, string label, string acceptText, string cancelText,
         string? initialText = null)
     {
-        if (Responder is { } responder) return responder(title);
+        if (Responder is { } responder)
+        {
+            var answer = responder(title);
+            if (answer is not null) Recorder?.Invoke(answer);
+            return answer;
+        }
         var input = new TextBox { MinWidth = 260, Text = initialText ?? string.Empty };
         input.Loaded += (_, _) => { input.Focus(); input.SelectAll(); };
         string? result = null;
@@ -43,6 +51,8 @@ internal static class TextPrompt
         window.Content = layout;
 
         window.ShowDialog();
-        return window.DialogResult == true && !string.IsNullOrWhiteSpace(result) ? result.Trim() : null;
+        var accepted = window.DialogResult == true && !string.IsNullOrWhiteSpace(result) ? result.Trim() : null;
+        if (accepted is not null) Recorder?.Invoke(accepted);
+        return accepted;
     }
 }

@@ -61,6 +61,7 @@ public sealed partial class DocumentSession
     {
         document.Dimensions.RemoveAll(item => PlanDimensions.Resolve(document, item) is null);
         ElementGroups.Prune(document);
+        document.Studies.RemoveAll(study => !document.StructuralElements.Any(item => item.Id == study.MassId && item.Kind == StructuralElementKind.Mass));
         foreach (var zone in document.Zones.ToArray())
         {
             var alive = zone.RoomIds.Where(id => document.Rooms.Any(room => room.Id == id)).ToList();
@@ -102,6 +103,23 @@ public sealed partial class DocumentSession
             throw new ArgumentException("A transaction group needs a name.", nameof(name));
         _openGroup = new TransactionGroup(this, name, Document, _undo.Count);
         return _openGroup;
+    }
+
+    /// <summary>Remembers where the history stands, so that everything done after can be made one undo step with <see cref="CollapseHistorySince"/>.</summary>
+    public HistoryMark MarkHistory() => new(Document, _undo.Count);
+
+    /// <summary>
+    /// Merges every step taken since the mark into one named step, as a group does, but without holding a group open, so the steps may
+    /// themselves be groups. Nothing changes when nothing was done since the mark, or when the history was trimmed past it.
+    /// </summary>
+    public void CollapseHistorySince(HistoryMark mark, string name)
+    {
+        if (string.IsNullOrWhiteSpace(name)) throw new ArgumentException("A step needs a name.", nameof(name));
+        if (_openGroup is not null) throw new InvalidOperationException("A transaction group is open.");
+        if (_undo.Count <= mark.UndoDepth || mark.UndoDepth < 0) return;
+        _undo.RemoveRange(mark.UndoDepth, _undo.Count - mark.UndoDepth);
+        _undo.Add(new HistoryEntry(name, mark.Start));
+        TrimHistory(_undo);
     }
 
     /// <summary>Collapses the group's transactions into a single named history entry.</summary>
@@ -202,3 +220,6 @@ public sealed class TransactionGroup : IDisposable
     /// <summary>Rolls back when the group was neither assimilated nor rolled back.</summary>
     public void Dispose() => RollBack();
 }
+
+/// <summary>A point in the history: the document then and how many steps could be undone.</summary>
+public readonly record struct HistoryMark(BuildingDocument Start, int UndoDepth);
