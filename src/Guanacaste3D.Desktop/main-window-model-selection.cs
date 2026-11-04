@@ -283,7 +283,7 @@ public partial class MainWindow
         {
             var text = new TextBlock
             {
-                Text = line.Meters.ToString("0.00", CultureInfo.CurrentCulture) + " m", FontSize = 12, FontWeight = FontWeights.SemiBold,
+                Text = Units.FormatLength(line.Meters), FontSize = 12, FontWeight = FontWeights.SemiBold,
                 Foreground = new SolidColorBrush(Color.FromRgb(20, 70, 140))
             };
             var chip = new Border

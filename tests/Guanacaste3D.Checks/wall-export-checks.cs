@@ -48,6 +48,14 @@ static class WallExportChecks
         var imperial = new ProjectUnits(LengthUnit.Feet, 2);
         check(imperial.Symbol("m") == "ft" && imperial.Symbol("m²") == "ft²" && imperial.Symbol("m³") == "ft³" && imperial.Symbol("°") == "°" && imperial.Symbol("") == "" && imperial.NumberFor("°", 5) is null, "Column units become the project's units, and other units are left as they are");
 
+        // Wall schedules carry the net height, the net area and the base.
+        var columns = ScheduleQuantities.ColumnsFor(ElementCategory.Walls).Select(column => column.Key).ToList();
+        check(columns.Contains(ScheduleQuantities.NetHeight) && columns.Contains(ScheduleQuantities.Area) && columns.Contains(ScheduleQuantities.BaseOffset), "A wall schedule offers net height, area and base offset");
+        var quantities = ScheduleQuantities.Compute(plain.Document, ElementCategory.Walls)[wall];
+        check(Near((double)quantities[ScheduleQuantities.NetHeight], 3.5) && Near((double)quantities[ScheduleQuantities.BaseOffset], -0.5) && Near((double)quantities[ScheduleQuantities.Area], 35), "A wall taken 50 cm below its level reads 3.5 m tall and 35 m² in the schedule");
+        var gableQuantities = ScheduleQuantities.Compute(gable.Document, ElementCategory.Walls)[gableWall];
+        check(Near((double)gableQuantities[ScheduleQuantities.Area], gable.Document.Walls.Single().ElevationArea), "A wall with a gable top reads the area under its profile, not its full rectangle");
+
         // Audit.
         var low = new DocumentSession(BuildingDocument.Create("Dintel"));
         var lowLevel = low.Document.Levels[0].Id;

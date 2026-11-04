@@ -248,6 +248,8 @@
   <sys:String x:Key="Parameters.Column.Length">Longitud</sys:String>
   <sys:String x:Key="Parameters.Column.Height">Altura</sys:String>
   <sys:String x:Key="Parameters.Column.Thickness">Espesor</sys:String>
+  <sys:String x:Key="Parameters.Column.NetHeight">Altura neta</sys:String>
+  <sys:String x:Key="Parameters.Column.BaseOffset">Desfase inferior</sys:String>
   <sys:String x:Key="Parameters.Column.NetVolume">Volumen neto</sys:String>
   <sys:String x:Key="Parameters.Column.Width">Ancho</sys:String>
   <sys:String x:Key="Parameters.Column.Sill">Antepecho</sys:String>

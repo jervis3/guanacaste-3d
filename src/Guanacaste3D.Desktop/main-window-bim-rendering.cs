@@ -96,7 +96,7 @@ public partial class MainWindow
             var center = WorldToCanvas(room.Center);
             var label = new TextBlock
             {
-                Text = $"{room.Number}\n{room.Name}\n{room.Area:0.00} m²",
+                Text = $"{room.Number}\n{room.Name}\n{Units.FormatArea(room.Area)}",
                 TextAlignment = TextAlignment.Center,
                 FontSize = 11,
                 Foreground = Brushes.MidnightBlue,

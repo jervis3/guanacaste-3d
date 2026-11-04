@@ -1337,6 +1337,17 @@ internal static partial class InteractionChecks
                 Check(Math.Abs(session.Document.Walls.Single(wall => wall.Id == baseWall).BaseOffset + 0.6) < 1e-9, "One undo gives the wall its base back");
                 session.Redo();
 
+                // Labels follow the project's units.
+                session.SetProjectUnits(new ProjectUnits(LengthUnit.Feet, 2));
+                Invoke("RefreshAll");
+                Pump();
+                var planTexts = ((System.Windows.Controls.Canvas)Field<object>("PlanCanvas")).Children.OfType<System.Windows.Controls.TextBlock>().Select(block => block.Text).ToList();
+                Check(planTexts.Any(text => text.Contains("ft²")) && !planTexts.Any(text => text.Contains(" m²")), "With the project in feet the room labels of the plan read in square feet");
+                session.SetProjectUnits(ProjectUnits.Default);
+                Invoke("RefreshAll");
+                Pump();
+                Check(((System.Windows.Controls.Canvas)Field<object>("PlanCanvas")).Children.OfType<System.Windows.Controls.TextBlock>().Any(block => block.Text.Contains(" m²")), "Back in meters they read in square meters again");
+
                 SetField("_viewSelection", null);
                 Pump();
                 tabs.SelectedIndex = 0;

@@ -152,7 +152,7 @@ public partial class MainWindow
             canvas.Children.Add(line);
             var label = new TextBlock
             {
-                Text = $"{level.Name}  {level.Elevation:0.00} m",
+                Text = $"{level.Name}  {Units.FormatLength(level.Elevation)}",
                 Foreground = Brushes.SteelBlue,
                 FontSize = 11,
                 Background = Brushes.White

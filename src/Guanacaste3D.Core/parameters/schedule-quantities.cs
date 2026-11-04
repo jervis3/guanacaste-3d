@@ -18,6 +18,8 @@ public static class ScheduleQuantities
     public const string PaperSize = "PaperSize";
     public const string TopConstraint = "TopConstraint";
     public const string TopOffset = "TopOffset";
+    public const string NetHeight = "NetHeight";
+    public const string BaseOffset = "BaseOffset";
 
     /// <summary>Returns the built-in quantity columns for a category, in display order.</summary>
     public static IReadOnlyList<CategoryScheduleColumn> ColumnsFor(ElementCategory category) => category switch
@@ -25,7 +27,7 @@ public static class ScheduleQuantities
         ElementCategory.Walls =>
         [
             new(Length, null, "m"), new(Height, null, "m"), new(Thickness, null, "m"), new(NetVolume, null, "m³"),
-            new(TopConstraint, null), new(TopOffset, null, "m")
+            new(TopConstraint, null), new(TopOffset, null, "m"), new(NetHeight, null, "m"), new(Area, null, "m²"), new(BaseOffset, null, "m")
         ],
         ElementCategory.Doors or ElementCategory.Windows =>
         [
@@ -53,7 +55,9 @@ public static class ScheduleQuantities
                     var values = new Dictionary<string, object>
                     {
                         [Length] = wall.Length, [Height] = wall.Height, [Thickness] = wall.Thickness,
-                        [NetVolume] = WallGeometry.NetVolume(wall, hosted[wall.Id])
+                        [NetVolume] = WallGeometry.NetVolume(wall, hosted[wall.Id]),
+                        [NetHeight] = wall.NetHeight, [BaseOffset] = wall.BaseOffset,
+                        [Area] = FinishRules.WallFaceArea(wall, hosted[wall.Id])
                     };
                     if (wall.TopLevelId is Guid topId)
                     {

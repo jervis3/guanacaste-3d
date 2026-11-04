@@ -278,7 +278,7 @@ public partial class MainWindow
         var center = WorldToCanvas(new Point2((area.Start.X + area.End.X) / 2, (area.Start.Y + area.End.Y) / 2));
         var label = new TextBlock
         {
-            Text = $"{area.Name}\n{area.PlanArea:0.00} m²",
+            Text = $"{area.Name}\n{Units.FormatArea(area.PlanArea)}",
             TextAlignment = TextAlignment.Center,
             FontSize = 11,
             Foreground = Brushes.Chocolate,
