@@ -40,6 +40,36 @@ public partial class MainWindow
     }
 
     /// <summary>
+    /// Uses the unoccupied ribbon tab strip as a recovery drag surface when the title bar is outside the monitor.
+    /// Tab headers keep their selection behavior, and the ribbon command area below the strip never moves the window.
+    /// </summary>
+    private void RibbonTabStrip_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (WindowState != WindowState.Normal || e.ChangedButton != MouseButton.Left || e.ClickCount != 1 ||
+            sender is not TabControl tabControl || e.OriginalSource is not DependencyObject source)
+        {
+            return;
+        }
+
+        if (!IsRibbonTabStripDragTarget(tabControl, source, e.GetPosition(tabControl))) return;
+
+        DragMove();
+        e.Handled = true;
+    }
+
+    /// <summary>
+    /// Identifies only the empty header-row background as draggable, excluding tab headers and ribbon commands.
+    /// This boundary is separate from mouse capture so layout tests can verify the recovery surface safely.
+    /// </summary>
+    private static bool IsRibbonTabStripDragTarget(TabControl tabControl, DependencyObject source, Point position)
+    {
+        var firstVisibleTab = tabControl.Items.OfType<TabItem>().FirstOrDefault(tab => tab.IsVisible);
+        var tabStripHeight = (firstVisibleTab?.ActualHeight ?? 0) + 3;
+        return tabStripHeight > 3 && position.Y >= 0 && position.Y <= tabStripHeight &&
+               ItemsControl.ContainerFromElement(tabControl, source) is not TabItem;
+    }
+
+    /// <summary>
     /// Keeps the custom frame inside the monitor work area when maximized and swaps the caption glyph.
     /// </summary>
     private void MainWindow_StateChanged(object? sender, EventArgs e)

@@ -115,6 +115,15 @@ internal static class ArchitectureUiChecks
         var titles = Descendants<TextBlock>(ribbon).Select(block => block.Text).ToList();
         foreach (var title in new[] { "Seleccionar", "Construir", "Circulación", "Modelo", "Habitación y área", "Hueco", "Referencia", "Plano de trabajo" })
             Check(titles.Any(text => text.StartsWith(title, StringComparison.Ordinal)), $"Panel '{title}' is present");
+        var ribbonTabs = (TabControl)_window.FindName("RibbonTabControl");
+        var firstTab = (TabItem)ribbonTabs.Items[0];
+        var dragTargetCheck = typeof(MainWindow).GetMethod("IsRibbonTabStripDragTarget", BindingFlags.Static | BindingFlags.NonPublic)!;
+        Check((bool)dragTargetCheck.Invoke(null, [ribbonTabs, ribbonTabs, new Point(ribbonTabs.ActualWidth - 10, 5)])!,
+            "Empty ribbon tab-strip space can recover a window whose title bar is outside the monitor");
+        Check(!(bool)dragTargetCheck.Invoke(null, [ribbonTabs, firstTab, new Point(100, 5)])!,
+            "Ribbon tab headers keep selecting tabs instead of moving the window");
+        Check(!(bool)dragTargetCheck.Invoke(null, [ribbonTabs, ribbonTabs, new Point(100, firstTab.ActualHeight + 10)])!,
+            "Ribbon commands and content never become window drag surfaces");
         SaveBitmap("artifacts/interaction-evidence/architecture-ribbon.png");
     }
 

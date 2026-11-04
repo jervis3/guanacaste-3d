@@ -63,7 +63,8 @@
       </Grid>
     </Border>
     <TabControl x:Name="RibbonTabControl" DockPanel.Dock="Top" Style="{StaticResource RibbonTabControlStyle}"
-                ItemContainerStyle="{StaticResource RibbonTabItemStyle}">
+                ItemContainerStyle="{StaticResource RibbonTabItemStyle}"
+                MouseLeftButtonDown="RibbonTabStrip_MouseLeftButtonDown">
       <TabControl.Tag>
         <Button x:Name="FileMenuButton" Content="{DynamicResource Menu.File}" Click="FileMenuButton_Click"
                 Style="{StaticResource FileTabButtonStyle}">

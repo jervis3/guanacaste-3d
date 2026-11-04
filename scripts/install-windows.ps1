@@ -25,7 +25,7 @@ try {
     Set-Location -LiteralPath $projectRoot
     if (-not $SkipBuild) {
         dotnet publish src/Guanacaste3D.Desktop/Guanacaste3D.Desktop.csproj `
-            -c Release -r win-x64 --self-contained false -o $publishRoot
+            -c Release -r win-x64 --self-contained true -p:PublishSingleFile=false -o $publishRoot
         if ($LASTEXITCODE -ne 0) {
             throw "Guanacaste 3D publishing failed with exit code $LASTEXITCODE."
         }
