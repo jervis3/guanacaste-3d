@@ -115,4 +115,42 @@ public partial class RenderPanel
         // A newer rebuild of the rows replaced this one while it was drawing.
         if (revision == _materialBallRevision && ball is not null) view.Source = ball;
     }
+
+    private const int OptionBallCacheLimit = 240;
+    private readonly Dictionary<string, BitmapSource> _optionBalls = new(StringComparer.Ordinal);
+
+    /// <summary>
+    /// One entry of the material drop-down: a small ball and the name. The ball is drawn when the entry scrolls
+    /// into view (the list is virtualized), so opening a list of hundreds of materials stays instant.
+    /// </summary>
+    private FrameworkElement BuildOptionContent(string name, string path, SurfaceKind category,
+        double roughness, double metallic, double relief)
+    {
+        var picture = new Image { Width = 56, Height = 36, Stretch = Stretch.Uniform };
+        RenderOptions.SetBitmapScalingMode(picture, BitmapScalingMode.HighQuality);
+        var grid = new Grid { MinHeight = 38 };
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(64) });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        Grid.SetColumn(picture, 0);
+        grid.Children.Add(picture);
+        grid.Children.Add(new TextBlock
+        {
+            Text = name, VerticalAlignment = VerticalAlignment.Center, TextWrapping = TextWrapping.Wrap,
+            Margin = new Thickness(4, 0, 4, 0)
+        });
+        Grid.SetColumn((UIElement)grid.Children[1], 1);
+        picture.Loaded += async (_, _) =>
+        {
+            if (picture.Source is not null) return;
+            if (_optionBalls.TryGetValue(path, out var cached)) { picture.Source = cached; return; }
+            var projectFile = _source?.ProjectFilePath;
+            var ball = await Task.Run(() => RenderMaterialBall(new RenderMaterialAssignment(category, path),
+                category, projectFile, roughness, metallic, relief));
+            if (ball is null) return;
+            if (_optionBalls.Count >= OptionBallCacheLimit) _optionBalls.Clear();
+            _optionBalls[path] = ball;
+            picture.Source = ball;
+        };
+        return grid;
+    }
 }

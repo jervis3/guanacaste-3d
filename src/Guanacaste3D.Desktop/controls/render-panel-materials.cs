@@ -92,7 +92,7 @@ public partial class RenderPanel
                 loadingOptions = true;
                 try
                 {
-                    PopulateMaterialOptions(picker, _source?.RenderMaterials.FirstOrDefault(material =>
+                    PopulateMaterialOptions(picker, category, _source?.RenderMaterials.FirstOrDefault(material =>
                         material.Category == category && material.ElementId == scope));
                 }
                 finally { loadingOptions = false; }
@@ -205,7 +205,7 @@ public partial class RenderPanel
     }
 
     /// <summary>Builds the full library only when the user opens a picker, avoiding thousands of idle WPF items.</summary>
-    private void PopulateMaterialOptions(ComboBox picker, RenderMaterialAssignment? assignment)
+    private void PopulateMaterialOptions(ComboBox picker, SurfaceKind category, RenderMaterialAssignment? assignment)
     {
         picker.Items.Clear();
         picker.Items.Add(new ComboBoxItem { Content = _focusedElement is Guid ? "Heredar material general" : Text("RenderPanel.MaterialStock"), Tag = StockTag });
@@ -223,7 +223,9 @@ public partial class RenderPanel
             foreach (var preset in group)
                 picker.Items.Add(new ComboBoxItem
                 {
-                    Content = "   " + preset.Name, Tag = MaterialPresets.Prefix + preset.Id
+                    Content = BuildOptionContent(preset.Name, MaterialPresets.Prefix + preset.Id, category,
+                        preset.Material.Roughness, preset.Material.Metallic, preset.Relief),
+                    Tag = MaterialPresets.Prefix + preset.Id
                 });
         }
         // Filtering must never hide the currently assigned preset or make it appear stock.
@@ -251,7 +253,9 @@ public partial class RenderPanel
             MaterialCatalogSearch.Matches(search, texture.Key, Text(texture.LabelKey))))
             picker.Items.Add(new ComboBoxItem
             {
-                Content = Text(texture.LabelKey), Tag = RenderTextureLibrary.BuiltInPrefix + texture.Key
+                Content = BuildOptionContent(Text(texture.LabelKey), RenderTextureLibrary.BuiltInPrefix + texture.Key,
+                    category, .82, 0, texture.Relief),
+                Tag = RenderTextureLibrary.BuiltInPrefix + texture.Key
             });
         if (assignment is not null &&
             assignment.TexturePath.StartsWith(RenderTextureLibrary.BuiltInPrefix, StringComparison.Ordinal) &&
