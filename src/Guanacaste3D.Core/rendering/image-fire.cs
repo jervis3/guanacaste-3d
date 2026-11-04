@@ -33,6 +33,7 @@ public static partial class ImageProcessor
                         var veil = sprite.Color * (0.22f + 0.3f * MathF.Min(Sampling.Luminance(current), 2f));
                         image[index] = Vector3.Lerp(current, veil, Math.Clamp(sprite.Strength * falloff, 0f, 0.85f));
                     }
+                    else if (sprite.Dark) image[index] = Vector3.Lerp(image[index], image[index] * 0.15f + sprite.Color * 0.05f, Math.Clamp(sprite.Strength * falloff, 0f, 0.9f));
                     else image[index] += sprite.Color * (sprite.Strength * falloff * 0.9f);
                 }
         }

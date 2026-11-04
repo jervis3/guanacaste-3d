@@ -54,6 +54,18 @@ static class RenderFireChecks
               FireParticles.Build([campfire with { Smoke = 0 }], view, 1.0).All(sprite => !sprite.Smoke),
             "Stronger flames give more light, and a fire without flames or without smoke draws only the other");
 
+        // Sparks and ash: only live flames throw them, they are small, and ash is dark where sparks are light.
+        var live = FireParticles.Build([campfire with { Smoke = 0 }], view, 1.0);
+        var ash = live.Where(sprite => sprite.Dark).ToList();
+        var bright = live.Where(sprite => !sprite.Dark).ToList();
+        var sparks = bright.Where(sprite => sprite.Aspect == 1).ToList();
+        check(ash.Count >= 10 && sparks.Count >= 6 && ash.All(sprite => !sprite.Smoke && sprite.Color.X < 0.4f) &&
+              sparks.Average(sprite => sprite.WorldRadius) < bright.Where(sprite => sprite.Aspect > 1).Average(sprite => sprite.WorldRadius) / 3 &&
+              !FireParticles.Build([campfire with { Flames = 0 }], view, 1.0).Any(sprite => sprite.Dark) &&
+              !FireParticles.Build([campfire with { Smoke = 0 }], view, 1.0).SequenceEqual(FireParticles.Build([campfire with { Smoke = 0 }], view, 2.0)),
+            $"Live flames throw small bright sparks ({sparks.Count}) and drifting dark flecks of ash ({ash.Count}); a fire with no flames throws none");
+
+
         // The picture: flames show, and what stands in front of them hides them.
         tracer.RenderPass();
         var plain = ImageProcessor.Plain;

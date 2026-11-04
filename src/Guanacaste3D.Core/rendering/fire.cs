@@ -90,9 +90,12 @@ public sealed class ScreenProjection(Vector3 position, Vector3 forward, Vector3 
     }
 }
 
-/// <summary>One soft round particle on the picture: a piece of flame (added light) or of smoke (a grey veil).</summary>
+/// <summary>
+/// One soft round particle on the picture: a piece of flame or a spark (added light), of smoke (a grey veil) or a fleck of
+/// ash (<paramref name="Dark"/>: a small dark speck laid over what is behind it).
+/// </summary>
 internal readonly record struct FireSprite(float Column, float Row, float Radius, float Distance, float WorldRadius, bool Smoke,
-    Vector3 Color, float Strength, float Aspect = 1);
+    Vector3 Color, float Strength, float Aspect = 1, bool Dark = false);
 
 /// <summary>
 /// The particles of the fires at a time of the movie. Every particle is worked out from a hash of its number and the time, so
@@ -142,6 +145,40 @@ internal static class FireParticles
                     : Vector3.Lerp(new Vector3(1.0f, 0.55f, 0.12f), new Vector3(0.9f, 0.18f, 0.03f), (age - 0.5f) * 2);
                 Add(sprites, view, at, radius, false, color, (float)fire.Flames * (1.0f * MathF.Pow(1 - age, 1.3f) + 0.05f), 1.9f);
             }
+            // Sparks leap out of live flames, cool from yellow to red as they climb and flicker; ash flecks drift up with the
+            // heat, then wander down on the wind. Both are few and tiny: they are what makes a fire read as a fire.
+            if (fire.Flames > 0)
+            {
+                var sparkCount = (int)MathF.Round(6 + 34 * (float)fire.Flames);
+                for (var index = 0; index < sparkCount; index++)
+                {
+                    var h = Hash(seed + 2000003u, (uint)index);
+                    float u1 = Unit(h, 0), u2 = Unit(h, 8), u3 = Unit(h, 16), u4 = Unit(h, 24);
+                    var age = Fraction(time / (1.2f + 1.6f * u1) + u2);
+                    var angle = u3 * 2 * MathF.PI;
+                    var reach = size * 0.18f * MathF.Sqrt(u4) * (1 + 2 * age);
+                    var wiggle = MathF.Sin(time * 9 + u3 * 30) * size * 0.12f * age;
+                    var at = origin + new Vector3(MathF.Cos(angle) * reach + size * 1.1f * age * (0.6f + u4) + wiggle, MathF.Sin(angle) * reach,
+                        size * (0.5f + 3.8f * MathF.Pow(age, 0.8f)));
+                    var twinkle = 0.65f + 0.35f * MathF.Sin(time * 23 + u2 * 40);
+                    var color = Vector3.Lerp(new Vector3(1.0f, 0.8f, 0.35f), new Vector3(1.0f, 0.3f, 0.05f), age);
+                    Add(sprites, view, at, size * 0.03f * (1 - 0.5f * age) + 0.002f, false, color, (float)fire.Flames * 5f * MathF.Pow(1 - age, 1.0f) * twinkle, minimumPixels: 1.3f);
+                }
+                var ashCount = (int)MathF.Round(10 + 50 * (float)fire.Flames);
+                for (var index = 0; index < ashCount; index++)
+                {
+                    var h = Hash(seed + 3000017u, (uint)index);
+                    float u1 = Unit(h, 0), u2 = Unit(h, 8), u3 = Unit(h, 16), u4 = Unit(h, 24);
+                    var age = Fraction(time / (4f + 4f * u1) + u2);
+                    var angle = u3 * 2 * MathF.PI;
+                    var reach = size * 0.3f * MathF.Sqrt(u4);
+                    var height = MathF.Max(0.02f, size * (0.4f + 3.6f * age - 3.2f * age * age));
+                    var at = origin + new Vector3(MathF.Cos(angle) * reach + 3.2f * age * size, MathF.Sin(angle) * reach + MathF.Sin(time * 1.7f + u1 * 12) * size * 0.3f * age, height);
+                    var fade = Math.Clamp(age / 0.08f, 0f, 1f) * Math.Clamp((1 - age) / 0.15f, 0f, 1f);
+                    var tone = 0.07f + 0.25f * u4 * u4;
+                    Add(sprites, view, at, size * (0.016f + 0.012f * u2), false, new Vector3(tone), 0.9f * fade, dark: true, minimumPixels: 0.9f);
+                }
+            }
             var smokeCount = fire.Smoke > 0 ? (int)MathF.Round(24 + 110 * (float)fire.Smoke) : 0;
             var smokeBase = fire.Flames > 0.05 ? size * 0.8f : size * 0.1f;
             for (var index = 0; index < smokeCount; index++)
@@ -164,11 +201,17 @@ internal static class FireParticles
     }
 
     private static void Add(List<FireSprite> sprites, ScreenProjection view, Vector3 at, float worldRadius, bool smoke, Vector3 color, float strength,
-        float aspect = 1)
+        float aspect = 1, bool dark = false, float minimumPixels = 0)
     {
         if (strength <= 1e-4f || !view.TryProject(at, out var column, out var row, out var distance, out var pixelsPerMetre)) return;
         var radius = worldRadius * pixelsPerMetre;
+        // A spark or a fleck is smaller than a pixel from afar: it is kept a pixel wide and fainter by the area it lost, so it twinkles instead of vanishing.
+        if (minimumPixels > 0 && radius < minimumPixels)
+        {
+            strength *= Math.Max(0.15f, radius * radius / (minimumPixels * minimumPixels));
+            radius = minimumPixels;
+        }
         if (radius < 0.6f || radius > 2000) return;
-        sprites.Add(new FireSprite(column, row, radius, distance, worldRadius, smoke, color, strength, aspect));
+        sprites.Add(new FireSprite(column, row, radius, distance, worldRadius, smoke, color, strength, aspect, dark));
     }
 }
