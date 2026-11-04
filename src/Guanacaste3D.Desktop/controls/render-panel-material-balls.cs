@@ -119,38 +119,171 @@ public partial class RenderPanel
     private const int OptionBallCacheLimit = 240;
     private readonly Dictionary<string, BitmapSource> _optionBalls = new(StringComparer.Ordinal);
 
+    private static readonly Brush TileBackground = new SolidColorBrush(Color.FromRgb(31, 47, 64));
+    private static readonly Brush TileSelectedBorder = new SolidColorBrush(Color.FromRgb(107, 215, 197));
+    private static readonly Brush TileBorder = new SolidColorBrush(Color.FromRgb(62, 83, 101));
+
+    private static bool IsActionTag(string? tag) =>
+        tag is StockTag or CustomTag or PbrPackageTag or CreatePbrTag or BrowsePbrTag;
+
     /// <summary>
-    /// One entry of the material drop-down: a small ball and the name. The ball is drawn when the entry scrolls
-    /// into view (the list is virtualized), so opening a list of hundreds of materials stays instant.
+    /// The closed picker of a surface: a button that opens a Lumion-style grid of material balls (with a search
+    /// box) instead of a plain text list. Choosing a ball selects it in the hidden picker, which applies it.
     /// </summary>
-    private FrameworkElement BuildOptionContent(string name, string path, SurfaceKind category,
+    private Button BuildMaterialPickerFace(ComboBox picker, SurfaceKind category, bool focusedHere, Action populate)
+    {
+        var chevron = new TextBlock
+        {
+            Text = "", FontFamily = new FontFamily("Segoe MDL2 Assets"), FontSize = 10,
+            VerticalAlignment = VerticalAlignment.Center, Foreground = new SolidColorBrush(Color.FromRgb(179, 196, 214))
+        };
+        var name = new TextBlock
+        {
+            Text = (picker.SelectedItem as ComboBoxItem)?.Content as string ?? "",
+            TextTrimming = TextTrimming.CharacterEllipsis, VerticalAlignment = VerticalAlignment.Center
+        };
+        var head = new DockPanel();
+        DockPanel.SetDock(chevron, Dock.Right);
+        head.Children.Add(chevron);
+        head.Children.Add(name);
+        var face = new Button
+        {
+            Content = head, HorizontalContentAlignment = HorizontalAlignment.Stretch,
+            HorizontalAlignment = HorizontalAlignment.Stretch, Margin = new Thickness(0), MinHeight = 32,
+            Padding = new Thickness(9, 5, 9, 5), ToolTip = "Elegir el material con bolas de ejemplo"
+        };
+        if (focusedHere) { face.BorderBrush = Brushes.DarkOrange; face.BorderThickness = new Thickness(2); }
+
+        var tiles = new WrapPanel();
+        var search = new TextBox { Margin = new Thickness(0, 0, 0, 8), ToolTip = "Buscar por nombre o familia" };
+        var scroller = new ScrollViewer
+        {
+            MaxHeight = 430, VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+            HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled, Content = tiles
+        };
+        var stack = new StackPanel();
+        stack.Children.Add(search);
+        stack.Children.Add(scroller);
+        var popup = new System.Windows.Controls.Primitives.Popup
+        {
+            PlacementTarget = face, Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom,
+            StaysOpen = false, AllowsTransparency = true,
+            Child = new Border
+            {
+                Width = 408, Padding = new Thickness(10), CornerRadius = new CornerRadius(9),
+                Background = new SolidColorBrush(Color.FromRgb(22, 33, 45)), BorderThickness = new Thickness(1),
+                BorderBrush = new SolidColorBrush(Color.FromRgb(74, 104, 130)), Child = stack,
+                Effect = new System.Windows.Media.Effects.DropShadowEffect { BlurRadius = 18, Opacity = .5, ShadowDepth = 4 }
+            }
+        };
+
+        void Rebuild()
+        {
+            tiles.Children.Clear();
+            var selectedTag = (picker.SelectedItem as ComboBoxItem)?.Tag as string;
+            foreach (var item in picker.Items.OfType<ComboBoxItem>().ToArray())
+            {
+                var label = item.Content as string ?? "";
+                if (!item.IsEnabled && item.Tag is null)
+                {
+                    tiles.Children.Add(new TextBlock
+                    {
+                        Text = label, Width = 372, Margin = new Thickness(2, 10, 2, 4), FontWeight = FontWeights.SemiBold,
+                        Foreground = new SolidColorBrush(Color.FromRgb(107, 215, 197))
+                    });
+                    continue;
+                }
+                var tag = item.Tag as string;
+                Button tile;
+                if (IsActionTag(tag))
+                {
+                    tile = new Button
+                    {
+                        Content = label.Trim(), Width = 372, Margin = new Thickness(2),
+                        HorizontalContentAlignment = HorizontalAlignment.Left
+                    };
+                }
+                else
+                {
+                    var preset = tag is null ? null : MaterialPresets.FromPath(tag);
+                    var texture = tag is null ? null : RenderTextureLibrary.BuiltIn.FirstOrDefault(entry =>
+                        RenderTextureLibrary.BuiltInPrefix + entry.Key == tag);
+                    tile = new Button
+                    {
+                        Content = BuildMaterialTileContent(label.Trim(), tag ?? "", category,
+                            preset?.Material.Roughness ?? .82, preset?.Material.Metallic ?? 0,
+                            preset?.Relief ?? texture?.Relief ?? .3),
+                        Width = 92, Margin = new Thickness(2), Padding = new Thickness(3, 4, 3, 5),
+                        Background = TileBackground, ToolTip = label.Trim(),
+                        BorderBrush = tag == selectedTag ? TileSelectedBorder : TileBorder,
+                        BorderThickness = new Thickness(tag == selectedTag ? 2 : 1)
+                    };
+                }
+                var chosen = item;
+                tile.Click += (_, _) =>
+                {
+                    popup.IsOpen = false;
+                    picker.SelectedItem = chosen;
+                };
+                tiles.Children.Add(tile);
+            }
+        }
+
+        face.Click += (_, _) =>
+        {
+            search.Text = MaterialSearch.Text;
+            populate();
+            Rebuild();
+            popup.IsOpen = true;
+            Dispatcher.BeginInvoke(new Action(() => search.Focus()), System.Windows.Threading.DispatcherPriority.Input);
+        };
+        search.TextChanged += (_, _) =>
+        {
+            if (!popup.IsOpen) return;
+            MaterialSearch.Text = search.Text;
+            populate();
+            Rebuild();
+        };
+        // The popup joins the row's logical tree so it inherits the panel's dark styles.
+        face.Loaded += (_, _) =>
+        {
+            if (face.Parent is Panel owner && popup.Parent is null) owner.Children.Add(popup);
+        };
+        return face;
+    }
+
+    /// <summary>A ball with the material name under it; the ball is drawn when the tile first appears.</summary>
+    private FrameworkElement BuildMaterialTileContent(string name, string path, SurfaceKind category,
         double roughness, double metallic, double relief)
     {
-        var picture = new Image { Width = 56, Height = 36, Stretch = Stretch.Uniform };
+        var picture = new Image { Width = 80, Height = 51, Stretch = Stretch.Uniform };
         RenderOptions.SetBitmapScalingMode(picture, BitmapScalingMode.HighQuality);
-        var grid = new Grid { MinHeight = 38 };
-        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(64) });
-        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        Grid.SetColumn(picture, 0);
-        grid.Children.Add(picture);
-        grid.Children.Add(new TextBlock
+        var panel = new StackPanel();
+        panel.Children.Add(picture);
+        panel.Children.Add(new TextBlock
         {
-            Text = name, VerticalAlignment = VerticalAlignment.Center, TextWrapping = TextWrapping.Wrap,
-            Margin = new Thickness(4, 0, 4, 0)
+            Text = name, FontSize = 10.5, TextWrapping = TextWrapping.Wrap, TextAlignment = TextAlignment.Center,
+            MaxHeight = 28, TextTrimming = TextTrimming.CharacterEllipsis, Margin = new Thickness(0, 3, 0, 0),
+            Foreground = new SolidColorBrush(Color.FromRgb(234, 240, 246))
         });
-        Grid.SetColumn((UIElement)grid.Children[1], 1);
         picture.Loaded += async (_, _) =>
         {
             if (picture.Source is not null) return;
             if (_optionBalls.TryGetValue(path, out var cached)) { picture.Source = cached; return; }
             var projectFile = _source?.ProjectFilePath;
-            var ball = await Task.Run(() => RenderMaterialBall(new RenderMaterialAssignment(category, path),
-                category, projectFile, roughness, metallic, relief));
+            await _galleryDecodeGate.WaitAsync();
+            BitmapSource? ball;
+            try
+            {
+                ball = await Task.Run(() => RenderMaterialBall(new RenderMaterialAssignment(category, path),
+                    category, projectFile, roughness, metallic, relief));
+            }
+            finally { _galleryDecodeGate.Release(); }
             if (ball is null) return;
             if (_optionBalls.Count >= OptionBallCacheLimit) _optionBalls.Clear();
             _optionBalls[path] = ball;
             picture.Source = ball;
         };
-        return grid;
+        return panel;
     }
 }

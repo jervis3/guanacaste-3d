@@ -831,8 +831,8 @@
                           <TextBlock x:Name="GalleryAppearanceName" Text="{DynamicResource RenderGallery.NoMaterial}"
                                      TextWrapping="Wrap" Foreground="#ABC3D1" FontSize="11" Margin="0,0,0,8"/>
                           <!-- A stylised ball that answers the sliders at once; the real result is in the render. -->
-                          <Ellipse x:Name="GalleryPreviewSphere" Width="92" Height="92" Margin="0,2,0,12" HorizontalAlignment="Center"
-                                   Stroke="#406075" StrokeThickness="1" ToolTip="Vista previa aproximada del material"/>
+                          <Image x:Name="GalleryPreviewSphere" Width="176" Height="176" Margin="0,2,0,12" HorizontalAlignment="Center"
+                                 RenderOptions.BitmapScalingMode="HighQuality" ToolTip="Vista previa del material (aproximada)"/>
                           <DockPanel>
                             <TextBlock x:Name="GalleryRoughnessValue" DockPanel.Dock="Right" Foreground="#70DAC9"
                                        Text="0.70" Width="45" TextAlignment="Right"/>

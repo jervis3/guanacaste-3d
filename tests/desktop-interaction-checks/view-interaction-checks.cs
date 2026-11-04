@@ -168,6 +168,19 @@ internal static partial class InteractionChecks
             var materialsButton = (Button)panel.FindName("RenderRailMaterials");
             materialsButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
             Check(sectionTabs.SelectedIndex == 3, "The dedicated Render rail opens the materials panel");
+            static IEnumerable<object> LogicalDescendants(DependencyObject parent) =>
+                LogicalTreeHelper.GetChildren(parent).OfType<object>().SelectMany(child =>
+                    child is DependencyObject node ? new[] { child }.Concat(LogicalDescendants(node)) : new[] { child });
+            var materialRows = (StackPanel)panel.FindName("MaterialRows");
+            var faceButton = FindButtons(materialRows)
+                .First(button => Equals(button.ToolTip, "Elegir el material con bolas de ejemplo"));
+            faceButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Pump();
+            var gridPopup = LogicalDescendants(materialRows).OfType<System.Windows.Controls.Primitives.Popup>().First(item => item.IsOpen);
+            var ballGrid = (WrapPanel)((ScrollViewer)((StackPanel)((Border)gridPopup.Child).Child).Children[1]).Content;
+            Check(ballGrid.Children.OfType<Button>().Count() > 20,
+                "A surface's material picker opens a grid of material balls instead of a text list");
+            gridPopup.IsOpen = false;
             var gallery = (Expander)panel.FindName("GalleryExpander");
             gallery.IsExpanded = true;
             Pump();

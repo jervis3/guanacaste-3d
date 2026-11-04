@@ -98,6 +98,17 @@ public partial class RenderPanel
                 finally { loadingOptions = false; }
             };
             picker.SelectionChanged += (_, _) => { if (!loadingOptions) MaterialChosen(category, picker, size, scope); };
+            var face = BuildMaterialPickerFace(picker, category, focusedHere: _focusedMaterial == category,
+                populate: () =>
+                {
+                    loadingOptions = true;
+                    try
+                    {
+                        PopulateMaterialOptions(picker, category, _source?.RenderMaterials.FirstOrDefault(material =>
+                            material.Category == category && material.ElementId == scope));
+                    }
+                    finally { loadingOptions = false; }
+                });
             size.LostFocus += (_, _) => MaterialSizeChanged(category, size, scope);
             size.KeyDown += (_, e) =>
             {
@@ -139,8 +150,10 @@ public partial class RenderPanel
             duplicate.Click += (_, _) => { duplicate.ContextMenu = menu; menu.PlacementTarget = duplicate; menu.IsOpen = true; };
             // Give the material name its full width; controls no longer compete for
             // the same narrow horizontal row in the 420 px render sidebar.
-            picker.HorizontalAlignment = HorizontalAlignment.Stretch;
+            // The picker stays as the model (selection and change handling); the face opens the ball grid instead.
+            picker.Visibility = Visibility.Collapsed;
             row.Children.Add(picker);
+            row.Children.Add(face);
             var details = new WrapPanel { Margin = new Thickness(0, 6, 0, 0) };
             details.Children.Add(new TextBlock
             {
@@ -223,8 +236,7 @@ public partial class RenderPanel
             foreach (var preset in group)
                 picker.Items.Add(new ComboBoxItem
                 {
-                    Content = BuildOptionContent(preset.Name, MaterialPresets.Prefix + preset.Id, category,
-                        preset.Material.Roughness, preset.Material.Metallic, preset.Relief),
+                    Content = preset.Name,
                     Tag = MaterialPresets.Prefix + preset.Id
                 });
         }
@@ -253,8 +265,7 @@ public partial class RenderPanel
             MaterialCatalogSearch.Matches(search, texture.Key, Text(texture.LabelKey))))
             picker.Items.Add(new ComboBoxItem
             {
-                Content = BuildOptionContent(Text(texture.LabelKey), RenderTextureLibrary.BuiltInPrefix + texture.Key,
-                    category, .82, 0, texture.Relief),
+                Content = Text(texture.LabelKey),
                 Tag = RenderTextureLibrary.BuiltInPrefix + texture.Key
             });
         if (assignment is not null &&

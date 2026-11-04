@@ -11,13 +11,18 @@ namespace Guanacaste3D.Desktop;
 /// </summary>
 internal static class MaterialSpherePreview
 {
-    private const int Width = 132;
-    private const int Height = 84;
-    private const float Radius = 36.5f;
+    internal const int DefaultWidth = 132;
+    internal const int DefaultHeight = 84;
+    internal const float DefaultRadius = 36.5f;
     private static readonly Vector3 Light = Vector3.Normalize(new Vector3(-0.57f, -0.62f, 0.55f));
     private static readonly Vector3 HalfVector = Vector3.Normalize(Light + Vector3.UnitZ);
 
-    internal static BitmapSource Create(BitmapSource source, double roughness, double metallic, double relief)
+    internal static BitmapSource Create(BitmapSource source, double roughness, double metallic, double relief) =>
+        CreateSized(source, roughness, metallic, relief, DefaultWidth, DefaultHeight, DefaultRadius);
+
+    /// <summary>The same shader on a canvas of any size, for the large ball beside the sliders.</summary>
+    internal static BitmapSource CreateSized(BitmapSource source, double roughness, double metallic, double relief,
+        int width, int height, float radius)
     {
         ArgumentNullException.ThrowIfNull(source);
         if (source.PixelWidth < 1 || source.PixelHeight < 1)
@@ -27,18 +32,18 @@ internal static class MaterialSpherePreview
         var pixels = new byte[checked(bitmap.PixelWidth * bitmap.PixelHeight * 4)];
         bitmap.CopyPixels(pixels, bitmap.PixelWidth * 4, 0);
 
-        var output = new byte[Width * Height * 4];
+        var output = new byte[width * height * 4];
         var r = float.IsFinite((float)roughness) ? Math.Clamp((float)roughness, .04f, 1) : .8f;
         var metal = float.IsFinite((float)metallic) ? Math.Clamp((float)metallic, 0, 1) : 0;
         var bump = float.IsFinite((float)relief) ? Math.Clamp((float)relief, 0, 1) : 0;
-        for (var y = 0; y < Height; y++)
-            for (var x = 0; x < Width; x++)
+        for (var y = 0; y < height; y++)
+            for (var x = 0; x < width; x++)
             {
-                var index = (y * Width + x) * 4;
-                var px = (x + .5f - Width * .5f) / Radius;
-                var py = (y + .5f - Height * .5f) / Radius;
+                var index = (y * width + x) * 4;
+                var px = (x + .5f - width * .5f) / radius;
+                var py = (y + .5f - height * .5f) / radius;
                 var distanceSquared = px * px + py * py;
-                var background = 0.10f + .055f * (1 - y / (float)Height);
+                var background = 0.10f + .055f * (1 - y / (float)height);
                 var backgroundColor = new Vector3(background * .74f, background * .86f, background);
                 Vector3 color = backgroundColor;
                 if (distanceSquared <= 1.055f)
@@ -69,7 +74,7 @@ internal static class MaterialSpherePreview
                     color = albedo * diffuse +
                             Vector3.Lerp(new Vector3(.38f), albedo, metal) * highlight * (1 + metal) +
                             Vector3.Lerp(new Vector3(.045f), albedo * .35f, metal) * fresnel;
-                    var coverage = Math.Clamp((1 - MathF.Sqrt(distanceSquared)) * Radius * 1.5f + .5f, 0, 1);
+                    var coverage = Math.Clamp((1 - MathF.Sqrt(distanceSquared)) * radius * 1.5f + .5f, 0, 1);
                     color = Vector3.Lerp(backgroundColor, color, coverage);
                 }
 
@@ -79,7 +84,7 @@ internal static class MaterialSpherePreview
                 output[index + 3] = 255;
             }
 
-        var result = BitmapSource.Create(Width, Height, 96, 96, PixelFormats.Bgra32, null, output, Width * 4);
+        var result = BitmapSource.Create(width, height, 96, 96, PixelFormats.Bgra32, null, output, width * 4);
         result.Freeze();
         return result;
     }

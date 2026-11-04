@@ -139,27 +139,39 @@ public partial class RenderPanel
         }
     }
 
-    /// <summary>Paints the ball: its colour is the tint, the highlight widens with roughness and takes the colour as metal.</summary>
+    private string? _bigBallKey;
+    private BitmapSource? _bigBallAlbedo;
+
+    /// <summary>
+    /// Draws the large ball under the sliders with the same shader as the thumbnails, so roughness, metalness,
+    /// relief and colour are judged on a lit sphere. The picture is decoded once per material, not per slider tick.
+    /// </summary>
     private void UpdateGalleryPreview()
     {
         if (GalleryPreviewSphere is null) return;
-        var baseColor = _galleryTintHex is { } hex && ColorConverter.ConvertFromString(hex) is Color tint ? tint : Color.FromRgb(184, 184, 178);
-        var roughness = GalleryRoughnessSlider.Value;
-        var metallic = GalleryMetallicSlider.Value;
-        static Color Mix(Color a, Color b, double t) => Color.FromRgb(
-            (byte)(a.R + (b.R - a.R) * t), (byte)(a.G + (b.G - a.G) * t), (byte)(a.B + (b.B - a.B) * t));
-        var highlight = Mix(Colors.White, baseColor, metallic * 0.8);
-        var lit = Mix(baseColor, highlight, (1 - roughness) * 0.9);
-        var shade = Mix(baseColor, Colors.Black, 0.62);
-        GalleryPreviewSphere.Fill = new RadialGradientBrush
+        var category = GalleryTarget();
+        var current = GalleryAssignment();
+        var key = current?.TexturePath ?? "stock:" + category;
+        if (key != _bigBallKey)
         {
-            GradientOrigin = new Point(0.34, 0.28), Center = new Point(0.5, 0.5), RadiusX = 0.72, RadiusY = 0.72,
-            GradientStops =
-            [
-                new GradientStop(lit, 0), new GradientStop(Mix(baseColor, lit, 0.35), 0.1 + 0.5 * roughness),
-                new GradientStop(baseColor, 0.55), new GradientStop(shade, 1)
-            ]
-        };
+            _bigBallKey = key;
+            _bigBallAlbedo = null;
+            try
+            {
+                var file = current is null || current.TexturePath == "stock:"
+                    ? null : RenderTextureLibrary.Resolve(current.TexturePath, _source?.ProjectFilePath);
+                if (file is not null && File.Exists(file)) _bigBallAlbedo = DecodeGalleryImage(file, 256);
+            }
+            catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or
+                                                NotSupportedException or ArgumentException or FormatException or
+                                                InvalidOperationException)
+            { /* The flat colour below stands in for an unreadable picture. */ }
+        }
+        var preset = current is null ? null : MaterialPresets.FromPath(current.TexturePath);
+        var material = preset?.Material ?? MaterialLibrary.ForKind(category);
+        var albedo = _bigBallAlbedo ?? SolidSwatch(_galleryTintHex is { } hex ? TintToLinear(hex) : material.BaseColor);
+        GalleryPreviewSphere.Source = MaterialSpherePreview.CreateSized(albedo, GalleryRoughnessSlider.Value,
+            GalleryMetallicSlider.Value, GalleryReliefSlider.Value, 176, 176, 80f);
     }
 
     private void UpdateGalleryAppearanceLabels()
