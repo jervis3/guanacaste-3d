@@ -25,6 +25,8 @@ public sealed class DesktopOptions
         Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
     public string DefaultFamilyFolder { get; set; } =
         Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+    /// <summary>The folder of the shared family library; empty uses a default under Documents.</summary>
+    public string CloudLibraryFolder { get; set; } = string.Empty;
     public bool CheckSpelling { get; set; } = true;
     public string DictionaryLanguage { get; set; } = "Español";
     public bool ShowNavigationWheelText { get; set; } = true;

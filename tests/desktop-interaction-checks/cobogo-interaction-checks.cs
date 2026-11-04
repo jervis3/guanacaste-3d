@@ -1292,6 +1292,32 @@ internal static partial class InteractionChecks
                 session.Redo();
                 ClickIn("_playerWindow", "PlayerClose");
 
+                // Insert: the shared family library.
+                var libraryRoot = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"biblioteca-{Guid.NewGuid():N}");
+                System.IO.Directory.CreateDirectory(libraryRoot);
+                var libraryModel = System.IO.Path.Combine(libraryRoot, "tetra.obj");
+                System.IO.File.WriteAllText(libraryModel, "v 0 0 0\nv 1 0 0\nv 0 1 0\nv 0 0 1\nf 1 3 2\nf 1 2 4\nf 2 3 4\nf 3 1 4\n");
+                var libraryFolder = System.IO.Path.Combine(libraryRoot, "familias");
+                FamilyConverter.Convert(libraryModel, System.IO.Path.Combine(libraryFolder, "tetraedro.g3df"), "Tetraedro", FamilyCategory.Entourage);
+                Invoke("ExecuteApplicationCommand", "LoadCloudFamily");
+                Pump();
+                InWindow<System.Windows.Controls.TextBox>("_libraryWindow", "LibraryFolder").Text = libraryFolder;
+                var libraryList = InWindow<System.Windows.Controls.ListBox>("_libraryWindow", "LibraryList");
+                Check(libraryList.Items.Count == 1 && ((string)libraryList.Items[0]).StartsWith("tetraedro", StringComparison.Ordinal), "The library window lists the families in the folder chosen");
+                InWindow<System.Windows.Controls.TextBox>("_libraryWindow", "LibrarySearch").Text = "zzzz";
+                Check(libraryList.Items.Count == 0, "Searching a name that is not there lists nothing");
+                InWindow<System.Windows.Controls.TextBox>("_libraryWindow", "LibrarySearch").Text = "";
+                ClickIn("_libraryWindow", "LibraryLoad");
+                Check(InWindow<System.Windows.Controls.TextBlock>("_libraryWindow", "LibraryMessage").Text.Length > 0, "Loading with nothing chosen says to choose a family");
+                var componentsBefore = session.Document.StructuralElements.Count;
+                libraryList.SelectedIndex = 0;
+                ClickIn("_libraryWindow", "LibraryLoad");
+                Check(session.Document.StructuralElements.Count == componentsBefore + 1, "Loading a family of the library places it in the project");
+                Check(((string)Invoke("PublishLibraryFamily", System.IO.Path.Combine(libraryFolder, "tetraedro.g3df"), libraryFolder)!).Contains("tetraedro 2.g3df") && System.IO.Directory.GetFiles(libraryFolder, "*.g3df").Length == 2, "Publishing a family adds it to the library under a free name");
+                Check(!((string)Invoke("PublishLibraryFamily", libraryModel, libraryFolder)!).Contains("publicada"), "A file that is not a family is not published");
+                Field<System.Windows.Window>("_libraryWindow").Close();
+                System.IO.Directory.Delete(libraryRoot, true);
+
                 SetField("_viewSelection", null);
                 Pump();
                 tabs.SelectedIndex = 0;

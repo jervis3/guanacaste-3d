@@ -159,6 +159,8 @@
   <sys:String x:Key="Error.The script has no steps.">El guion no tiene pasos.</sys:String>
   <sys:String x:Key="Error.The project has too many scripts.">El proyecto ya tiene demasiados guiones.</sys:String>
   <sys:String x:Key="Error.The script does not exist.">El guion no existe.</sys:String>
+  <sys:String x:Key="Error.The folder does not exist.">La carpeta no existe.</sys:String>
+  <sys:String x:Key="Error.The family file is not valid.">El archivo de la familia no es válido.</sys:String>
   <sys:String x:Key="Error.The render scene does not exist.">La escena seleccionada ya no existe.</sys:String>
   <sys:String x:Key="Error.The render scene preview is too large.">La miniatura de la foto es demasiado grande.</sys:String>
   <sys:String x:Key="Error.The render scene collection is invalid.">La colección de escenas del proyecto no es válida.</sys:String>

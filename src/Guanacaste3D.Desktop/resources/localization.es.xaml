@@ -969,6 +969,16 @@
   <sys:String x:Key="Player.None">El proyecto no tiene guiones. Cree uno con Automatización.</sys:String>
   <sys:String x:Key="Player.Pick">Elija primero un guion de la lista.</sys:String>
   <sys:String x:Key="Player.Run">Reproducir</sys:String>
+  <sys:String x:Key="Library.Hint">Una carpeta compartida con familias (.g3df): puede ser una que su servicio en la nube mantenga igual en todos los equipos, un servidor o la del equipo de trabajo. Elija una familia para traerla al proyecto, o publique una de las suyas para que todos la tengan.</sys:String>
+  <sys:String x:Key="Library.Folder">Carpeta de la biblioteca</sys:String>
+  <sys:String x:Key="Library.Browse">Elegir carpeta…</sys:String>
+  <sys:String x:Key="Library.Load">Cargar en el proyecto</sys:String>
+  <sys:String x:Key="Library.Publish">Publicar una familia…</sys:String>
+  <sys:String x:Key="Library.None">No hay familias que mostrar en esta carpeta.</sys:String>
+  <sys:String x:Key="Library.Pick">Elija primero una familia de la lista.</sys:String>
+  <sys:String x:Key="Library.Published">Familia publicada en la biblioteca: {0}.</sys:String>
+  <sys:String x:Key="Library.Kind.Native">Familia</sys:String>
+  <sys:String x:Key="Library.Kind.Opening">Puerta o ventana</sys:String>
   <sys:String x:Key="Status.NoViewForCategories">Abra una planta, un alzado, una sección o la vista 3D para cambiar sus categorías.</sys:String>
   <sys:String x:Key="Status.ViewCategoriesChanged">Categorías ocultas en esta vista: {0}.</sys:String>
   <sys:String x:Key="Status.SelectWallFirst">Seleccione primero un muro.</sys:String>

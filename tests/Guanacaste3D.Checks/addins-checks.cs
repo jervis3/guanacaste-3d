@@ -41,6 +41,7 @@ static class AddInsChecks
         {
             Converter(check, folder);
             Transmittal(check, folder);
+            Library(check, folder);
         }
         finally
         {
@@ -150,6 +151,27 @@ static class AddInsChecks
         check(without.Notes.Contains("CentralMissing") && without.Entries.Count == 1 && !with.Notes.Contains("CentralMissing") && with.Entries.Any(item => item.Role == "Central") && ModelTransmittal.Verify(Path.Combine(folder, "equipo2.zip")).Count == 0,
             "A shared project takes its central model along, and says so when the central model is not there");
         check(Throws(() => ModelTransmittal.Create(house, Path.Combine(folder, "no-zip.txt"), DateTimeOffset.Now, false)) && Throws(() => ModelTransmittal.Create(house, "", DateTimeOffset.Now, false)), "A package must be a .zip file");
+    }
+
+    private static void Library(Action<bool, string> check, string folder)
+    {
+        var library = Path.Combine(folder, "biblioteca");
+        var model = WriteBox(folder, "base");
+        FamilyConverter.Convert(model, Path.Combine(library, "zeta.g3df"), "Zeta", FamilyCategory.Furniture);
+        FamilyConverter.Convert(model, Path.Combine(library, "muebles", "alfa.g3df"), "Alfa", FamilyCategory.Furniture);
+        var house = BreezeBlockHouseShowcase.Create();
+        FamilyFile.Save(Path.Combine(library, "ventana.g3df"), OpeningFamilyDocument.FromProject(house, house.OpeningTypes[0].FamilyName));
+        File.WriteAllText(Path.Combine(library, "dañado.g3df"), "esto no es una familia");
+        File.WriteAllText(Path.Combine(library, "notas.txt"), "no es una familia");
+        var found = FamilyLibrary.Scan(library);
+        check(found.Select(item => item.Name).SequenceEqual(["alfa", "ventana", "zeta"]) && found.Count(item => item.Kind == "Native") == 2 && found.Single(item => item.Name == "ventana").Kind == "Opening" && found.All(item => item.Bytes > 0),
+            "The library lists the families that can be read, by name, including those in folders under it, and leaves out damaged files and other kinds");
+        check(Throws(() => FamilyLibrary.Scan("")) && Throws(() => FamilyLibrary.Scan(Path.Combine(folder, "no-existe"))), "A library folder must be named and must exist");
+        var published = FamilyLibrary.Publish(Path.Combine(library, "zeta.g3df"), Path.Combine(folder, "nueva"));
+        var second = FamilyLibrary.Publish(Path.Combine(library, "zeta.g3df"), Path.Combine(folder, "nueva"));
+        check(File.Exists(published) && Path.GetFileName(second) == "zeta 2.g3df" && FamilyLibrary.Scan(Path.Combine(folder, "nueva")).Count == 2, "Publishing copies a family into the library, creating the folder, and never overwrites one with the same name");
+        check(Throws(() => FamilyLibrary.Publish(Path.Combine(library, "dañado.g3df"), library)) && Throws(() => FamilyLibrary.Publish(Path.Combine(library, "notas.txt"), library)) && Throws(() => FamilyLibrary.Publish(Path.Combine(folder, "nada.g3df"), library)) &&
+              Throws(() => FamilyLibrary.Publish(published, " ")), "A damaged file, another kind of file, a missing file and no folder are refused");
     }
 
     private static byte[] ReadAllBytes(this Stream stream)
