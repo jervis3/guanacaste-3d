@@ -39,6 +39,10 @@ internal static class Program
         var styles = RenderLooks.Styles.Select(p => (BitmapSource?)style.Invoke(null, [p])).ToArray();
         if (styles.Any(s => s is null || !s.IsFrozen) || styles.Skip(1).All(s => Pixels(s!).SequenceEqual(Pixels(styles[0]!))))
             throw new Exception("Style previews are missing or identical");
+        var panel = typeof(MainWindow).Assembly.GetType("Guanacaste3D.Desktop.Controls.RenderPanel", true)!;
+        var focalLengths = (int[])panel.GetField("FocalPresetLengths", BindingFlags.Static | BindingFlags.NonPublic)!.GetValue(null)!;
+        if (focalLengths.Length < 10 || focalLengths.Any(f => Math.Abs(PhotographicCamera.FocalLength(PhotographicCamera.VerticalFieldOfView(f)) - f) > .01))
+            throw new Exception("The focal-length presets must map back to the camera lens");
         Console.WriteLine($"PASS: {mesh.Positions.Count} textured vertices; material texture and 3D rotation.");
     }
 }
