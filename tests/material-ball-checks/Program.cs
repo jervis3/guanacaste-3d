@@ -4,6 +4,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Media.Media3D;
 using Guanacaste3D.Desktop;
+using Guanacaste3D.Core.Rendering;
 
 internal static class Program
 {
@@ -28,6 +29,16 @@ internal static class Program
         var diffuse = ((MaterialGroup)geometry.Material).Children.OfType<DiffuseMaterial>().Single();
         if (diffuse.Brush is not ImageBrush image || image.ImageSource != bitmap || geometry.Transform is not RotateTransform3D)
             throw new Exception("The preview does not apply the texture or expose a 3D rotation");
+        var thumbnails = typeof(MainWindow).Assembly.GetType("Guanacaste3D.Desktop.Controls.RenderLookThumbnail", true)!;
+        var sky = thumbnails.GetMethod("Sky")!;
+        var skies = RenderLooks.Skies.Select(p => (BitmapSource)sky.Invoke(null, [p])!).ToArray();
+        if (skies.Any(s => s.PixelWidth != 96 || s.PixelHeight != 54 || !s.IsFrozen)) throw new Exception("Invalid sky previews");
+        byte[] Pixels(BitmapSource b) { var data = new byte[b.PixelWidth*b.PixelHeight*4]; b.CopyPixels(data,b.PixelWidth*4,0); return data; }
+        if (skies.Skip(1).All(b => Pixels(b).SequenceEqual(Pixels(skies[0])))) throw new Exception("Sky previews must differ");
+        var style = thumbnails.GetMethod("Style")!;
+        var styles = RenderLooks.Styles.Select(p => (BitmapSource?)style.Invoke(null, [p])).ToArray();
+        if (styles.Any(s => s is null || !s.IsFrozen) || styles.Skip(1).All(s => Pixels(s!).SequenceEqual(Pixels(styles[0]!))))
+            throw new Exception("Style previews are missing or identical");
         Console.WriteLine($"PASS: {mesh.Positions.Count} textured vertices; material texture and 3D rotation.");
     }
 }
