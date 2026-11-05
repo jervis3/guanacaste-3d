@@ -580,6 +580,12 @@
                     <Slider x:Name="GrassSlider" Minimum="0" Maximum="1" Value="0" TickFrequency="0.05"
                             IsSnapToTickEnabled="True" ValueChanged="Lighting_SliderChanged"/>
                   </DockPanel>
+                  <TextBlock Style="{StaticResource PanelLabel}" Margin="0,12,0,0" Text="{DynamicResource Render.Wind.Strength}"/>
+                  <DockPanel>
+                    <TextBlock Style="{StaticResource SliderValue}" Text="{Binding Value, ElementName=WindSlider, StringFormat={}{0:0%}}"/>
+                    <Slider x:Name="WindSlider" Minimum="0" Maximum="1" Value="0" TickFrequency="0.05"
+                            IsSnapToTickEnabled="True" ValueChanged="Lighting_SliderChanged"/>
+                  </DockPanel>
                   <TextBlock Style="{StaticResource PanelLabel}" Margin="0,12,0,0" Text="{DynamicResource RenderPanel.Rain}"/>
                   <DockPanel>
                     <TextBlock Style="{StaticResource SliderValue}" Text="{Binding Value, ElementName=RainSlider, StringFormat={}{0:0%}}"/>

@@ -209,6 +209,8 @@ public partial class RenderPanel
             AerialPerspective = HazeCheck.IsChecked == true ? 1f : 0f,
             Wetness = RainWetness.Effective((float)WetnessSlider.Value, (float)RainSlider.Value),
             GrassHeight = (float)(GrassSlider.Value * 0.4),
+            WindStrength = (float)WindSlider.Value,
+            WindSeconds = (float)_playTime,
             CloudCover = _hdriEnvironment is null ? (float)(CloudSlider.Value / 100) : 0f,
             Clouds = SelectedClouds(),
             CloudSeed = (uint)CloudSeedSlider.Value,

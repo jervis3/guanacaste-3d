@@ -25,6 +25,7 @@ public partial class RenderPanel
         if (_preview is null) return;
         if (_actorRig is not null) _preview.SetActors(_actorRig, _playTime);
         if (FiresForFinish() is not null) _preview.SetFinish(CurrentFinish());
+        if (WindSlider.Value > 0 && GrassSlider.Value > 0) _preview.SetSettings(PreviewSettings());
     }
 
     /// <summary>Opens the window of people beside the view (one at a time).</summary>

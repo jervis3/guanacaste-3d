@@ -66,6 +66,8 @@ public static class RenderFx
             [Slider("WetnessSlider", "Intensidad", start: 0.6)], Featured: true),
         new("grass", "Hierba alta", "El césped y la hierba del suelo crecen con hojas de verdad, de un césped segado a un prado", FxCategory.Objects, "",
             [Slider("GrassSlider", "Altura", start: 0.4)], Featured: true),
+        new("wind", "Viento", "La hierba se inclina con el viento y las ráfagas la recorren en ondas; se mueve con la película", FxCategory.Weather, "",
+            [Slider("WindSlider", "Fuerza", start: 0.5)], Featured: true),
         new("vignette", "Viñeta", "Oscurece las esquinas de la imagen", FxCategory.Camera, "",
             [Toggle("VignetteCheck", "Activada", neutral: false)], Featured: true),
         new("dof", "Profundidad de campo", "Desenfoca lo que está lejos o cerca de la distancia de enfoque", FxCategory.Camera, "",

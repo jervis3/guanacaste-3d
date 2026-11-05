@@ -88,6 +88,10 @@ public sealed record RenderSettings
     public float Wetness { get; init; }
     /// <summary>Height of the tallest blade of the lawn, in metres (0 is off): lawn surfaces grow blades of grass with depth instead of a flat green.</summary>
     public float GrassHeight { get; init; }
+    /// <summary>Wind on the grass, 0–1 (0 is calm): blades lean downwind (the clouds' direction) in gusts that travel across the lawn.</summary>
+    public float WindStrength { get; init; }
+    /// <summary>The second of the movie the wind is at, so the gusts move from frame to frame.</summary>
+    public float WindSeconds { get; init; }
     /// <summary>
     /// Candidate lights examined per shading point. Where more lights than this can reach a point, one is chosen by
     /// resampled importance sampling, so cost stays flat as luminaires multiply; 0 evaluates every light every time.

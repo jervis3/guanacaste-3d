@@ -62,13 +62,30 @@ static class RenderGrassChecks
         check(Math.Abs(Brightness(grown, 45, 55) - Brightness(dry, 45, 55)) / Brightness(dry, 45, 55) < 0.25,
             $"Far lawn keeps about the brightness it had, so the blades do not show as a seam ({Brightness(grown, 45, 55):0} against {Brightness(dry, 45, 55):0})");
 
+        // Wind: calm grass is the grass as before at any second; windy grass leans and ripples, and the gusts move with the time.
+        var spot = new Vector3(3.1f, 4.7f, 0);
+        var calm = SurfacePatterns.GrassBlades(spot, Vector3.UnitZ, direction, 0.2f, 0.022f);
+        check(SurfacePatterns.GrassBlades(spot, Vector3.UnitZ, direction, 0.2f, 0.022f, 0, 5.3f, 1f) == calm &&
+              samples.Zip(Enumerable.Range(0, samples.Length)).Take(2000).Any(pair => pair.First != SurfacePatterns.GrassBlades(
+                  new Vector3(pair.Second % 50 * 0.37f, pair.Second / 50 * 0.29f, 0), Vector3.UnitZ, direction, 0.2f, 0.022f, 0.8f, 1f, 0.5f)),
+            "Calm grass is the same at any second, and wind changes the blades");
+        byte[] Windy(float strength, float seconds)
+        {
+            var tracer = new PathTracer(scene, width, height, camera, new RenderSettings { Seed = 4, GrassHeight = 0.25f, WindStrength = strength, WindSeconds = seconds });
+            for (var pass = 0; pass < 4; pass++) tracer.RenderPass();
+            return tracer.ToBgra32(finish: ImageProcessor.Plain);
+        }
+        var still = Windy(0, 0);
+        check(Windy(0, 3).SequenceEqual(still) && still.SequenceEqual(grown) && !Windy(0.8f, 0).SequenceEqual(still) && !Windy(0.8f, 1.3f).SequenceEqual(Windy(0.8f, 0)),
+            "With no wind the picture does not depend on the time; with wind the lawn leans, and the gusts have moved a moment later");
+
         // Saved with the photo's look, and refused out of range.
-        var setup = new RenderSetup { Grass = 0.6 };
-        var rejected = new[] { new RenderSetup { Grass = 1.4 }, new RenderSetup { Grass = -0.1 }, new RenderSetup { Grass = double.NaN } }.Count(bad =>
+        var setup = new RenderSetup { Grass = 0.6, Wind = 0.35 };
+        var rejected = new[] { new RenderSetup { Grass = 1.4 }, new RenderSetup { Grass = -0.1 }, new RenderSetup { Grass = double.NaN }, new RenderSetup { Wind = 2 } }.Count(bad =>
         {
             try { bad.Validate(); return false; } catch (InvalidDataException) { return true; }
         });
-        check(new RenderSetup().WithEffectsFrom(setup).Grass == 0.6 && rejected == 3 && RenderFx.Find("grass") is { Planned: false, Removable: true } effect && effect.Controls[0].Key == "GrassSlider",
+        check(new RenderSetup().WithEffectsFrom(setup).Grass == 0.6 && new RenderSetup().WithEffectsFrom(setup).Wind == 0.35 && rejected == 4 && RenderFx.Find("grass") is { Planned: false, Removable: true } effect && effect.Controls[0].Key == "GrassSlider" && RenderFx.Find("wind")?.Controls[0].Key == "WindSlider",
             "The grass height is kept with the photo's look, bad values are refused, and the effect picker offers it");
     }
 }

@@ -81,6 +81,9 @@ public static class TourRenderer
                     var (positions, normals) = actors.Frame(total <= 1 ? 0 : path.Duration * frame / (total - 1));
                     tracer.MoveActors(positions, normals);
                 }
+                // The wind moves with the movie too: the gusts are where they are at this instant.
+                if (settings.WindStrength > 0 && settings.GrassHeight > 0)
+                    tracer.UpdateSettings(settings with { AdaptiveSampling = true, WindSeconds = total <= 1 ? 0 : (float)(path.Duration * frame / (total - 1)) });
                 tracer.SetCamera(new RenderCamera(position, target, fieldOfView));
                 for (var sample = 0; sample < samplesPerFrame; sample++)
                 {

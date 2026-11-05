@@ -35,6 +35,7 @@
   <sys:String x:Key="Render.Camera.TiltShiftPosition">Posición de la franja nítida</sys:String>
   <sys:String x:Key="Render.Weather.Wet">Suelo mojado</sys:String>
   <sys:String x:Key="Render.Grass.Height">Hierba (altura del césped)</sys:String>
+  <sys:String x:Key="Render.Wind.Strength">Viento (fuerza)</sys:String>
   <sys:String x:Key="Render.Fire.Open">Fuego y humo…</sys:String>
   <sys:String x:Key="Render.Ocean.Use">Océano en lugar del suelo infinito</sys:String>
   <sys:String x:Key="Render.Ocean.Level">Nivel del agua respecto al suelo</sys:String>

@@ -69,6 +69,7 @@ public partial class RenderPanel
         RainSlider.Value = setup.Rain;
         WetnessSlider.Value = setup.Wetness;
         GrassSlider.Value = setup.Grass;
+        WindSlider.Value = setup.Wind;
         SnowSlider.Value = setup.Snow;
         LensFlareSlider.Value = setup.LensFlare;
         LightRaysSlider.Value = setup.LightRays;
@@ -128,7 +129,7 @@ public partial class RenderPanel
             Sharpen = SharpenSlider.Value, ChromaticAberration = AberrationSlider.Value, FilmGrain = GrainSlider.Value,
             Monochrome = MonochromeCheck.IsChecked == true,
             HighlightMaterial = SelectedHighlight(), HighlightDim = HighlightDimSlider.Value,
-            Rain = RainSlider.Value, Snow = SnowSlider.Value, Wetness = WetnessSlider.Value, Grass = GrassSlider.Value,
+            Rain = RainSlider.Value, Snow = SnowSlider.Value, Wetness = WetnessSlider.Value, Grass = GrassSlider.Value, Wind = WindSlider.Value,
             LensFlare = LensFlareSlider.Value, LightRays = LightRaysSlider.Value,
             TiltShift = TiltShiftSlider.Value, TiltShiftPosition = TiltShiftPositionSlider.Value,
             LutPresetId = Mode(LutPicker) is { Length: > 0 } lutId ? lutId : "none",

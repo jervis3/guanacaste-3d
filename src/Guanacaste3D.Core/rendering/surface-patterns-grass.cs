@@ -25,8 +25,11 @@ internal static partial class SurfacePatterns
     /// spacing of blades in metres, <paramref name="geometric"/> the (upward) normal of the ground and <paramref name="direction"/>
     /// the direction the ray travels (toward the ground).
     /// </summary>
-    internal static GrassSample GrassBlades(Vector3 position, Vector3 geometric, Vector3 direction, float height, float pitch)
+    internal static GrassSample GrassBlades(Vector3 position, Vector3 geometric, Vector3 direction, float height, float pitch,
+        float wind = 0, float seconds = 0, float windDirection = 0)
     {
+        // Wind: a push downwind that comes in gusts, long waves travelling over the lawn (about 6 m apart), each blade a little out of step.
+        float windX = MathF.Cos(windDirection), windY = MathF.Sin(windDirection);
         var cosine = -Vector3.Dot(geometric, direction);
         var soil = new GrassSample(new Vector3(0.34f, 0.26f, 0.18f), Vector3.Zero, false);
         if (cosine < 0.04f || !(height > 1e-4f) || !(pitch > 1e-4f)) return soil;
@@ -47,7 +50,17 @@ internal static partial class SurfacePatterns
                     if (fraction > tall) continue;
                     var angle = h3 * 2 * MathF.PI;
                     var lean = fraction * fraction * (0.5f + 0.9f * h1);
-                    float cx = x + 0.15f + 0.7f * h1 + MathF.Cos(angle) * lean, cy = y + 0.15f + 0.7f * h2 + MathF.Sin(angle) * lean;
+                    // The blade's own lean gives way to the wind as it grows stronger.
+                    lean *= 1 - 0.5f * wind;
+                    var gust = 0f;
+                    var push = 0f;
+                    if (wind > 0)
+                    {
+                        var along = (x * windX + y * windY) * pitch;
+                        gust = 0.5f + 0.5f * MathF.Sin(seconds * 2.1f - along * 1.05f + h1 * 1.5f) * (0.65f + 0.35f * MathF.Sin(seconds * 0.7f - along * 0.31f));
+                        push = wind * fraction * fraction * (0.25f + 1.35f * gust);
+                    }
+                    float cx = x + 0.15f + 0.7f * h1 + MathF.Cos(angle) * lean + windX * push, cy = y + 0.15f + 0.7f * h2 + MathF.Sin(angle) * lean + windY * push;
                     var radius = 0.04f + 0.36f * (1 - 0.8f * fraction / tall);
                     float ex = u - cx, ey = v - cy;
                     var squared = ex * ex + ey * ey;
@@ -55,6 +68,8 @@ internal static partial class SurfacePatterns
                     // Dark at the root, light at the tip, a little warmer where it is tall, and each blade its own shade.
                     var shade = (0.40f + 1.25f * fraction / tall) * (0.82f + 0.36f * h3);
                     var warm = fraction / tall;
+                    // A blade bent by a gust shows more of its pale underside.
+                    shade *= 1 + wind * (0.25f * gust * warm + 0.22f * (gust - 0.4f));
                     var tone = new Vector3(shade * (1 + 0.14f * warm), shade * (1 + 0.04f * warm), shade * (1 - 0.22f * warm));
                     var across = MathF.Sqrt(squared) / radius;
                     var bend = new Vector3(ex, ey, 0) / MathF.Max(MathF.Sqrt(squared), 1e-4f) * (0.55f * across) + new Vector3(MathF.Cos(angle), MathF.Sin(angle), 0) * (0.25f * fraction);

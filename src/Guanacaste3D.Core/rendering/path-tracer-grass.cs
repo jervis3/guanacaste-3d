@@ -34,7 +34,8 @@ public sealed partial class PathTracer
             diffuse = flat;
             return;
         }
-        var sample = SurfacePatterns.GrassBlades(position, geometric, direction, height, pitch);
+        var sample = SurfacePatterns.GrassBlades(position, geometric, direction, height, pitch, _settings.WindStrength,
+            _settings.WindSeconds, _settings.CloudDirectionDegrees * MathF.PI / 180);
         diffuse = Vector3.Lerp(flat, diffuse * sample.Tone, resolved);
         if (sample.Blade)
         {
