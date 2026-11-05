@@ -45,54 +45,12 @@ public partial class MainWindow
         _refreshingLevels = false;
     }
 
-    /// <summary>Builds the project browser hierarchy for all supported BIM entities.</summary>
-    private void RefreshTree()
-    {
-        ProjectTree.Items.Clear();
-        var project = new TreeViewItem { Header = _session.Document.Name, IsExpanded = true };
-        var views = new TreeViewItem { Header = GetText("Tree.Views"), IsExpanded = true, ContextMenu = CreateAllViewsMenu() };
-        foreach (var view in _session.Document.Views.Where(view => MatchesProjectSearch(view.Name)))
-            views.Items.Add(new TreeViewItem { Header = view.Name, Tag = view.Id, ContextMenu = CreateViewMenu(view.Id) });
-        project.Items.Add(views);
-        if (CreateCalloutBranch() is { } calloutBranch) project.Items.Add(calloutBranch);
-        var levels = new TreeViewItem { Header = GetText("Tree.Levels"), IsExpanded = true };
-        foreach (var level in _session.Document.Levels)
-        {
-            var branch = new TreeViewItem
-            {
-                Header = $"{level.Name}  ({level.Elevation:0.##} m)",
-                Tag = level.Id,
-                IsExpanded = true
-            };
-            foreach (var wall in _session.Document.Walls.Where(candidate => candidate.LevelId == level.Id))
-            {
-                var wallBranch = new TreeViewItem
-                {
-                    Header = $"{GetText("Entity.Wall")} · {wall.Length:0.00} m",
-                    Tag = wall.Id
-                };
-                foreach (var opening in _session.Document.Openings.Where(candidate => candidate.WallId == wall.Id))
-                {
-                    wallBranch.Items.Add(new TreeViewItem
-                    {
-                        Header = $"{GetText(opening.Kind == OpeningKind.Door ? "Entity.Door" : "Entity.Window")} · {opening.Width:0.00} m",
-                        Tag = opening.Id
-                    });
-                }
-                branch.Items.Add(wallBranch);
-            }
-            levels.Items.Add(branch);
-        }
-        project.Items.Add(levels);
-        AppendExtendedProjectTree(project);
-        ProjectTree.Items.Add(project);
-    }
-
     /// <summary>Shows coordinated parameters for the selected element or document summary.</summary>
     private void RefreshProperties()
     {
         UpdateModelSelection(false);
         UpdateDocumentationProperties();
+        UpdateWallPropertyEditorVisibility();
         if (TryRefreshSheetProperties()) return;
         if (TryRefreshExtendedProperties()) return;
         var selectedOpening = _session.Document.Openings.FirstOrDefault(opening => opening.Id == _selectedOpeningId);
@@ -114,14 +72,7 @@ public partial class MainWindow
                 _session.Document.Walls.Count);
             return;
         }
-        PropertiesText.Text = FormatText(
-            "Properties.WallSummary",
-            Units.FormatLength(wall.Length),
-            Units.FormatLength(wall.Thickness),
-            Units.FormatLength(wall.Height),
-            _session.Document.Openings.Count(opening => opening.WallId == wall.Id),
-            Units.FormatVolume(WallGeometry.NetVolume(wall, _session.Document.Openings.Where(opening => opening.WallId == wall.Id))),
-            wall.Id.ToString()[..8]);
+        PropertiesText.Text = BuildWallQuantitySummary(wall);
         LoadWallDimensionFields(wall);
         WallTypePicker.SelectedItem = WallTypePicker.Items.OfType<ComboBoxItem>()
             .FirstOrDefault(item => Equals(item.Tag, wall.WallTypeId));

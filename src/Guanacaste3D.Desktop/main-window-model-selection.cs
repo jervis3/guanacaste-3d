@@ -46,6 +46,7 @@ public partial class MainWindow
             renderNavigator.OrbitPivot = ResolveModelOrbitPivot;
             renderNavigator.Clicked += position => HandleViewClick(position, RenderPanelControl.Surface);
             renderNavigator.Changed += UpdateRenderSelection;
+            RenderPanelControl.SelectionViewportChanged += UpdateRenderSelection;
             renderNavigator.DoubleClicked += _ => OpenSelectionEditor();
             renderNavigator.ContextRequested += _ => ShowViewContextMenu(RenderPanelControl.Surface);
         }

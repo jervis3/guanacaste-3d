@@ -11,6 +11,7 @@
         <ResourceDictionary Source="resources/icons.navigation.xaml"/>
         <ResourceDictionary Source="resources/icons.assistant.xaml"/>
         <ResourceDictionary Source="resources/theme.xaml"/>
+        <ResourceDictionary Source="resources/sidebar-theme.xaml"/>
         <ResourceDictionary Source="resources/brand.xaml"/>
         <ResourceDictionary Source="resources/localization.splash.es.xaml"/>
         <ResourceDictionary Source="resources/localization.ai.es.xaml"/>

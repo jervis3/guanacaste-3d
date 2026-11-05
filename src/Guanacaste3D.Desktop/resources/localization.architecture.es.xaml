@@ -8,6 +8,15 @@
   <sys:String x:Key="Transaction.AddSkylight">Crear tragaluz</sys:String>
   <sys:String x:Key="Error.Invalid roof shape or pitch.">La forma o la pendiente de la cubierta no es válida.</sys:String>
   <sys:String x:Key="Error.Invalid column shape.">La sección de la columna no es válida.</sys:String>
+  <sys:String x:Key="Properties.WallQuantitySummary">Elemento: muro&#10;Tipo: {0}&#10;Longitud: {1}&#10;Espesor total: {2}&#10;Altura: {3}&#10;Aberturas: {4}&#10;Área neta por cara: {5}&#10;&#10;CANTIDADES NETAS POR CAPA&#10;Núcleo: {6} · {7}&#10;Repello izquierdo: {8} · {9}&#10;Fino izquierdo: {10} · {11}&#10;Repello derecho: {12} · {13}&#10;Fino derecho: {14} · {15}&#10;&#10;Repello total: {16}&#10;Fino total: {17}&#10;Volumen total: {18}&#10;Identificador: {19}</sys:String>
+  <sys:String x:Key="Properties.WallTypeSummary">Tipo de muro: {0}&#10;Función: {1}&#10;Espesor total: {2}&#10;Material: {3}&#10;&#10;CAPAS&#10;Repello izquierdo: {4}&#10;Fino izquierdo: {5}&#10;Repello derecho: {6}&#10;Fino derecho: {7}</sys:String>
+  <sys:String x:Key="WallTypeEditor.ConstructionSystem">Sistema constructivo</sys:String>
+  <sys:String x:Key="WallTypeEditor.FinishLayers">Capas de acabado (metros; 0 = sin acabado)</sys:String>
+  <sys:String x:Key="WallTypeEditor.LeftRepello">Cara izquierda · Repello (0,010–0,015 m)</sys:String>
+  <sys:String x:Key="WallTypeEditor.LeftFine">Cara izquierda · Fino (0,003–0,005 m)</sys:String>
+  <sys:String x:Key="WallTypeEditor.RightRepello">Cara derecha · Repello (m)</sys:String>
+  <sys:String x:Key="WallTypeEditor.RightFine">Cara derecha · Fino (m)</sys:String>
+  <sys:String x:Key="WallTypeEditor.GypsumStudSpacing">Separación de postes de gypsum (m): 0,4064 = 16″; 0,6096 = 24″</sys:String>
   <sys:String x:Key="Error.Invalid element style.">El estilo del elemento no es válido.</sys:String>
   <sys:String x:Key="Error.Invalid ramp, gutter, downspout, curtain wall or skylight geometry.">La geometría de la rampa, canal, bajante, muro cortina o tragaluz no es válida.</sys:String>
   <sys:String x:Key="Error.The column does not exist.">La columna no existe.</sys:String>

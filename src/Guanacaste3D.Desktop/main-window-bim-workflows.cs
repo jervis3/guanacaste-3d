@@ -142,6 +142,8 @@ public partial class MainWindow
     /// <summary>Refreshes project-browser matches while the search query changes.</summary>
     private void ProjectSearchInput_TextChanged(object sender, TextChangedEventArgs e)
     {
+        if (ClearProjectSearchButton is not null)
+            ClearProjectSearchButton.IsEnabled = !string.IsNullOrWhiteSpace(ProjectSearchInput.Text);
         if (ProjectTree is not null && _session is not null) RefreshTree();
     }
 
@@ -317,7 +319,7 @@ public partial class MainWindow
         if (type is null) return false;
         WallTypePicker.SelectedItem = WallTypePicker.Items.OfType<ComboBoxItem>()
             .FirstOrDefault(item => Equals(item.Tag, id));
-        PropertiesText.Text = $"{GetText("Tool.WallType")}: {type.Name}\n{type.Function}\n{type.Thickness:0.00} m\n{type.MaterialName}";
+        PropertiesText.Text = BuildWallTypeSummary(type);
         return true;
     }
 
@@ -381,39 +383,6 @@ public partial class MainWindow
                 GetText($"Schedule.{row.Category}"), row.Number, row.Name,
                 row.Level, row.Quantity, row.Unit))
             .ToArray();
-    }
-
-    /// <summary>Adds wall types, rooms, floors, schedules, and sheets to the project tree.</summary>
-    private void AppendExtendedProjectTree(TreeViewItem project)
-    {
-        var query = ProjectSearchInput?.Text?.Trim() ?? string.Empty;
-
-        var types = new TreeViewItem { Header = GetText("Tree.WallTypes"), IsExpanded = query.Length > 0 };
-        foreach (var type in _session.Document.WallTypes.Where(type => MatchesProjectSearch(type.Name)))
-            types.Items.Add(new TreeViewItem { Header = type.Name, Tag = type.Id });
-        var rooms = new TreeViewItem { Header = GetText("Tree.Rooms"), IsExpanded = query.Length > 0 };
-        foreach (var room in _session.Document.Rooms.Where(room =>
-                     MatchesProjectSearch(room.Name) || MatchesProjectSearch(room.Number)))
-            rooms.Items.Add(new TreeViewItem { Header = $"{room.Number} · {room.Name}", Tag = room.Id });
-        var floors = new TreeViewItem { Header = GetText("Tree.Floors"), IsExpanded = query.Length > 0 };
-        foreach (var floor in _session.Document.Floors.Where(floor => MatchesProjectSearch(floor.Name)))
-            floors.Items.Add(new TreeViewItem { Header = floor.Name, Tag = floor.Id });
-        var sheets = new TreeViewItem { Header = GetText("Tree.Sheets"), IsExpanded = true };
-        foreach (var sheet in _session.Document.Sheets.Where(sheet =>
-                     MatchesProjectSearch(sheet.Name) || MatchesProjectSearch(sheet.Number)))
-            sheets.Items.Add(new TreeViewItem { Header = $"{sheet.Number} · {sheet.Name}", Tag = sheet.Id });
-
-        project.Items.Add(types);
-        project.Items.Add(rooms);
-        project.Items.Add(floors);
-        project.Items.Add(sheets);
-    }
-
-    /// <summary>Determines whether a project-browser label matches the active search query.</summary>
-    private bool MatchesProjectSearch(string value)
-    {
-        var query = ProjectSearchInput?.Text?.Trim() ?? string.Empty;
-        return query.Length == 0 || value.Contains(query, StringComparison.CurrentCultureIgnoreCase);
     }
 
 }

@@ -14,6 +14,9 @@
   <SolidColorBrush x:Key="PanelBorderBrush" Color="#C1C1C1"/>
   <SolidColorBrush x:Key="PropertyGroupBrush" Color="#E6E6E6"/>
   <SolidColorBrush x:Key="PropertyGridLineBrush" Color="#ECECEC"/>
+  <SolidColorBrush x:Key="SidebarCardBrush" Color="#FFFFFF"/>
+  <SolidColorBrush x:Key="SidebarQuietBrush" Color="#FAFAFA"/>
+  <SolidColorBrush x:Key="SidebarHoverBrush" Color="#EEF6FC"/>
   <SolidColorBrush x:Key="ViewTabStripBrush" Color="#CCCCCC"/>
   <SolidColorBrush x:Key="ViewControlBarBrush" Color="#E6E6E6"/>
   <SolidColorBrush x:Key="FileTabBrush" Color="#2B7BB3"/>
@@ -543,6 +546,7 @@
 
   <Style x:Key="PanelHeaderStyle" TargetType="TextBlock">
     <Setter Property="FontSize" Value="12"/>
+    <Setter Property="FontWeight" Value="SemiBold"/>
     <Setter Property="Foreground" Value="{StaticResource PrimaryTextBrush}"/>
     <Setter Property="Margin" Value="4,0,4,0"/>
     <Setter Property="VerticalAlignment" Value="Center"/>
@@ -724,7 +728,7 @@
               <Setter Property="Foreground" Value="White"/>
             </Trigger>
             <Trigger Property="IsEnabled" Value="False">
-              <Setter Property="Foreground" Value="#A0A0A0"/>
+              <Setter Property="Foreground" Value="#586675"/>
             </Trigger>
           </ControlTemplate.Triggers>
         </ControlTemplate>
@@ -778,8 +782,8 @@
             </Grid.RowDefinitions>
             <ToggleButton x:Name="Expander" Style="{StaticResource TreeExpanderToggleStyle}"
                           IsChecked="{Binding IsExpanded, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"/>
-            <Border x:Name="HeaderSurface" Grid.Column="1" Background="Transparent" Padding="{TemplateBinding Padding}"
-                    SnapsToDevicePixels="True">
+            <Border x:Name="HeaderSurface" Grid.Column="1" Grid.ColumnSpan="2" Background="Transparent"
+                    CornerRadius="2" Margin="0,1,3,1" Padding="{TemplateBinding Padding}" SnapsToDevicePixels="True">
               <ContentPresenter x:Name="PART_Header" ContentSource="Header" VerticalAlignment="Center"/>
             </Border>
             <ItemsPresenter x:Name="ItemsHost" Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2"/>
@@ -791,9 +795,16 @@
             <Trigger Property="HasItems" Value="False">
               <Setter TargetName="Expander" Property="Visibility" Value="Hidden"/>
             </Trigger>
+            <Trigger Property="IsMouseOver" Value="True">
+              <Setter TargetName="HeaderSurface" Property="Background" Value="{StaticResource SidebarHoverBrush}"/>
+            </Trigger>
             <Trigger Property="IsSelected" Value="True">
               <Setter TargetName="HeaderSurface" Property="Background" Value="{StaticResource SelectionBrush}"/>
               <Setter Property="Foreground" Value="White"/>
+            </Trigger>
+            <Trigger Property="IsKeyboardFocusWithin" Value="True">
+              <Setter TargetName="HeaderSurface" Property="BorderBrush" Value="{StaticResource AccentBrush}"/>
+              <Setter TargetName="HeaderSurface" Property="BorderThickness" Value="1"/>
             </Trigger>
             <MultiTrigger>
               <MultiTrigger.Conditions>
