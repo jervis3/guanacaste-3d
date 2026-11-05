@@ -12,6 +12,16 @@ public readonly record struct TourProgress(int Frame, int Total, double Seconds)
 /// </summary>
 public sealed record LayerSource(LayerAnimation Animation, Func<IReadOnlySet<Guid>, RenderScene?> SceneFor);
 
+/// <summary>Where the finished frames of a movie go besides (or instead of) PNG files: an encoder that writes them into one video file.</summary>
+public interface IFrameSink : IDisposable
+{
+    /// <summary>True once the sink has given up (the encoder failed); the renderer then keeps the frames as PNG images.</summary>
+    bool Failed { get; }
+
+    /// <summary>Takes the next frame, BGRA with the top row first.</summary>
+    void Add(byte[] bgra, int width, int height);
+}
+
 /// <summary>Outcome of a video render.</summary>
 public sealed record TourResult(int FramesWritten, int TotalFrames, bool Cancelled, bool StoppedForMemory, string Folder);
 
@@ -24,17 +34,16 @@ public static class TourRenderer
 {
     public static Task<TourResult> RenderAsync(RenderScene scene, CameraPath path, RenderSettings settings, int width, int height,
         int framesPerSecond, int samplesPerFrame, ImageFinish finish, string folder, IProgress<TourProgress>? progress,
-        CancellationToken cancellation, LayerSource? layers = null, ActorRig? actors = null) =>
-        Task.Run(() => Render(scene, path, settings, width, height, framesPerSecond, samplesPerFrame, finish, folder, progress, cancellation, layers, actors));
+        CancellationToken cancellation, LayerSource? layers = null, ActorRig? actors = null, IFrameSink? sink = null) =>
+        Task.Run(() => Render(scene, path, settings, width, height, framesPerSecond, samplesPerFrame, finish, folder, progress, cancellation, layers, actors, sink));
 
     private static TourResult Render(RenderScene scene, CameraPath path, RenderSettings settings, int width, int height,
         int framesPerSecond, int samplesPerFrame, ImageFinish finish, string folder, IProgress<TourProgress>? progress,
-        CancellationToken cancellation, LayerSource? layers, ActorRig? actors)
+        CancellationToken cancellation, LayerSource? layers, ActorRig? actors, IFrameSink? sink)
     {
         ArgumentNullException.ThrowIfNull(scene);
         ArgumentNullException.ThrowIfNull(path);
         if (path.Marks.Count < 2) throw new InvalidOperationException("A tour needs at least two camera marks.");
-        Directory.CreateDirectory(folder);
         var total = path.FrameCount(framesPerSecond);
         var written = 0;
         var memoryStop = false;
@@ -94,7 +103,13 @@ public static class TourRenderer
                 var frameFinish = tracer.WithScreenEffects(finish with { FireSeconds = total <= 1 ? 0 : (float)(path.Duration * frame / (total - 1)) });
                 var bytes = ImageProcessor.ToBgra32(tracer.LinearImage(denoise: true), width, height, tracer.BaseExposure, frameFinish,
                     tracer.CaptureFeatures);
-                PngCodec.Save(Path.Combine(folder, $"frame_{frame + 1:00000}.png"), RasterImage.FromBgra32(width, height, bytes));
+                // With a video file the frame goes into it; as images only when there is no video or the encoder gave up.
+                sink?.Add(bytes, width, height);
+                if (sink is null || sink.Failed)
+                {
+                    Directory.CreateDirectory(folder);
+                    PngCodec.Save(Path.Combine(folder, $"frame_{frame + 1:00000}.png"), RasterImage.FromBgra32(width, height, bytes));
+                }
                 written++;
                 progress?.Report(new TourProgress(written, total, written / (double)Math.Max(1, framesPerSecond)));
             }

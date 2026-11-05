@@ -123,7 +123,10 @@ public partial class RenderPanel
         SyncPlayButton(false);
     }
 
-    /// <summary>Exports a bounded image sequence from the camera path with cancellation and memory checks.</summary>
+    /// <summary>
+    /// Renders the camera path into an .mp4 video (H.264, made with the encoder Windows has) with cancellation and memory checks. If this
+    /// computer cannot encode, or the encoder fails, the frames are kept as numbered images in a folder instead, and the message says so.
+    /// </summary>
     private async void RenderTour_Click(object sender, RoutedEventArgs e)
     {
         if (_source is null || _rendering || _renderingTour) return;
@@ -132,7 +135,11 @@ public partial class RenderPanel
             StatusText.Text = UiText.Get("RenderPanel.TourNeedsMarks");
             return;
         }
-        var dialog = new OpenFolderDialog { Title = UiText.Get("RenderPanel.RenderVideo") };
+        var dialog = new SaveFileDialog
+        {
+            Title = UiText.Get("RenderPanel.RenderVideo"), Filter = "Video MP4|*.mp4", DefaultExt = ".mp4", AddExtension = true,
+            FileName = SafeName(_source.ProjectName), OverwritePrompt = true
+        };
         if (dialog.ShowDialog(Window.GetWindow(this)) != true) return;
         var scene = await _source.GetSceneAsync();
         if (scene is null) return;
@@ -147,7 +154,9 @@ public partial class RenderPanel
             return;
         }
         var fps = int.TryParse((FpsPicker.SelectedItem as ComboBoxItem)?.Tag as string, out var chosen) ? chosen : 30;
-        var folder = Path.Combine(dialog.FolderName, SafeName(_source.ProjectName) + "-walkthrough");
+        var videoPath = dialog.FileName;
+        // The frames only go to this folder if the video cannot be made.
+        var folder = Path.Combine(Path.GetDirectoryName(videoPath) ?? ".", Path.GetFileNameWithoutExtension(videoPath) + "-cuadros");
         // Video frames need far fewer samples than a still: the next frame is nearly the same picture.
         var samples = Math.Max(12, RenderPresets.Profile(quality).TargetSamples / 4);
 
@@ -162,28 +171,59 @@ public partial class RenderPanel
             RenderProgress.Value = p.Frame / (double)Math.Max(1, p.Total);
             StatusText.Text = UiText.Format("RenderPanel.TourFrame", p.Frame, p.Total, p.Seconds);
         });
+        // The encoder is tried first, before any frame is rendered, so a computer that cannot make video says so at once.
+        Mp4VideoWriter? video = null;
+        if (!Mp4VideoWriter.TryCreate(videoPath, fit.Width, fit.Height, fps, out video, out var problem))
+            StatusText.Text = UiText.Format("RenderPanel.VideoFallback", folder, problem ?? "");
         TourResult? result = null;
+        string? failure = null;
         try
         {
             result = await TourRenderer.RenderAsync(scene, _path, LightingFor(quality, ResourceUse()), fit.Width, fit.Height, fps, samples,
-                CurrentFinish(), folder, progress, _cancel.Token, LayersForRender(), ActorRig.From(_source.GetActors(), CarLibrary.Load));
+                CurrentFinish(), folder, progress, _cancel.Token, LayersForRender(), ActorRig.From(_source.GetActors(), CarLibrary.Load), video);
         }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException)
+        catch (Exception ex)
         {
-            StatusText.Text = UiText.Format("RenderPanel.Failed", ex.Message);
+            // Whatever goes wrong, the panel must come back and say it, not stay "rendering" with nothing to show.
+            failure = ex.Message;
         }
         finally
         {
+            if (video is not null) await Task.Run(video.Dispose);
             _renderingTour = false;
             RenderButton.Content = UiText.Get("RenderPanel.Render");
             RenderTourButton.IsEnabled = true;
             RenderProgress.Visibility = Visibility.Collapsed;
+            _preview?.Resume();
+        }
+        if (failure is not null)
+        {
+            StatusText.Text = UiText.Format("RenderPanel.Failed", failure);
+            return;
         }
         if (result is null) return;
-        StatusText.Text = result.FramesWritten == result.TotalFrames
-            ? UiText.Format("RenderPanel.TourDone", result.FramesWritten, result.Folder)
-            : result.StoppedForMemory
-                ? UiText.Format("RenderPanel.MemoryStop", result.FramesWritten)
-                : UiText.Format("RenderPanel.TourStopped", result.FramesWritten, result.Folder);
+        var videoMade = video is { Failed: false } && File.Exists(videoPath) && result.FramesWritten > 0;
+        if (video is { Failed: true })
+            StatusText.Text = UiText.Format("RenderPanel.VideoFallback", folder, video.Problem ?? "");
+        else if (videoMade)
+        {
+            StatusText.Text = result.FramesWritten == result.TotalFrames
+                ? UiText.Format("RenderPanel.VideoDone", videoPath, result.FramesWritten)
+                : UiText.Format("RenderPanel.VideoStopped", result.FramesWritten, videoPath);
+            RevealInExplorer(videoPath);
+        }
+        else
+            StatusText.Text = result.FramesWritten == result.TotalFrames
+                ? UiText.Format("RenderPanel.TourDone", result.FramesWritten, result.Folder)
+                : result.StoppedForMemory
+                    ? UiText.Format("RenderPanel.MemoryStop", result.FramesWritten)
+                    : UiText.Format("RenderPanel.TourStopped", result.FramesWritten, result.Folder);
+    }
+
+    /// <summary>Shows the finished file selected in a File Explorer window, so a movie is never lost in a folder.</summary>
+    private static void RevealInExplorer(string path)
+    {
+        try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("explorer.exe", $"/select,\"{path}\"") { UseShellExecute = true }); }
+        catch (Exception exception) when (exception is System.ComponentModel.Win32Exception or InvalidOperationException) { }
     }
 }

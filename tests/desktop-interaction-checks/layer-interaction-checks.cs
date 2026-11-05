@@ -286,6 +286,32 @@ internal static partial class InteractionChecks
             Check(session.GetExtension(Decals.Key) is null && session.GetExtension(Actors.Key) is null && session.GetExtension(Fires.Key) is null && session.GetExtension(Ocean.Key) is null,
                 "Removing the decals, people and fires, and an ocean back at its defaults, keep nothing in the project");
 
+            // The movie is a real video file: H.264 in an .mp4 made with Windows' own encoder, playable anywhere.
+            var videoType = typeof(MainWindow).Assembly.GetType("Guanacaste3D.Desktop.Mp4VideoWriter")!;
+            var videoFile = Path.Combine(Path.GetTempPath(), $"g3d-video-{Guid.NewGuid():N}.mp4");
+            var videoArguments = new object?[] { videoFile, 101, 57, 24, null, null };
+            var videoStarted = (bool)videoType.GetMethod("TryCreate")!.Invoke(null, videoArguments)!;
+            try
+            {
+                Check(videoStarted && videoArguments[4] is IFrameSink, $"The encoder starts a video file of an odd size ({videoArguments[5]})");
+                if (videoStarted && videoArguments[4] is IFrameSink sink)
+                {
+                    for (var frame = 0; frame < 24; frame++)
+                    {
+                        var picture = new byte[101 * 57 * 4];
+                        for (var i = 0; i < picture.Length; i += 4) { picture[i] = (byte)(frame * 10); picture[i + 1] = (byte)(i / 40); picture[i + 2] = 200; picture[i + 3] = 255; }
+                        sink.Add(picture, 101, 57);
+                    }
+                    var failed = sink.Failed;
+                    sink.Dispose();
+                    var bytes = File.ReadAllBytes(videoFile);
+                    var text = System.Text.Encoding.Latin1.GetString(bytes);
+                    Check(!failed && bytes.Length > 2000 && text.Substring(4, 4) == "ftyp" && text.Contains("moov") && text.Contains("avc1"),
+                        $"Twenty-four frames become an .mp4 with its index and an H.264 track ({bytes.Length} bytes)");
+                }
+            }
+            finally { if (File.Exists(videoFile)) File.Delete(videoFile); }
+
             // Trees and rocks: the window spreads a family in a circle round the view's point, as one undoable step.
             var scatterFamilies = (System.Collections.IList)host.GetType().GetMethod("ScatterFamilies")!.Invoke(host, null)!;
             var rockIndex = scatterFamilies.Cast<object>().ToList().FindIndex(family => family.ToString()!.Contains("Roca mediana"));

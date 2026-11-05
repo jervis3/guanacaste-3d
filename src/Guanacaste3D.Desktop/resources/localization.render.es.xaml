@@ -244,6 +244,9 @@
   <sys:String x:Key="RenderPanel.TourNeedsMarks">Añade al menos dos marcas para crear un recorrido.</sys:String>
   <sys:String x:Key="RenderPanel.TourFrame">Cuadro {0} de {1} · {2:0.0} s</sys:String>
   <sys:String x:Key="RenderPanel.TourDone">Recorrido terminado: {0} cuadros guardados en {1}. Para convertirlos en video usa cualquier editor o ffmpeg.</sys:String>
+  <sys:String x:Key="RenderPanel.VideoDone">Video terminado: {0} ({1} cuadros).</sys:String>
+  <sys:String x:Key="RenderPanel.VideoStopped">Video detenido: se conservaron {0} cuadros en {1}.</sys:String>
+  <sys:String x:Key="RenderPanel.VideoFallback">No se pudo crear el video MP4 en este equipo; los cuadros se guardan como imágenes en {0}. ({1})</sys:String>
   <sys:String x:Key="RenderPanel.TourStopped">Recorrido detenido: se conservaron {0} cuadros en {1}.</sys:String>
 
   <!-- Status -->
