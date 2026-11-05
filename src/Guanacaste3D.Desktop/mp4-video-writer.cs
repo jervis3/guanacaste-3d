@@ -8,6 +8,8 @@ namespace Guanacaste3D.Desktop;
 /// Writes the frames of a movie into an H.264 .mp4 file with the encoder Windows already has (Media Foundation), so a movie is a
 /// file that plays anywhere, with no ffmpeg or editor to convert it. Width and height are rounded down to even numbers, as H.264
 /// needs. If the file cannot be started, <see cref="TryCreate"/> says why instead of throwing, and the caller keeps the frames as images.
+/// Media Foundation objects belong to the thread that made them, so every call to the encoder runs on one thread of the writer's own;
+/// frames are queued to it (a few at a time), which also lets the next frame render while the last one is being encoded.
 /// </summary>
 internal sealed class Mp4VideoWriter : IFrameSink
 {
@@ -15,9 +17,14 @@ internal sealed class Mp4VideoWriter : IFrameSink
     private readonly int _width, _height, _fps;
     private long _frame;
     private bool _started;
+    private readonly System.Collections.Concurrent.BlockingCollection<Action> _jobs = new(6);
+    private Thread? _thread;
+    private volatile bool _failed;
+    private volatile string? _problem;
+    private bool _disposed;
 
-    public bool Failed { get; private set; }
-    public string? Problem { get; private set; }
+    public bool Failed => _failed;
+    public string? Problem => _problem;
     public string Path { get; }
 
     private Mp4VideoWriter(string path, int width, int height, int fps)
@@ -35,7 +42,8 @@ internal sealed class Mp4VideoWriter : IFrameSink
         var candidate = new Mp4VideoWriter(path, width, height, fps);
         try
         {
-            candidate.Open();
+            candidate.StartThread();
+            candidate.RunOnThread(candidate.Open);
             writer = candidate;
             return true;
         }
@@ -46,6 +54,28 @@ internal sealed class Mp4VideoWriter : IFrameSink
             problem = exception.Message;
             return false;
         }
+    }
+
+    private void StartThread()
+    {
+        _thread = new Thread(() =>
+        {
+            foreach (var job in _jobs.GetConsumingEnumerable()) job();
+        }) { IsBackground = true, Name = "Video encoder" };
+        _thread.Start();
+    }
+
+    /// <summary>Runs something on the encoder's thread and waits for it, passing on what it throws.</summary>
+    private void RunOnThread(Action action)
+    {
+        var done = new TaskCompletionSource();
+        _jobs.Add(() =>
+        {
+            try { action(); done.SetResult(); }
+            catch (Exception exception) { done.SetException(exception); }
+        });
+        try { done.Task.GetAwaiter().GetResult(); }
+        catch (AggregateException aggregate) { throw aggregate.GetBaseException(); }
     }
 
     private void Open()
@@ -88,10 +118,17 @@ internal sealed class Mp4VideoWriter : IFrameSink
         if (result < 0) Marshal.ThrowExceptionForHR(result);
     }
 
-    /// <summary>Adds the next frame (BGRA, top row first); a frame larger than the video is cropped to it.</summary>
+    /// <summary>Queues the next frame (BGRA, top row first); a frame larger than the video is cropped to it. The array must not change afterwards.</summary>
     public void Add(byte[] bgra, int width, int height)
     {
-        if (_writer is null || Failed) return;
+        if (_failed || _disposed || _thread is null) return;
+        try { _jobs.Add(() => AddFrame(bgra, width, height)); }
+        catch (InvalidOperationException) { /* closed while adding */ }
+    }
+
+    private void AddFrame(byte[] bgra, int width, int height)
+    {
+        if (_writer is null || _failed) return;
         try
         {
             if (width < _width || height < _height || bgra.Length < width * height * 4) throw new ArgumentException("The frame is smaller than the video.");
@@ -116,20 +153,30 @@ internal sealed class Mp4VideoWriter : IFrameSink
         }
         catch (Exception exception) when (exception is COMException or ArgumentException or InvalidCastException)
         {
-            Failed = true;
-            Problem = exception.Message;
+            _failed = true;
+            _problem = exception.Message;
         }
     }
 
-    /// <summary>Closes the file: writes the index so the video plays, and releases the encoder.</summary>
+    /// <summary>Closes the file: waits for the queued frames, writes the index so the video plays, and releases the encoder.</summary>
     public void Dispose()
     {
-        try { _writer?.FinalizeWriting(); }
-        catch (COMException exception) { Failed = true; Problem ??= exception.Message; }
-        if (_writer is not null) Marshal.ReleaseComObject(_writer);
-        _writer = null;
-        if (_started) MF.MFShutdown();
-        _started = false;
+        if (_disposed) return;
+        _disposed = true;
+        if (_thread is not null)
+        {
+            _jobs.Add(() =>
+            {
+                try { _writer?.FinalizeWriting(); }
+                catch (COMException exception) { _failed = true; _problem ??= exception.Message; }
+                if (_writer is not null) Marshal.ReleaseComObject(_writer);
+                _writer = null;
+                if (_started) MF.MFShutdown();
+                _started = false;
+            });
+            _jobs.CompleteAdding();
+            _thread.Join();
+        }
     }
 
     // ------------------------------------------------------------------ Media Foundation

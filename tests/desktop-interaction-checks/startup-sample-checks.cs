@@ -1,3 +1,4 @@
+using Guanacaste3D.Core.Rendering;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
@@ -136,6 +137,51 @@ internal static partial class InteractionChecks
             MovieStorageChecks(opened, panel);
             EffectControlChecks(panel);
             RenderExtrasChecks(opened, panel);
+
+            // Photos and movies end to end, the way a person asks for them: a draft photo of the house, and a short movie saved as an .mp4.
+            // Like the real window, the continuations of the async buttons must come back to the interface thread.
+            var contextBefore = SynchronizationContext.Current;
+            SynchronizationContext.SetSynchronizationContext(new System.Windows.Threading.DispatcherSynchronizationContext(System.Windows.Threading.Dispatcher.CurrentDispatcher));
+            try
+            {
+            var qualityPicker = (ComboBox)panel.FindName("QualityPicker");
+            var sizePicker = (ComboBox)panel.FindName("SizePicker");
+            qualityPicker.SelectedIndex = 1;
+            sizePicker.SelectedIndex = 0;
+            var lastFinalField = typeof(RenderPanel).GetField("_lastFinal", PrivateInstance)!;
+            var photoStart = DateTime.UtcNow;
+            ((Button)panel.FindName("RenderButton")).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            var photoDeadline = DateTime.UtcNow.AddMinutes(4);
+            while (lastFinalField.GetValue(panel) is null && DateTime.UtcNow < photoDeadline) Pump();
+            var photo = lastFinalField.GetValue(panel) as RenderFrame;
+            double mean = photo is null ? 0 : Enumerable.Range(0, photo.Bgra.Length / 16).Average(i => photo.Bgra[i * 16 + 1]);
+            Check(photo is { Width: > 100, Height: > 50 } && photo.Samples >= 1 && mean > 8,
+                $"A photo of the house renders from the Render button and shows a picture, not black ({photo?.Width}×{photo?.Height}, {photo?.Samples} samples, {(DateTime.UtcNow - photoStart).TotalSeconds:0} s)");
+
+            var path = (CameraPath)typeof(RenderPanel).GetField("_path", PrivateInstance)!.GetValue(panel)!;
+            path.Clear();
+            path.Add(new CameraMark(camera.Position, camera.Position + camera.Forward * 5, 60, 0));
+            path.Add(new CameraMark(camera.Position + new System.Numerics.Vector3(1.5f, 0, 0.3f), camera.Position + camera.Forward * 5, 60, 0.5f));
+            var movieFile = Path.Combine(Path.GetTempPath(), $"g3d-movie-{Guid.NewGuid():N}.mp4");
+            try
+            {
+                var movieTask = (Task)typeof(RenderPanel).GetMethod("RunTourAsync", PrivateInstance)!.Invoke(panel, [movieFile])!;
+                var movieDeadline = DateTime.UtcNow.AddMinutes(6);
+                while (!movieTask.IsCompleted && DateTime.UtcNow < movieDeadline) Pump();
+                var movieStatus = ((TextBlock)panel.FindName("StatusText")).Text;
+                if (!movieTask.IsCompleted) throw new InvalidOperationException("The movie did not finish in time: " + movieStatus);
+                var movieBytes = File.Exists(movieFile) ? File.ReadAllBytes(movieFile) : [];
+                var movieText = System.Text.Encoding.Latin1.GetString(movieBytes);
+                Check(movieTask.IsCompletedSuccessfully && movieBytes.Length > 3000 && movieText.Substring(4, 4) == "ftyp" && movieText.Contains("moov") && movieText.Contains("avc1"),
+                    $"A movie renders from the camera path into an .mp4 file ({movieBytes.Length} bytes): {movieStatus}");
+                Check(!((TextBlock)panel.FindName("StatusText")).Text.Contains("No se pudo", StringComparison.Ordinal) && panel.FindName("RenderTourButton") is Button { IsEnabled: true },
+                    "After the movie the panel is back to normal and says nothing went wrong");
+            }
+            finally { if (File.Exists(movieFile)) File.Delete(movieFile); }
+            qualityPicker.SelectedIndex = 0;
+            }
+            finally { SynchronizationContext.SetSynchronizationContext(contextBefore); }
+
 
             // A recent list in a scratch folder: it keeps the newest first and forgets on request.
             var folder = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"g3d-recents-{Guid.NewGuid():N}");

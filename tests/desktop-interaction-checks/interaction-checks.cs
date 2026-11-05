@@ -27,6 +27,7 @@ internal static partial class InteractionChecks
         var scratch = Path.Combine(Path.GetTempPath(), "g3d-ui-" + Guid.NewGuid().ToString("N"));
         Environment.SetEnvironmentVariable("G3D_RECOVERY_DIR", Path.Combine(scratch, "recovery"));
         Environment.SetEnvironmentVariable("G3D_LOG_DIR", Path.Combine(scratch, "logs"));
+        Environment.SetEnvironmentVariable("G3D_NO_EXPLORER", "1");
         var application = new App();
         application.InitializeComponent();
         application.ShutdownMode = ShutdownMode.OnExplicitShutdown;

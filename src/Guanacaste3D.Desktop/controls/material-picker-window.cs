@@ -15,7 +15,7 @@ internal sealed record PickerItem(string Key, string Label, string Category, dou
     RenderMaterial? Material, string? ImageFile);
 
 /// <summary>What the picker needs from the Render panel: where a click lands, what is applied now, and how to apply and adjust.</summary>
-internal sealed record PickerHost(Func<string> TargetName, Func<string?> CurrentKey, Func<(double Roughness, double Metallic, double Relief, double Size, string? Tint)> Appearance,
+internal sealed record PickerHost(Func<IReadOnlyList<string>> Surfaces, Func<int> SurfaceIndex, Func<bool> SurfaceEnabled, Action<int> SetSurface, Func<string> TargetName, Func<string?> CurrentKey, Func<(double Roughness, double Metallic, double Relief, double Size, string? Tint)> Appearance,
     Action<PickerItem> Apply, Action<double, double, double, double, string?> Adjust, Action Reset);
 
 /// <summary>
@@ -46,7 +46,8 @@ internal sealed class MaterialPickerWindow : Window
     private readonly TextBox _search = new() { MinHeight = 30, VerticalContentAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 0, 8), ToolTip = "Busca por nombre" };
     private readonly ListBox _categories = new() { BorderThickness = new Thickness(0), Background = Brushes.Transparent };
     private readonly WrapPanel _tiles = new() { Margin = new Thickness(8) };
-    private readonly TextBlock _target = new() { FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 0, 0, 6) };
+    private readonly TextBlock _target = new() { FontWeight = FontWeights.SemiBold, Margin = new Thickness(8, 0, 0, 6), VerticalAlignment = VerticalAlignment.Center };
+    private readonly ComboBox _surface = new() { MinWidth = 220, Margin = new Thickness(0, 0, 0, 6), ToolTip = "Qué superficie del proyecto recibe el material" };
     private readonly Slider _gloss = new() { Minimum = 0, Maximum = 1, TickFrequency = 0.02 };
     private readonly Slider _metal = new() { Minimum = 0, Maximum = 1, TickFrequency = 0.02 };
     private readonly Slider _relief = new() { Minimum = 0, Maximum = 1, TickFrequency = 0.02 };
@@ -71,8 +72,10 @@ internal sealed class MaterialPickerWindow : Window
         MinHeight = 520;
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
         ShowInTaskbar = false;
-        SetResourceReference(BackgroundProperty, "AppBackgroundBrush");
-        SetResourceReference(ForegroundProperty, "PrimaryTextBrush");
+        // The same dark palette as the Render studio, set outright so the text is always readable on it.
+        Background = new SolidColorBrush(Color.FromRgb(0x1B, 0x2A, 0x3A));
+        Foreground = new SolidColorBrush(Color.FromRgb(0xF0, 0xF6, 0xFB));
+        _categories.Foreground = Foreground;
 
         var layout = new Grid { Margin = new Thickness(14) };
         layout.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(210) });
@@ -122,7 +125,16 @@ internal sealed class MaterialPickerWindow : Window
         grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         var header = new StackPanel { Orientation = Orientation.Horizontal };
-        header.Children.Add(new TextBlock { Text = "Se aplica a: ", Opacity = 0.7, Margin = new Thickness(0, 0, 4, 6) });
+        header.Children.Add(new TextBlock { Text = "Aplicar a: ", Opacity = 0.7, Margin = new Thickness(0, 0, 4, 6), VerticalAlignment = VerticalAlignment.Center });
+        foreach (var name in _host.Surfaces()) _surface.Items.Add(name);
+        _surface.SelectionChanged += (_, _) =>
+        {
+            if (_loading || _surface.SelectedIndex < 0) return;
+            _host.SetSurface(_surface.SelectedIndex);
+            SyncSliders();
+            Highlight();
+        };
+        header.Children.Add(_surface);
         header.Children.Add(_target);
         Grid.SetColumnSpan(header, 5);
         grid.Children.Add(header);
@@ -200,6 +212,8 @@ internal sealed class MaterialPickerWindow : Window
             _relief.Value = relief;
             _size.Value = Math.Clamp(size, _size.Minimum, _size.Maximum);
             _tint = tint;
+            _surface.SelectedIndex = _host.SurfaceIndex();
+            _surface.IsEnabled = _host.SurfaceEnabled();
             _target.Text = _host.TargetName();
             BuildSwatches();
         }
@@ -225,7 +239,7 @@ internal sealed class MaterialPickerWindow : Window
             RenderOptions.SetBitmapScalingMode(picture, BitmapScalingMode.HighQuality);
             var label = new TextBlock
             {
-                Text = item.Label, TextWrapping = TextWrapping.Wrap, TextAlignment = TextAlignment.Center, MaxHeight = 36, FontSize = 12,
+                Text = item.Label, Foreground = Foreground, TextWrapping = TextWrapping.Wrap, TextAlignment = TextAlignment.Center, MaxHeight = 36, FontSize = 12,
                 TextTrimming = TextTrimming.CharacterEllipsis, Margin = new Thickness(2, 4, 2, 0), HorizontalAlignment = HorizontalAlignment.Center
             };
             var stack = new StackPanel { Width = BallSize + 12 };

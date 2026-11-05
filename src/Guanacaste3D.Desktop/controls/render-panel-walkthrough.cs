@@ -141,6 +141,13 @@ public partial class RenderPanel
             FileName = SafeName(_source.ProjectName), OverwritePrompt = true
         };
         if (dialog.ShowDialog(Window.GetWindow(this)) != true) return;
+        await RunTourAsync(dialog.FileName);
+    }
+
+    /// <summary>Renders the camera path to the given .mp4 (the part after the file is chosen, so it can be run without a dialog).</summary>
+    private async Task RunTourAsync(string videoPath)
+    {
+        if (_source is null || _rendering || _renderingTour) return;
         var scene = await _source.GetSceneAsync();
         if (scene is null) return;
 
@@ -154,7 +161,6 @@ public partial class RenderPanel
             return;
         }
         var fps = int.TryParse((FpsPicker.SelectedItem as ComboBoxItem)?.Tag as string, out var chosen) ? chosen : 30;
-        var videoPath = dialog.FileName;
         // The frames only go to this folder if the video cannot be made.
         var folder = Path.Combine(Path.GetDirectoryName(videoPath) ?? ".", Path.GetFileNameWithoutExtension(videoPath) + "-cuadros");
         // Video frames need far fewer samples than a still: the next frame is nearly the same picture.
@@ -223,6 +229,7 @@ public partial class RenderPanel
     /// <summary>Shows the finished file selected in a File Explorer window, so a movie is never lost in a folder.</summary>
     private static void RevealInExplorer(string path)
     {
+        if (Environment.GetEnvironmentVariable("G3D_NO_EXPLORER") == "1") return;
         try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("explorer.exe", $"/select,\"{path}\"") { UseShellExecute = true }); }
         catch (Exception exception) when (exception is System.ComponentModel.Win32Exception or InvalidOperationException) { }
     }
