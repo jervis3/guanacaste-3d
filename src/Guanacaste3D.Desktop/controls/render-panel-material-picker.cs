@@ -1,5 +1,6 @@
 using System.IO;
 using System.Windows;
+using System.Windows.Controls;
 using Guanacaste3D.Core.Rendering;
 
 namespace Guanacaste3D.Desktop.Controls;
@@ -31,8 +32,11 @@ public partial class RenderPanel
             return;
         }
         var host = new PickerHost(
-            TargetName: () => Text(RenderTextureLibrary.Categories.FirstOrDefault(item => item.Category == GalleryTarget()).LabelKey ?? "") +
-                              (_focusedElement is Guid ? " (elemento elegido)" : " (todo el proyecto)"),
+            Surfaces: () => GalleryTargetPicker.Items.OfType<ComboBoxItem>().Select(item => item.Content as string ?? "").ToList(),
+            SurfaceIndex: () => GalleryTargetPicker.SelectedIndex,
+            SurfaceEnabled: () => GalleryTargetPicker.IsEnabled,
+            SetSurface: index => GalleryTargetPicker.SelectedIndex = index,
+            TargetName: () => _focusedElement is Guid ? "(elemento elegido)" : "(todo el proyecto)",
             CurrentKey: () => GalleryAssignment()?.TexturePath,
             Appearance: () =>
             {
