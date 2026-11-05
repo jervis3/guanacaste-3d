@@ -363,9 +363,19 @@ public partial class MainWindow
         }
     }
 
+    private const int ScheduleTabIndex = 2;
+    private bool _scheduleStale = true;
+
     /// <summary>Builds localized rows for the coordinated project schedule.</summary>
     private void RefreshSchedule()
     {
+        // The schedule of a big project takes a tenth of a second or more to work out, so it waits until its tab is the one shown.
+        if (ViewTabs.SelectedIndex != ScheduleTabIndex)
+        {
+            _scheduleStale = true;
+            return;
+        }
+        _scheduleStale = false;
         ScheduleGrid.ItemsSource = ProjectScheduleService.Build(_session.Document)
             .Select(row => new ScheduleDisplayRow(
                 GetText($"Schedule.{row.Category}"), row.Number, row.Name,

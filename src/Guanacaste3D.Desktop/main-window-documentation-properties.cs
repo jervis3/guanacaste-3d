@@ -121,6 +121,7 @@ public partial class MainWindow
         HighlightTilePane();
         if (_orthographicViewsStale && ViewTabs.SelectedIndex is ElevationTabIndex or SectionTabIndex) RenderOrthographicViews();
         if (_sheetStale && ViewTabs.SelectedIndex == SheetTabIndex) RenderSheet();
+        if (_scheduleStale && ViewTabs.SelectedIndex == ScheduleTabIndex) RefreshSchedule();
         UpdateDocumentationCaption();
         SynchronizeDocumentationView();
         UpdateRenderWorkspace(ViewTabs.SelectedIndex == RenderTabIndex);

@@ -276,10 +276,16 @@ internal static partial class InteractionChecks
     /// <summary>Sets selection or teardown state without editing any user document.</summary>
     private static void SetField(string name, object? value) => typeof(MainWindow).GetField(name, PrivateInstance)!.SetValue(_window, value);
 
+    private static readonly System.Diagnostics.Stopwatch _checkClock = System.Diagnostics.Stopwatch.StartNew();
+
     /// <summary>Fails immediately when an observable UI behavior differs from the contract.</summary>
     private static void Check(bool condition, string message)
     {
         if (!condition) throw new InvalidOperationException(message);
+        // The time since the last check, when it is long: the steps that make the window wait show up here.
+        var elapsed = _checkClock.ElapsedMilliseconds;
+        _checkClock.Restart();
+        if (elapsed >= 700) Console.WriteLine($"SLOW {elapsed} ms: {message}");
         Console.WriteLine("OK: " + message);
     }
 }

@@ -127,6 +127,9 @@ public sealed class FamilyMesh
     {
         if (Positions is null || Indices is null || Kinds is null || Preview?.Preview is not null)
             throw new InvalidDataException("The family mesh is not valid.");
+        // Every edit of the project validates the whole document, and a loaded tree is hundreds of thousands of triangles and
+        // images of megabytes: a mesh that was checked and has not changed since (the same arrays, the same images) is not checked again.
+        if (_validatedStamp is { } stamp && StampMatches(stamp)) return;
         Preview?.Validate();
         var mesh = Decode();
         if (mesh.Kinds.Length is < 1 or > MaximumTriangles || mesh.Indices.Length != mesh.Kinds.Length * 3 ||
@@ -141,6 +144,28 @@ public sealed class FamilyMesh
             (mesh.TriangleTextures is not null && (mesh.TriangleTextures.Length != mesh.Kinds.Length ||
                 mesh.TriangleTextures.Any(texture => texture != NoTexture && texture >= Textures.Count))))
             throw new InvalidDataException("The family mesh is not valid.");
+        _validatedStamp = Stamp();
+    }
+
+    private object?[]? _validatedStamp;
+
+    /// <summary>What a validation depends on, by identity: the strings are immutable, so the same instance is the same content.</summary>
+    private object?[] Stamp()
+    {
+        var stamp = new List<object?> { Positions, Indices, Kinds, Normals, Uvs, TriangleTextures, Preview, Textures, Textures?.Count };
+        if (Textures is not null)
+            foreach (var texture in Textures)
+                stamp.AddRange([texture, texture?.Rgba, texture?.NormalRgb, texture?.Width, texture?.Height, texture?.NormalWidth, texture?.NormalHeight, texture?.AlphaCutoff, texture?.Name]);
+        return [.. stamp];
+    }
+
+    private bool StampMatches(object?[] before)
+    {
+        var now = Stamp();
+        if (now.Length != before.Length) return false;
+        for (var index = 0; index < now.Length; index++)
+            if (!ReferenceEquals(now[index], before[index]) && !(now[index] is ValueType && now[index]!.Equals(before[index]))) return false;
+        return true;
     }
 
     /// <summary>
