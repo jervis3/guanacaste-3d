@@ -53,8 +53,8 @@ internal sealed class MaterialBall3D : Viewport3D
         for (var y = 0; y < rings; y++) for (var x = 0; x < slices; x++)
         {
             var a = y * (slices + 1) + x; var b = a + slices + 1;
-            mesh.TriangleIndices.Add(a); mesh.TriangleIndices.Add(b); mesh.TriangleIndices.Add(a + 1);
-            mesh.TriangleIndices.Add(a + 1); mesh.TriangleIndices.Add(b); mesh.TriangleIndices.Add(b + 1);
+            mesh.TriangleIndices.Add(a); mesh.TriangleIndices.Add(a + 1); mesh.TriangleIndices.Add(b);
+            mesh.TriangleIndices.Add(a + 1); mesh.TriangleIndices.Add(b + 1); mesh.TriangleIndices.Add(b);
         }
         mesh.Freeze(); return mesh;
     }
