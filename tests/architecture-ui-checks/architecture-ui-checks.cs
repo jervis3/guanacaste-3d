@@ -18,10 +18,15 @@ internal static class ArchitectureUiChecks
     private const BindingFlags PrivateInstance = BindingFlags.Instance | BindingFlags.NonPublic;
     private static MainWindow _window = null!;
 
+    /// <summary>Runs the Architecture workspace checks in an isolated desktop session.</summary>
     [STAThread]
     private static int Main()
     {
         Console.SetOut(new StreamWriter(Console.OpenStandardOutput()) { AutoFlush = true });
+        // Recovery and diagnostic files stay isolated from the installed application and other UI suites.
+        var scratch = Path.Combine(Path.GetTempPath(), "g3d-architecture-ui-" + Guid.NewGuid().ToString("N"));
+        Environment.SetEnvironmentVariable("G3D_RECOVERY_DIR", Path.Combine(scratch, "recovery"));
+        Environment.SetEnvironmentVariable("G3D_LOG_DIR", Path.Combine(scratch, "logs"));
         var application = new App();
         application.InitializeComponent();
         application.ShutdownMode = ShutdownMode.OnExplicitShutdown;
@@ -267,6 +272,8 @@ internal static class ArchitectureUiChecks
         Check(plan.Children.OfType<System.Windows.Shapes.Line>().Any(line => Equals(line.Tag, familyId)),
             "An in-place family appears in the interactive floor plan");
         SetField("_selectedSheetId", (Guid?)session.AddSheet(SheetPaperSize.A3));
+        ((TabControl)_window.FindName("ViewTabs")).SelectedIndex = 3;
+        Pump();
         Invoke("RenderSheet");
         var sheet = (Canvas)_window.FindName("SheetCanvas");
         Check(sheet.Children.OfType<Canvas>().Single().Children.OfType<System.Windows.Shapes.Polyline>().Count() >= 4,
@@ -328,8 +335,17 @@ internal static class ArchitectureUiChecks
         encoder.Save(stream);
     }
 
-    private static object? Invoke(string name, params object[] arguments) =>
-        typeof(MainWindow).GetMethod(name, PrivateInstance)!.Invoke(_window, arguments);
+    /// <summary>Invokes the private overload whose parameters accept the supplied arguments.</summary>
+    private static object? Invoke(string name, params object[] arguments)
+    {
+        var method = typeof(MainWindow).GetMethods(PrivateInstance)
+            .Single(candidate => candidate.Name == name &&
+                candidate.GetParameters().Length == arguments.Length &&
+                candidate.GetParameters().Select(parameter => parameter.ParameterType)
+                    .Zip(arguments, (parameterType, argument) => argument is null || parameterType.IsInstanceOfType(argument))
+                    .All(matches => matches));
+        return method.Invoke(_window, arguments);
+    }
 
     private static T GetField<T>(string name) => (T)typeof(MainWindow).GetField(name, PrivateInstance)!.GetValue(_window)!;
 

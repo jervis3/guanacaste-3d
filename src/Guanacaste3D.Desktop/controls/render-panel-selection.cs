@@ -8,6 +8,12 @@ namespace Guanacaste3D.Desktop.Controls;
 
 public partial class RenderPanel
 {
+    /// <summary>Notifies the host when the selection projection must follow a resized render surface.</summary>
+    internal event Action? SelectionViewportChanged;
+
+    /// <summary>Updates the selection guide after the render surface changes size.</summary>
+    private void NotifySelectionViewportChanged() => SelectionViewportChanged?.Invoke();
+
     /// <summary>Draws transient selection guides over the preview without changing the rendered or exported pixels.</summary>
     internal void ShowSelection(IReadOnlyList<EdgeSegment> edges)
     {

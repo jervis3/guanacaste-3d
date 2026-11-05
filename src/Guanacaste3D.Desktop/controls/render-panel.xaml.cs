@@ -311,6 +311,7 @@ public partial class RenderPanel : UserControl
     {
         if (!_ready) return;
         UpdateInteractiveCamera();
+        NotifySelectionViewportChanged();
         if (_preview is not null)
         {
             var (width, height) = PreviewSize();

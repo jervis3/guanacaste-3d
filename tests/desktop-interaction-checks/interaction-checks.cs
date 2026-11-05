@@ -53,6 +53,14 @@ internal static partial class InteractionChecks
             _canvas = (Canvas)_window.FindName("PlanCanvas");
             var session = Field<DocumentSession>("_session");
             var level = session.Document.Levels[0].Id;
+            var basicTypeIndex = session.Document.WallTypes.FindIndex(type => type.Id == BuiltInWallTypes.Basic200Id);
+            session.Document.WallTypes[basicTypeIndex] = session.Document.WallTypes[basicTypeIndex] with
+            {
+                LeftRepelloThickness = 0.015,
+                LeftFineThickness = 0.003,
+                RightRepelloThickness = 0.015,
+                RightFineThickness = 0.003
+            };
             var wallId = session.AddWall(level, new(-6, 0), new(6, 0));
             session.AddWall(level, new(-6, 0), new(-6, 4));
             Invoke("Door_Click", _window, new RoutedEventArgs());
@@ -74,6 +82,16 @@ internal static partial class InteractionChecks
             Invoke("SetWallTool", false);
             SetField("_selectedOpeningId", (Guid?)door.Id);
             SetField("_selectedWallId", (Guid?)wallId);
+            Invoke("RefreshProperties");
+            var wallProperties = ((TextBlock)_window.FindName("PropertiesText")).Text;
+            Check(wallProperties.Contains("CANTIDADES NETAS POR CAPA", StringComparison.Ordinal) &&
+                  wallProperties.Contains("Núcleo:", StringComparison.Ordinal) &&
+                  wallProperties.Contains("Repello total:", StringComparison.Ordinal) &&
+                  wallProperties.Contains("Fino total:", StringComparison.Ordinal) &&
+                  !wallProperties.Contains("Repello total: 0.00", StringComparison.Ordinal) &&
+                  !wallProperties.Contains("Fino total: 0.00", StringComparison.Ordinal),
+                "Selecting a wall exposes core, repello and fine-layer quantities in the property palette");
+            SaveBitmap("artifacts/interaction-evidence/wall-layer-quantities.png");
             Invoke("RenderPlan");
             Pump();
             var editor = _canvas.Children.OfType<Button>().First(button =>
